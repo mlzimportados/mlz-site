@@ -235,6 +235,15 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 @media(max-width:900px){nav.tabs button{font-size:9.5px}}
 .fotoprev{display:flex;align-items:center;gap:14px}
 .fotoprev img{width:76px;height:76px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.04);padding:4px}
+.esplit{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:760px){.esplit{grid-template-columns:1fr}}
+.ebox{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--surface,rgba(255,255,255,.02))}
+.eh{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;margin-bottom:12px}
+.eh .dot{width:8px;height:8px;border-radius:50%}
+.erow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.erow small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.erow b{font-size:17px}
+.ebox .s{margin-top:10px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -347,15 +356,38 @@ function numeros() {
     if (p.estoque > 0) { unid += p.estoque; valorEst += p.estoque * precoProd(p); custoEst += p.estoque * (+p.custo || 0); if (!precoProd(p)) semPreco++; }
     else esgot++;
   }
-  const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.reduce((a, i) => a + i.quantidade, 0), 0);
+  const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^Juros do parcelamento/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
   return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend };
+}
+// estoque separado: unidades livres dos lotes de investidores x resto da MLZ
+function estoqueSplit() {
+  const vendLote = new Map();
+  for (const v of D.vendas) for (const i of v.venda_itens) if (i.lote_id) vendLote.set(i.lote_id, (vendLote.get(i.lote_id) || 0) + i.quantidade);
+  const livreProd = new Map(), porInv = new Map();
+  for (const inv of (D.investidores || [])) for (const l of inv.lotes) {
+    const livre = Math.max(0, l.quantidade - (vendLote.get(l.id) || 0)); if (!livre) continue;
+    const arr = livreProd.get(l.produto_id) || []; arr.push({ inv, livre, custo: +l.custo_unit || 0 }); livreProd.set(l.produto_id, arr);
+  }
+  const mlz = { unid: 0, venda: 0, custo: 0, prods: 0 }, inv = { unid: 0, venda: 0, custo: 0, prods: 0 };
+  for (const p of D.produtos) {
+    if (p.estoque <= 0) continue;
+    let resta = p.estoque, usouInv = 0;
+    for (const x of (livreProd.get(p.id) || [])) {
+      const u = Math.min(resta, x.livre); if (!u) break;
+      resta -= u; usouInv += u; inv.unid += u; inv.venda += u * precoProd(p); inv.custo += u * x.custo;
+      const o = porInv.get(x.inv.id) || { nome: x.inv.nome, unid: 0 }; o.unid += u; porInv.set(x.inv.id, o);
+    }
+    if (usouInv) inv.prods++;
+    if (resta > 0) { mlz.prods++; mlz.unid += resta; mlz.venda += resta * precoProd(p); mlz.custo += resta * (+p.custo || 0); }
+  }
+  return { mlz, inv, porInv: [...porInv.values()] };
 }
 const cliNome = (id) => (D.clientes.find(c => c.id === id) || {}).nome || 'Cliente';
 const cliObj = (id) => D.clientes.find(c => c.id === id) || {};
 
 // ---------- RESUMO ----------
 function vResumo() {
-  const n = numeros();
+  const n = numeros(), es = estoqueSplit();
   const tot = n.caixa + n.receber;
   const pct = (x) => tot ? (x / tot * 100) : 0;
   const hoje = hojeISO(), em7 = new Date(Date.now() + 7 * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
@@ -379,8 +411,16 @@ function vResumo() {
       <div class="kpis">
         <div class="kpi"><div class="l">Unidades em estoque</div><div class="v num">${n.unid}</div><div class="s">${D.produtos.filter(p => p.estoque > 0).length} produtos · ${n.esgot} esgotado${n.esgot === 1 ? '' : 's'}</div></div>
         <div class="kpi"><div class="l">Valor do estoque (venda)</div><div class="v num">${brl(n.valorEst)}</div><div class="s">${n.semPreco ? `${n.semPreco} sem preço cadastrado` : 'Pelo preço do site'}</div></div>
-        <div class="kpi"><div class="l">Custo do estoque</div><div class="v num">${brl(n.custoEst)}</div><div class="s">Pelo custo cadastrado</div></div>
+        <div class="kpi"><div class="l">Custo do estoque</div><div class="v num">${brl(es.mlz.custo + es.inv.custo)}</div><div class="s">MLZ + investidores</div></div>
         <div class="kpi"><div class="l">Potencial total</div><div class="v num">${brl(n.caixa + n.receber + n.valorEst)}</div><div class="s">Caixa + a receber + estoque</div></div>
+      </div>
+      <div class="esplit">
+        <div class="ebox"><div class="eh"><span class="dot" style="background:var(--gold)"></span>Estoque da MLZ</div>
+          <div class="erow"><div><small>Unidades</small><b class="num">${es.mlz.unid}</b></div><div><small>Valor de venda</small><b class="num">${brl(es.mlz.venda)}</b></div><div><small>Custo</small><b class="num">${brl(es.mlz.custo)}</b></div></div>
+          <div class="s">${es.mlz.prods} produto${es.mlz.prods === 1 ? '' : 's'} comprados pela própria loja</div></div>
+        <div class="ebox"><div class="eh"><span class="dot" style="background:#6aa8ff"></span>Estoque dos investidores</div>
+          <div class="erow"><div><small>Unidades</small><b class="num">${es.inv.unid}</b></div><div><small>Valor de venda</small><b class="num">${brl(es.inv.venda)}</b></div><div><small>Custo</small><b class="num">${brl(es.inv.custo)}</b></div></div>
+          <div class="s">${es.porInv.length ? es.porInv.map(o => `${esc(o.nome)}: ${o.unid} un.`).join(' · ') : 'Nenhum produto de investidor em estoque'}</div></div>
       </div>
     </div>
     <div class="sec"><h3><svg class="i"><use href="#i-clock"/></svg>Atrasadas e vencendo em 7 dias</h3>
@@ -500,9 +540,20 @@ function editarCliente(id) {
 let NV;
 function novaVendaVazia() {
   return { cliId: '', novoCli: { nome: '', telefone: '', instagram: '' }, data: hojeISO(), canal: 'WhatsApp', forma: 'Pix', obs: '',
-    itens: [{ prod: '', desc: '', qtd: 1, preco: '' }], modo: 'avista', recebido: true, nParc: 3, entrada: '', primeiroVenc: addMeses(hojeISO(), 1), parcelas: [], parcelasEditadas: false };
+    itens: [{ prod: '', desc: '', qtd: 1, preco: '' }], modo: 'avista', recebido: true, nParc: 3, entrada: '', juros: '', jurosTipo: 'mes', primeiroVenc: addMeses(hojeISO(), 1), parcelas: [], parcelasEditadas: false };
 }
 const totalNV = () => r2(NV.itens.reduce((s, i) => s + (+i.qtd || 0) * (+String(i.preco).replace(',', '.') || 0), 0));
+// juros do parcelamento: "% ao mês" = tabela Price (parcelas iguais); "% sobre o total" = acréscimo único
+function jurosNV() {
+  if (NV.modo === 'avista') return 0;
+  const i = (+String(NV.juros).replace(',', '.') || 0) / 100; if (i <= 0) return 0;
+  const fin = r2(totalNV() - (+String(NV.entrada).replace(',', '.') || 0)), n = Math.max(1, +NV.nParc || 1);
+  if (fin <= 0) return 0;
+  if (NV.jurosTipo === 'total') return r2(fin * i);
+  const pmt = fin * i / (1 - Math.pow(1 + i, -n));
+  return r2(r2(pmt) * n - fin);
+}
+const totalComJuros = () => r2(totalNV() + jurosNV());
 function gerarParcelas() {
   const total = totalNV(); const ps = [];
   if (NV.modo === 'avista') { ps.push({ numero: 1, valor: total, vencimento: NV.data, pago: NV.recebido }); }
@@ -511,7 +562,7 @@ function gerarParcelas() {
     const n = Math.max(1, +NV.nParc || 1);
     let k = 1;
     if (ent > 0) ps.push({ numero: k++, valor: ent, vencimento: NV.data, pago: true });
-    const resto = r2(total - ent), base = Math.floor(resto / n * 100) / 100;
+    const resto = r2(total - ent + jurosNV()), base = Math.floor(resto / n * 100) / 100;
     for (let j = 0; j < n; j++) {
       const valor = j === 0 ? r2(resto - base * (n - 1)) : base;
       ps.push({ numero: k++, valor, vencimento: addMeses(NV.primeiroVenc, j), pago: false });
@@ -528,8 +579,12 @@ function htmlParcelas() {
 }
 function htmlAviso() {
   const somaParc = r2(NV.parcelas.reduce((s, p) => s + (+p.valor || 0), 0));
-  const difer = r2(totalNV() - somaParc);
+  const difer = r2(totalComJuros() - somaParc);
   return Math.abs(difer) > 0.004 ? `<div class="hint" style="color:var(--warn)">As parcelas somam ${brl(somaParc)}, diferença de ${brl(difer)} para o total. <button class="btn sm line" data-recalc>Recalcular</button></div>` : '';
+}
+function htmlJuros() {
+  const j = jurosNV(); if (!j) return '';
+  return `<div class="tot" style="margin-top:10px"><span>Juros ${brl(j)} · Total a prazo</span><b class="num" style="color:var(--gold-hi)">${brl(totalComJuros())}</b></div>`;
 }
 function vNova() {
   if (!NV) NV = novaVendaVazia();
@@ -571,6 +626,11 @@ function vNova() {
             <label class="f">Entrada (opcional)<input class="in num" inputmode="decimal" data-k="entrada" value="${esc(NV.entrada)}" placeholder="0,00"></label>
             <label class="f">1º vencimento<input class="in" type="date" data-k="primeiroVenc" value="${NV.primeiroVenc}"></label>
           </div>
+          <div class="grid2" style="margin-top:10px">
+            <label class="f">Juros (%)<input class="in num" inputmode="decimal" data-k="juros" value="${esc(NV.juros)}" placeholder="0 = sem juros"></label>
+            <label class="f">Como calcular<select class="in" data-k="jurosTipo"><option value="mes" ${NV.jurosTipo === 'mes' ? 'selected' : ''}>% ao mês (parcelas iguais)</option><option value="total" ${NV.jurosTipo === 'total' ? 'selected' : ''}>% sobre o total</option></select></label>
+          </div>
+          <div id="jbox">${htmlJuros()}</div>
           <div class="hint">Cartão de crédito parcelado na maquininha: marque as parcelas como pagas se o dinheiro já caiu para você.</div>`}
         <div id="pbox">${htmlParcelas()}</div><div id="pwarn">${htmlAviso()}</div>
         <label class="f" style="margin-top:12px">Observação<input class="in" data-k="obs" value="${esc(NV.obs)}" placeholder="Ex.: entrega sábado, cor, brinde…"></label>
@@ -580,7 +640,7 @@ function vNova() {
 }
 const elNova = $('#v-nova');
 function lerCampo(el) {
-  if (el.dataset.k) { NV[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (['modo', 'nParc', 'entrada', 'primeiroVenc', 'recebido', 'data'].includes(el.dataset.k)) NV.parcelasEditadas = false; return true; }
+  if (el.dataset.k) { NV[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (['modo', 'nParc', 'entrada', 'juros', 'jurosTipo', 'primeiroVenc', 'recebido', 'data'].includes(el.dataset.k)) NV.parcelasEditadas = false; return true; }
   if (el.dataset.nc) { NV.novoCli[el.dataset.nc] = el.value; return false; }
   if (el.dataset.it !== undefined) {
     const it = NV.itens[+el.dataset.it]; it[el.dataset.ik] = el.value;
@@ -605,6 +665,7 @@ function atualizarParciais(alvo) {
   const tb = elNova.querySelector('.tot b'); if (tb) tb.textContent = brl(totalNV());
   if (!alvo || !alvo.closest('#pbox')) { const pb = $('#pbox'); if (pb) pb.innerHTML = htmlParcelas(); }
   const pw = $('#pwarn'); if (pw) pw.innerHTML = htmlAviso();
+  const jb = $('#jbox'); if (jb) jb.innerHTML = htmlJuros();
 }
 // input: só guarda (sem re-render, para não perder o foco)
 elNova.addEventListener('input', (e) => { const t = e.target; if (t.tagName === 'INPUT' && t.type !== 'checkbox' && t.type !== 'date') { const muda = lerCampo(t); if (t.dataset.nc === undefined) atualizarParciais(t); } });
@@ -627,7 +688,9 @@ async function salvarVenda(btn) {
     if (it.prod === 'outro') { if (!it.desc.trim()) return toast('Descreva o item “Outro”'); itens.push({ produto_id: '', descricao: it.desc.trim(), quantidade: qtd, preco_unit: preco }); }
     else { const p = D.produtos.find(x => String(x.id) === String(it.prod)); if (p.estoque < qtd && !confirm(`${nomeProd(p)} tem só ${p.estoque} em estoque. Registrar mesmo assim?`)) return; itens.push({ produto_id: p.id, descricao: nomeProd(p), quantidade: qtd, preco_unit: preco }); }
   }
-  const total = totalNV(), soma = r2(NV.parcelas.reduce((s, p) => s + p.valor, 0));
+  const juros = jurosNV();
+  if (juros > 0) itens.push({ produto_id: '', descricao: `Juros do parcelamento (${String(NV.juros).replace('.', ',')}% ${NV.jurosTipo === 'total' ? 'sobre o total' : 'a.m.'})`, quantidade: 1, preco_unit: juros });
+  const total = totalComJuros(), soma = r2(NV.parcelas.reduce((s, p) => s + p.valor, 0));
   if (Math.abs(total - soma) > 0.004 && !confirm(`As parcelas somam ${brl(soma)} e a venda é de ${brl(total)}. Salvar mesmo assim?`)) return;
   btn.disabled = true;
   try {
