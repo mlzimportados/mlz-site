@@ -244,6 +244,10 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .erow small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
 .erow b{font-size:17px}
 .ebox .s{margin-top:10px;font-size:12.5px;color:var(--muted)}
+.eprow{display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.eprow.eph{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.epl{display:none}
+@media(max-width:560px){.eprow{grid-template-columns:28px 1fr 1fr}.eprow [name=pago_em]{grid-column:2/-1}.eprow.eph span:last-child{display:none}.epl{display:block;font-size:10.5px;color:var(--muted);line-height:1.1}.eprow{margin-bottom:14px}}
 </style>
 </head>
 <body>
@@ -357,7 +361,22 @@ function numeros() {
     else esgot++;
   }
   const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^Juros do parcelamento/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
-  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend };
+  // resultado: lucro = vendas − custo dos itens; parte dos investidores sai do lucro
+  let custoVend = 0, semCusto = 0, parteInv = 0, lucroMes = 0;
+  const pctInv = new Map((D.investidores || []).map(i => [i.id, +i.percentual || 0]));
+  for (const v of D.vendas) {
+    let lv = 0;
+    for (const i of v.venda_itens) {
+      const c = +i.custo_unit || 0, l = i.quantidade * (+i.preco_unit - c);
+      if (i.produto_id && !c) semCusto += i.quantidade;
+      custoVend += i.quantidade * c; lv += l;
+      if (i.investidor_id) { const pi = l * (+(i.percentual ?? pctInv.get(i.investidor_id) ?? 0)) / 100; parteInv += pi; lv -= pi; }
+    }
+    if (v.data.slice(0, 7) === mes) lucroMes += lv;
+  }
+  const lucroBruto = vendido - custoVend, lucroMLZ = lucroBruto - parteInv;
+  const pagoInv = (D.investidores || []).reduce((s, i) => s + i.repasses.reduce((a, r) => a + +r.valor, 0), 0);
+  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv };
 }
 // estoque separado: unidades livres dos lotes de investidores x resto da MLZ
 function estoqueSplit() {
@@ -406,6 +425,15 @@ function vResumo() {
       <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Recebido x a receber</span><span class="num">${tot ? Math.round(pct(n.caixa)) : 0}% recebido</span></div>
       <div class="barra"><i style="width:${pct(n.caixa)}%;background:var(--ok)"></i><i style="width:${pct(n.receber - n.atrasado)}%;background:var(--gold)"></i><i style="width:${pct(n.atrasado)}%;background:var(--bad)"></i></div>
       <div class="leg"><span style="--c:var(--ok)">Recebido</span><span style="--c:var(--gold)">A receber em dia</span><span style="--c:var(--bad)">Atrasado</span></div>
+    </div>
+    <div class="sec"><h3><svg class="i"><use href="#i-trend"/></svg>Resultado das vendas</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Lucro bruto</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Vendas − custo dos produtos (${brl(n.custoVend)})</div></div>
+        <div class="kpi"><div class="l">Parte dos investidores</div><div class="v num">${brl(n.parteInv)}</div><div class="s">Já pago a eles: ${brl(n.pagoInv)}</div></div>
+        <div class="kpi caixa"><div class="l">Lucro da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Este mês: ${brl(n.lucroMes)}</div></div>
+        <div class="kpi"><div class="l">Margem</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
+      </div>
+      ${n.semCusto ? `<div class="hint" style="color:var(--warn);margin-top:8px">${n.semCusto} unidade${n.semCusto === 1 ? '' : 's'} vendida${n.semCusto === 1 ? '' : 's'} sem custo cadastrado: o lucro aparece maior do que é. Cadastre o custo dos produtos em Estoque.</div>` : ''}
     </div>
     <div class="sec"><h3><svg class="i"><use href="#i-box"/></svg>Estoque para vender</h3>
       <div class="kpis">
@@ -503,7 +531,7 @@ function cardVenda(v, tel) {
       <span class="ck">${p.pago_em ? '<svg class="i"><use href="#i-check"/></svg>' : ''}</span>
       <b>${n > 1 ? `${p.numero}/${n}` : 'À vista'}</b><span class="num">${brl(p.valor)}</span><span>${p.pago_em ? 'pago ' + dataBR(p.pago_em).slice(0, 5) : 'vence ' + dataBR(p.vencimento).slice(0, 5)}</span></button>`; }).join('')}</div>
     ${v.obs ? `<div class="hint">Obs.: ${esc(v.obs)}</div>` : ''}
-    <div class="vacoes">${cobrar}<button class="btn sm red" data-delvenda="${v.id}">Excluir venda</button></div>
+    <div class="vacoes">${cobrar}<button class="btn sm line" data-editparc="${v.id}"><svg class="i"><use href="#i-edit"/></svg>Editar parcelas</button><button class="btn sm red" data-delvenda="${v.id}">Excluir venda</button></div>
   </div>`;
 }
 
@@ -514,6 +542,7 @@ $('#v-vendas').addEventListener('click', async (e) => {
   if ((b = e.target.closest('[data-fv]'))) { UI.fVend = b.dataset.fv; return vVendas(); }
   if ((b = e.target.closest('[data-ir]'))) return irPara(b.dataset.ir);
   if ((b = e.target.closest('[data-editcli]'))) return editarCliente(+b.dataset.editcli);
+  if ((b = e.target.closest('[data-editparc]'))) return editarParcelas(+b.dataset.editparc);
   if ((b = e.target.closest('[data-delvenda]'))) {
     if (!confirm('Excluir esta venda? Os produtos voltam para o estoque e as parcelas somem do caixa.')) return;
     await tentar(() => api.excluirVenda(+b.dataset.delvenda), 'Venda excluída');
@@ -521,6 +550,31 @@ $('#v-vendas').addEventListener('click', async (e) => {
   }
 });
 $('#v-vendas').addEventListener('input', (e) => { if (e.target.id === 'qVend') { UI.qVend = e.target.value; const pos = e.target.selectionStart; vVendas(); const i = $('#qVend'); i.focus(); i.setSelectionRange(pos, pos); } });
+
+function editarParcelas(vid) {
+  const v = D.vendas.find(x => x.id === vid); const ps = [...v.parcelas].sort((a, b) => a.numero - b.numero);
+  const val = (x) => (+x).toFixed(2).replace('.', ',');
+  abrirModal(`<h3>Parcelas da venda de ${dataBR(v.data)}</h3><div class="sub" style="margin:-4px 0 12px">${esc(cliNome(v.cliente_id))} · total ${brl(v.total)}</div><form id="fparc" class="form">
+    <div class="eprow eph"><span>Nº</span><span>Valor</span><span>Vencimento</span><span>Pago em (vazio = em aberto)</span></div>
+    ${ps.map(p => `<div class="eprow" data-pid="${p.id}"><span class="num">${p.numero}ª</span>
+      <input class="in num" name="valor" inputmode="decimal" value="${val(p.valor)}">
+      <input class="in" type="date" name="vencimento" value="${p.vencimento}">
+      <span class="epl">pago em</span><input class="in" type="date" name="pago_em" value="${p.pago_em || ''}"></div>`).join('')}
+    <div id="epAviso"></div>
+    <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar parcelas</button></div></form>`);
+  const fm = $('#fparc');
+  const ler = () => [...fm.querySelectorAll('[data-pid]')].map(r => ({ id: +r.dataset.pid, valor: num(r.querySelector('[name=valor]').value), vencimento: r.querySelector('[name=vencimento]').value, pago_em: r.querySelector('[name=pago_em]').value || null }));
+  const aviso = () => { const soma = r2(ler().reduce((s, p) => s + p.valor, 0)), d = r2(+v.total - soma); $('#epAviso').innerHTML = Math.abs(d) > 0.004 ? `<div class="hint" style="color:var(--warn)">As parcelas somam ${brl(soma)}, diferença de ${brl(d)} para o total da venda.</div>` : ''; };
+  fm.addEventListener('input', aviso); aviso();
+  fm.onsubmit = async (e) => {
+    e.preventDefault(); const novos = ler();
+    if (novos.some(p => p.valor <= 0 || !p.vencimento)) return toast('Preencha valor e vencimento de todas as parcelas');
+    const mud = novos.filter(n => { const o = ps.find(p => p.id === n.id); return r2(+o.valor) !== n.valor || o.vencimento !== n.vencimento || (o.pago_em || null) !== n.pago_em; });
+    if (!mud.length) return fecharModal();
+    try { for (const p of mud) await api.salvarParcela(p); toast('Parcelas atualizadas'); fecharModal(); await carregar(); }
+    catch (err) { toast('Erro: ' + err.message); }
+  };
+}
 
 function editarCliente(id) {
   const c = cliObj(id);
@@ -716,7 +770,7 @@ function vEstoque() {
     <div class="kpis" style="margin-bottom:14px">
       <div class="kpi"><div class="l">Unidades</div><div class="v num">${n.unid}</div></div>
       <div class="kpi"><div class="l">Valor (venda)</div><div class="v num">${brl(n.valorEst)}</div></div>
-      <div class="kpi"><div class="l">Custo</div><div class="v num">${brl(n.custoEst)}</div></div>
+      <div class="kpi"><div class="l">Custo</div><div class="v num">${brl((() => { const es = estoqueSplit(); return es.mlz.custo + es.inv.custo; })())}</div></div>
       <div class="kpi"><div class="l">Esgotados</div><div class="v num">${n.esgot}</div></div>
     </div>
     <div class="barf"><input class="in" id="qEst" placeholder="Buscar produto" value="${esc(UI.qEst)}"></div>

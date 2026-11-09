@@ -39,6 +39,7 @@ function criarApi() {
     registrarVenda: async (v) => ok(await sb.rpc('registrar_venda', v)),
     excluirVenda: async (id) => ok(await sb.from('vendas').delete().eq('id', id)),
     marcarParcela: async (id, pagoEm) => ok(await sb.from('parcelas').update({ pago_em: pagoEm }).eq('id', id)),
+    salvarParcela: async ({ id, ...d }) => ok(await sb.from('parcelas').update(d).eq('id', id)),
     salvarConfig: async (obj) => ok(await sb.from('config').upsert(Object.entries(obj).map(([chave, valor]) => ({ chave, valor })))),
     investidores: async () => ok(await sb.from('investidores').select('*, aportes(*), repasses(*), lotes(*)').order('nome')),
     salvarInvestidor: async (x) => { const { id, ...d } = x; return id ? ok(await sb.from('investidores').update(d).eq('id', id).select().single()) : ok(await sb.from('investidores').insert(d).select().single()); },
