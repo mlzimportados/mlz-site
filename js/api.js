@@ -15,7 +15,7 @@ function criarApi() {
     // público
     config: async () => Object.fromEntries(ok(await sb.from('config').select('chave,valor')).map(r => [r.chave, r.valor])),
     categorias: async () => ok(await sb.from('categorias').select('id,nome,ordem').order('ordem')),
-    produtosPublicos: async () => ok(await sb.from('produtos').select(PROD_PUBLICO).eq('ativo', true).gt('estoque', 0).order('destaque', { ascending: false }).order('nome')),
+    produtosPublicos: async () => ok(await sb.from('produtos').select(PROD_PUBLICO).eq('ativo', true).order('destaque', { ascending: false }).order('nome')),
     // auth
     sessao: async () => (await sb.auth.getSession()).data.session,
     entrar: async (email, senha) => ok(await sb.auth.signInWithPassword({ email, password: senha })),

@@ -766,7 +766,7 @@ function vEstoque() {
     (UI.fEst === 'todos' || (UI.fEst === 'disp' && p.estoque > 0) || (UI.fEst === 'esg' && p.estoque <= 0) || (UI.fEst === 'semp' && !precoProd(p)) || (UI.fEst === 'oculto' && !p.ativo)));
   const catNome = (id) => (D.cats.find(c => c.id === id) || {}).nome || 'Sem categoria';
   $('#v-estoque').innerHTML = `
-    <div class="ph"><div><h2 class="t">Estoque e produtos</h2><div class="sub">Produtos visíveis e com estoque aparecem no site.</div></div><button class="btn gold" data-novoprod><svg class="i"><use href="#i-plus"/></svg>Novo produto</button></div>
+    <div class="ph"><div><h2 class="t">Estoque e produtos</h2><div class="sub">Produtos visíveis aparecem no site. Sem estoque, aparecem como “sob encomenda”.</div></div><button class="btn gold" data-novoprod><svg class="i"><use href="#i-plus"/></svg>Novo produto</button></div>
     <div class="kpis" style="margin-bottom:14px">
       <div class="kpi"><div class="l">Unidades</div><div class="v num">${n.unid}</div></div>
       <div class="kpi"><div class="l">Valor (venda)</div><div class="v num">${brl(n.valorEst)}</div></div>

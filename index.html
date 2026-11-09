@@ -117,6 +117,12 @@ section.blk{padding:76px 0 0}
 .pf{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
 .pf::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,#888)}
 .pp{margin-top:8px;font-size:15px;color:var(--gold-hi);font-weight:500}
+.tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.prod.enc .pimg img{filter:drop-shadow(0 18px 22px rgba(0,0,0,.5)) saturate(.55) brightness(.82)}
+.prod.enc .pp{font-size:13px;color:var(--muted);font-weight:400}
+.encbox{margin:22px 0 6px;padding:16px 18px;border:1px solid rgba(217,178,76,.35);border-radius:16px;background:linear-gradient(130deg,rgba(217,178,76,.12),transparent 70%)}
+.encbox b{display:block;font-size:16px;color:var(--gold-hi);margin-bottom:4px;font-weight:500}
+.encbox p{font-size:14px;color:var(--muted);line-height:1.55}
 .pp s{color:var(--faint);font-size:12.5px;margin-right:6px;font-weight:400}
 .marcas{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:34px}
 .marcas::-webkit-scrollbar{display:none}
@@ -286,7 +292,8 @@ const linkIg = () => igUser() ? `https://ig.me/m/${igUser()}` : null;
 
 // ---------- vitrine em destaque ----------
 function montarSpot() {
-  let dest = PRODS.filter(p => p.destaque); if (dest.length < 3) dest = PRODS.slice(0, 6);
+  const disp = PRODS.filter(p => !esgotado(p));
+  let dest = disp.filter(p => p.destaque); if (dest.length < 3) dest = disp.slice(0, 6);
   dest = dest.slice(0, 6);
   if (!dest.length) { document.getElementById('stage').style.display = 'none'; return; }
   document.getElementById('slides').innerHTML = dest.map((p, i) => `<div class="slide ${i ? '' : 'on'}"><img src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>`).join('');
@@ -336,13 +343,15 @@ document.getElementById('aromaGrid').addEventListener('click', e => {
 });
 
 // ---------- coleção ----------
+const esgotado = (p) => !(+p.estoque > 0);
 const marcaBase = (m) => (m || 'Outras').replace(/\s+Pride$/i, '');
 function cardProd(p) {
-  return `<button class="prod" data-id="${p.id}">
-      <div class="pimg"><img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
+  const enc = esgotado(p);
+  return `<button class="prod${enc ? ' enc' : ''}" data-id="${p.id}">
+      <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
         ${p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
-        <div class="pp">${precoHtml(p)}</div></div>
+        <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div></div>
     </button>`;
 }
 function render() {
@@ -362,7 +371,7 @@ function render() {
   const grupos = todasMarcas.map(m => [m, lista.filter(p => marcaBase(p.marca) === m)]).filter(([, ps]) => ps.length);
   document.getElementById('grade').innerHTML = grupos.map(([m, ps]) => `<div class="grupo">
       <div class="ghead"><h3>${esc(m)}</h3><span>${ps.length} ${ps.length === 1 ? 'produto' : 'produtos'}</span></div>
-      <div class="grade">${ps.map(cardProd).join('')}</div></div>`).join('');
+      <div class="grade">${[...ps].sort((a, b) => esgotado(a) - esgotado(b)).map(cardProd).join('')}</div></div>`).join('');
 }
 document.getElementById('marcas').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; marcaSel = b.dataset.m; render(); });
 document.getElementById('grade').addEventListener('click', e => { const c = e.target.closest('.prod'); if (c) abrir(+c.dataset.id); });
@@ -383,7 +392,9 @@ function lerNotas(desc) {
 function abrir(id) {
   const p = PRODS.find(x => x.id === id); if (!p) return;
   const f = precoFinal(p), max = parseInt(CFG.parcelas_max || '1', 10);
-  const msg = `Olá! Vi no site da MLZ e tenho interesse em: ${nomeCompleto(p)}${f ? ` (${brl(f)})` : ''}. Está disponível?`;
+  const enc = esgotado(p);
+  const msg = enc ? `Olá! Vi no site da MLZ que o ${nomeCompleto(p)} está esgotado. Gostaria de fazer uma encomenda. Qual o prazo e o valor?`
+    : `Olá! Vi no site da MLZ e tenho interesse em: ${nomeCompleto(p)}${f ? ` (${brl(f)})` : ''}. Está disponível?`;
   const wa = linkWa(msg), ig = linkIg();
   const { n, resto } = lerNotas(p.descricao);
   const niveis = [['saída', 'saída'], ['corpo', 'corpo'], ['fundo', 'fundo']].filter(([k]) => n[k]);
@@ -394,13 +405,14 @@ function abrir(id) {
       <div class="pb">${esc(p.marca || '')}</div>
       <div class="pn">${esc(p.nome)}</div>
       ${p.familia ? `<span class="fam" style="--c:${corFam(p.familia)}">${esc(p.familia)}${FAMILIAS[p.familia] ? ' · ' + esc(FAMILIAS[p.familia].d.toLowerCase()) : ''}</span>` : (p.tipo ? `<span class="fam">${esc(p.tipo)}</span>` : '')}
+      ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada e o valor.</p></div>` : `
       <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : '<span class="por" style="font-size:22px">Consulte o preço</span>'}</div>
-      ${f && max > 1 ? `<div class="parc">ou em até ${max}x de ${brl(f / max)}</div>` : ''}
+      ${f && max > 1 ? `<div class="parc">ou em até ${max}x de ${brl(f / max)}</div>` : ''}`}
       ${niveis.length ? `<div class="piramide">${niveis.map(([k, l]) => `<div class="nivel"><div class="nl">Notas de ${l}</div><div class="notas">${n[k].map(x => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}</div>` : ''}
       ${resto ? `<div class="desc">${esc(resto)}</div>` : ''}
       <div class="sacoes">
-        ${wa ? `<a class="btn solid" target="_blank" rel="noopener" href="${wa}"><svg class="i"><use href="#i-wa"/></svg>Pedir pelo WhatsApp</a>` : ''}
-        ${ig ? `<a class="btn ghost" target="_blank" rel="noopener" href="${ig}" data-copiar="${esc(msg)}"><svg class="i"><use href="#i-ig"/></svg>Pedir pelo Instagram</a>` : ''}
+        ${wa ? `<a class="btn solid" target="_blank" rel="noopener" href="${wa}"><svg class="i"><use href="#i-wa"/></svg>${enc ? 'Encomendar pelo WhatsApp' : 'Pedir pelo WhatsApp'}</a>` : ''}
+        ${ig ? `<a class="btn ghost" target="_blank" rel="noopener" href="${ig}" data-copiar="${esc(msg)}"><svg class="i"><use href="#i-ig"/></svg>${enc ? 'Encomendar pelo Instagram' : 'Pedir pelo Instagram'}</a>` : ''}
         ${!wa && !ig ? `<div class="btn ghost">Chame a gente no direct</div>` : ''}
       </div>
       <div class="snote">Pagamento combinado direto com a gente: Pix, cartão ou parcelado.</div>
