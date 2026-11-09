@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seja revendedor · MLZ Importados</title>
+<meta name="description" content="Revenda importados originais com a MLZ Importados: preço de revenda, procedência garantida e apoio para vender.">
+<meta name="theme-color" content="#07111f">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#07111f;scroll-behavior:smooth;scroll-padding-top:86px}
+:root{--line:rgba(255,255,255,.08);--gold:#d9b24c;--gold-hi:#f1d68a;--txt:#f2f4f8;--muted:rgba(226,232,242,.68);--faint:rgba(226,232,242,.42);--surface:#0e1d31;--hd:Montserrat,system-ui,sans-serif}
+body{font-family:Outfit,system-ui,sans-serif;color:var(--txt);background:#07111f;-webkit-font-smoothing:antialiased;line-height:1.6}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+header{position:sticky;top:0;z-index:10;background:rgba(7,17,31,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:12px}
+header img{height:20px;display:block}
+header a.volta{font-size:14px;color:var(--muted);white-space:nowrap}
+header a.volta:hover{color:var(--txt)}
+.hero{padding:64px 0 40px;text-align:center;background:radial-gradient(60% 80% at 50% 0%,rgba(217,178,76,.12),transparent 70%)}
+.eyebrow{font-family:var(--hd);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
+h1{font-family:var(--hd);font-weight:600;font-size:clamp(30px,5vw,48px);letter-spacing:-1.2px;line-height:1.1;margin:12px auto 14px;max-width:760px}
+h1 em{font-style:normal;color:var(--gold-hi)}
+.hero p{color:var(--muted);max-width:600px;margin:0 auto;font-size:16.5px}
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 24px;border-radius:999px;font-weight:500;font-size:15px;cursor:pointer;border:0;transition:.2s}
+.btn.solid{background:linear-gradient(135deg,#f1d68a,#d9b24c);color:#111}
+.btn.solid:hover{filter:brightness(1.06)}
+.btn.ghost{border:1px solid rgba(255,255,255,.18);background:transparent}
+.btn.ghost:hover{border-color:var(--gold)}
+section{padding:46px 0}
+h2{font-family:var(--hd);font-weight:600;font-size:clamp(22px,3vw,30px);letter-spacing:-.6px;margin:8px 0 22px}
+.ben{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.ben{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.ben{grid-template-columns:1fr}}
+.ben div{border:1px solid var(--line);border-radius:18px;padding:20px;background:linear-gradient(160deg,rgba(255,255,255,.035),transparent)}
+.ben svg{color:var(--gold);width:24px;height:24px}
+.ben b{display:block;font-family:var(--hd);font-weight:600;font-size:15px;margin:12px 0 6px}
+.ben p{font-size:14px;color:var(--muted);line-height:1.5}
+.passos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;counter-reset:p;list-style:none}
+@media(max-width:900px){.passos{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.passos{grid-template-columns:1fr}}
+.passos li{counter-increment:p;padding:18px;border-radius:16px;border:1px solid var(--line)}
+.passos li::before{content:counter(p);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);font-family:var(--hd);font-size:13px;margin-bottom:10px}
+.passos b{display:block;font-weight:500;margin-bottom:4px}
+.passos span{font-size:14px;color:var(--muted)}
+.contato{display:grid;grid-template-columns:1fr 1.25fr;gap:36px;align-items:start}
+@media(max-width:860px){.contato{grid-template-columns:1fr;gap:20px}}
+.info p{color:var(--muted);margin-bottom:14px}
+.canais{display:grid;gap:10px;margin-top:6px}
+.canal{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;transition:.2s;min-width:0}
+.canal:hover{border-color:rgba(217,178,76,.5)}
+.canal svg{color:var(--gold);width:22px;height:22px}
+.canal small{display:block;font-size:12px;color:var(--faint)}
+.canal span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+form{border:1px solid rgba(217,178,76,.25);border-radius:22px;padding:24px;background:linear-gradient(150deg,rgba(217,178,76,.07),rgba(255,255,255,.015) 50%)}
+@media(max-width:420px){form{padding:18px}}
+form h3{font-family:var(--hd);font-weight:600;font-size:18px;margin-bottom:4px}
+form .sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.g2{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);margin-bottom:12px;min-width:0}
+.in{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--txt);font-size:15px;outline:none}
+select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+select.in option{background:#0e1d31}
+textarea.in{height:96px;padding:12px 14px;resize:vertical}
+.in:focus{border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 14px}
+.chips label{cursor:pointer}
+.chips input{position:absolute;opacity:0;pointer-events:none}
+.chips span{display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);font-size:13.5px;color:var(--muted);transition:.15s}
+.chips input:checked+span{border-color:var(--gold);color:var(--gold-hi);background:rgba(217,178,76,.1)}
+.lbl{font-size:13px;color:var(--muted);margin-bottom:8px}
+form .btn{width:100%;margin-top:4px}
+.aviso{font-size:12.5px;color:var(--faint);margin-top:10px;text-align:center}
+.erro{color:#ff8f7a;font-size:13px;margin-top:8px;text-align:center;min-height:1px}
+details{border:1px solid var(--line);border-radius:14px;padding:0 18px;margin-top:8px}
+summary{cursor:pointer;padding:15px 0;list-style:none;display:flex;justify-content:space-between;gap:14px;font-size:15px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--gold);font-size:18px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{color:var(--muted);font-size:14.5px;padding-bottom:16px}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:22px 0 30px;font-size:12.5px;color:var(--faint);text-align:center}
+footer a{color:var(--muted);margin:0 8px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3.5 20.5l1.3-4.3A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.8c0 3.3 2.9 6.2 6.2 6.2l1.3-1.6-2-1-1 .8a4.6 4.6 0 0 1-2.7-2.7l.8-1-1-2z"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8" r="1.3"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-img" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/></symbol>
+</svg>
+
+<header><div class="wrap"><a href="index.html"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a><a class="volta" href="index.html">← Voltar para a loja</a></div></header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Revenda MLZ</div>
+    <h1>Revenda importados <em>originais</em> com a MLZ</h1>
+    <p>Trabalhamos com varejo e distribuição. Se você vende pelo Instagram, por catálogo ou tem uma loja, a gente fornece produtos com procedência e preço de revenda.</p>
+    <div class="cta"><a class="btn solid" href="#contato">Quero revender</a><a class="btn ghost" href="index.html#colecao">Ver os produtos</a></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Por que revender MLZ</div>
+    <h2>O que você recebe</h2>
+    <div class="ben">
+      <div><svg class="i"><use href="#i-tag"/></svg><b>Preço de revenda</b><p>Tabela própria para revendedores, com condições melhores conforme a quantidade.</p></div>
+      <div><svg class="i"><use href="#i-escudo"/></svg><b>100% originais</b><p>Só produtos com procedência. Nada de réplica ou contratipo, para você vender com segurança.</p></div>
+      <div><svg class="i"><use href="#i-img"/></svg><b>Material para divulgar</b><p>Fotos e artes dos produtos para você postar nas suas redes e no seu catálogo.</p></div>
+      <div><svg class="i"><use href="#i-box"/></svg><b>Variedade crescendo</b><p>Perfumes árabes e, em breve, outros importados. Encomendas de itens fora do estoque.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Passo a passo</div>
+    <h2>Como funciona</h2>
+    <ol class="passos">
+      <li><b>Mande seus dados</b><span>Preencha o formulário abaixo. A mensagem chega direto no nosso WhatsApp.</span></li>
+      <li><b>Receba a tabela</b><span>Enviamos os preços de revenda, os produtos disponíveis e as condições.</span></li>
+      <li><b>Faça seu pedido</b><span>Você escolhe os produtos e a quantidade, e combinamos pagamento e envio.</span></li>
+      <li><b>Comece a vender</b><span>Com os produtos em mãos e o material de divulgação, é só vender.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="contato">
+  <div class="wrap contato">
+    <div class="info">
+      <div class="eyebrow">Fale com a gente</div>
+      <h2>Vamos conversar</h2>
+      <p>Preencha o formulário e toque em enviar: o WhatsApp abre com a sua mensagem pronta. Se preferir, chame direto por um dos canais.</p>
+      <div class="canais" id="canais"></div>
+      <details><summary>Preciso ter CNPJ ou loja?</summary><p>Não necessariamente. Atendemos quem vende pelo Instagram, por catálogo ou para conhecidos, e também lojas. As condições são combinadas no atendimento.</p></details>
+      <details><summary>Existe pedido mínimo?</summary><p>As condições variam conforme a quantidade. Mande seus dados que passamos os detalhes.</p></details>
+      <details><summary>Vocês enviam para outras cidades?</summary><p>Sim. O envio e o frete são combinados no atendimento, antes do pagamento.</p></details>
+    </div>
+    <form id="frev" novalidate>
+      <h3>Quero ser revendedor</h3>
+      <div class="sub">Leva menos de 1 minuto.</div>
+      <div class="g2">
+        <label class="f">Seu nome<input class="in" name="nome" autocomplete="name" required></label>
+        <label class="f">WhatsApp<input class="in" name="tel" inputmode="tel" autocomplete="tel" placeholder="(42) 99999-9999" required></label>
+      </div>
+      <div class="g2">
+        <label class="f">Cidade / estado<input class="in" name="cidade" placeholder="Ex.: Ponta Grossa / PR"></label>
+        <label class="f">Instagram ou loja (opcional)<input class="in" name="ig" placeholder="@sualoja"></label>
+      </div>
+      <div class="lbl">Como você vende?</div>
+      <div class="chips">
+        <label><input type="checkbox" name="canal" value="Instagram"><span>Instagram</span></label>
+        <label><input type="checkbox" name="canal" value="WhatsApp / catálogo"><span>WhatsApp / catálogo</span></label>
+        <label><input type="checkbox" name="canal" value="Loja física"><span>Loja física</span></label>
+        <label><input type="checkbox" name="canal" value="Para conhecidos"><span>Para conhecidos</span></label>
+        <label><input type="checkbox" name="canal" value="Ainda vou começar"><span>Ainda vou começar</span></label>
+      </div>
+      <div class="g2">
+        <label class="f">Interesse<select class="in" name="interesse"><option>Perfumes árabes</option><option>Outros importados</option><option>Os dois</option></select></label>
+        <label class="f">Quantidade por mês (estimativa)<select class="in" name="qtd"><option>Até 5 unidades</option><option>6 a 15 unidades</option><option>16 a 30 unidades</option><option>Mais de 30 unidades</option><option>Ainda não sei</option></select></label>
+      </div>
+      <label class="f">Mensagem (opcional)<textarea class="in" name="msg" placeholder="Conte um pouco sobre você ou o que procura"></textarea></label>
+      <button class="btn solid" type="submit"><svg class="i"><use href="#i-wa"/></svg>Enviar pelo WhatsApp</button>
+      <div class="erro" id="erro"></div>
+      <div class="aviso">Seus dados são usados só para o atendimento. Veja a <a href="politicas.html#privacidade" style="text-decoration:underline">política de privacidade</a>.</div>
+    </form>
+  </div>
+</section>
+
+<footer><div class="wrap">© <span id="ano"></span> MLZ Importados<br><a href="index.html">Loja</a><a href="politicas.html">Políticas</a><a href="politicas.html#privacidade">Privacidade</a></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+document.getElementById('ano').textContent = new Date().getFullYear();
+let CFG = {};
+const waNum = (s) => { const n = soDigitos(s); return n ? (n.length <= 11 ? '55' + n : n) : ''; };
+(async () => {
+  try { CFG = await criarApi().config(); } catch (e) { console.error(e); }
+  const c = [];
+  const txt = encodeURIComponent('Olá! Tenho interesse em revender produtos da MLZ Importados.');
+  for (const k of ['whatsapp', 'whatsapp2']) { const n = waNum(CFG[k]); if (n) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${txt}"><svg class="i"><use href="#i-wa"/></svg><span><small>WhatsApp</small>${esc(CFG[k])}</span></a>`); }
+  const ig = (CFG.instagram || '').replace(/^@/, '');
+  if (ig) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://ig.me/m/${esc(ig)}"><svg class="i"><use href="#i-ig"/></svg><span><small>Instagram</small>@${esc(ig)}</span></a>`);
+  document.getElementById('canais').innerHTML = c.join('') || '<div class="canal">Chame a gente no direct do Instagram</div>';
+})();
+document.getElementById('frev').addEventListener('submit', (e) => {
+  e.preventDefault(); const f = e.target, er = document.getElementById('erro'); er.textContent = '';
+  const nome = f.nome.value.trim(), tel = f.tel.value.trim();
+  if (!nome) { er.textContent = 'Informe seu nome.'; return f.nome.focus(); }
+  if (soDigitos(tel).length < 10) { er.textContent = 'Informe um WhatsApp com DDD.'; return f.tel.focus(); }
+  const canais = [...f.querySelectorAll('[name=canal]:checked')].map(x => x.value);
+  const linhas = ['Olá! Quero ser revendedor(a) da MLZ Importados.', '', `• Nome: ${nome}`, `• WhatsApp: ${tel}`];
+  if (f.cidade.value.trim()) linhas.push(`• Cidade: ${f.cidade.value.trim()}`);
+  if (f.ig.value.trim()) linhas.push(`• Instagram/loja: ${f.ig.value.trim()}`);
+  if (canais.length) linhas.push(`• Vendo por: ${canais.join(', ')}`);
+  linhas.push(`• Interesse: ${f.interesse.value}`, `• Quantidade por mês: ${f.qtd.value}`);
+  if (f.msg.value.trim()) linhas.push('', f.msg.value.trim());
+  const texto = encodeURIComponent(linhas.join('\n'));
+  const n = waNum(CFG.whatsapp);
+  if (n) return window.open(`https://wa.me/${n}?text=${texto}`, '_blank', 'noopener');
+  const ig = (CFG.instagram || '').replace(/^@/, '');
+  if (ig) { navigator.clipboard?.writeText(linhas.join('\n')).catch(() => {}); return window.open(`https://ig.me/m/${ig}`, '_blank', 'noopener'); }
+  er.textContent = 'Não foi possível abrir o WhatsApp agora. Tente pelo Instagram @mlzimportados.';
+});
+</script>
+</body>
+</html>

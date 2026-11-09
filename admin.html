@@ -163,6 +163,8 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 
 /* nova venda */
 .form{display:grid;gap:16px}
+.form>*,.grid2>*,.grid3>*,.f{min-width:0}.in{min-width:0}
+@media(max-width:380px){.grid2{grid-template-columns:1fr}.linha{flex-wrap:wrap}.linha .gr{flex-basis:100%}}
 .card{padding:22px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
 .card>h3{font-family:var(--hd);font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
 @media(max-width:560px){.card{padding:18px 16px}}

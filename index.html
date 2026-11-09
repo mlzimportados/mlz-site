@@ -37,6 +37,7 @@ header nav a:hover{color:var(--txt)}
 .hbtn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;border:1px solid rgba(217,178,76,.55);color:var(--gold-hi);font-size:14px;font-weight:500;transition:.2s;white-space:nowrap}
 .hbtn:hover{background:var(--gold);color:#0b1a2e}
 @media(max-width:760px){header nav{display:none}.hbtn{margin-left:auto}header .logo img{height:18px}}
+@media(max-width:370px){header .wrap{gap:10px}.hbtn{padding:0 12px;font-size:13px;gap:6px}header .logo img{height:15px}}
 
 .spot{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
   background:radial-gradient(900px 520px at 72% 55%,rgba(40,84,140,.45),transparent 70%),radial-gradient(600px 400px at 0% 0%,rgba(217,178,76,.08),transparent 70%)}
@@ -50,7 +51,7 @@ header nav a:hover{color:var(--txt)}
 .btn.solid:hover{background:var(--gold-hi)}
 .btn.ghost{border:1px solid var(--line);color:var(--txt)}
 .btn.ghost:hover{border-color:rgba(255,255,255,.3)}
-.stage{touch-action:pan-y;user-select:none;-webkit-user-select:none;position:relative;height:min(62vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer}
+.stage{margin-bottom:34px;touch-action:pan-y;user-select:none;-webkit-user-select:none;position:relative;height:min(62vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer}
 .stage .halo{position:absolute;left:50%;top:44%;width:78%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(217,178,76,.20),rgba(217,178,76,.05) 60%,transparent)}
 .stage .ring{position:absolute;left:50%;top:44%;width:66%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(217,178,76,.22)}
 .stage .floor{position:absolute;left:50%;bottom:92px;width:62%;height:34px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
@@ -204,7 +205,7 @@ footer{margin-top:64px;padding:0 0 22px}
 <header>
   <div class="wrap">
     <a href="#" class="logo"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a>
-    <nav><a href="#colecao">Coleção</a><a href="#aromas">Aromas</a><a href="#revenda">Revenda</a></nav>
+    <nav><a href="#colecao">Coleção</a><a href="#aromas">Aromas</a><a href="revenda.html">Revenda</a></nav>
     <a class="hbtn" id="hWa" target="_blank" rel="noopener" href="#"><svg class="i"><use href="#i-wa"/></svg>Fale com a gente</a>
   </div>
 </header>
@@ -243,7 +244,7 @@ footer{margin-top:64px;padding:0 0 22px}
 
   <section class="rev reveal" id="revenda">
     <div><div class="eyebrow">Revenda</div><h3>Quer revender produtos MLZ?</h3><p>Trabalhamos com varejo e distribuição de importados originais. Condições sob consulta.</p></div>
-    <a class="btn solid" id="btRevenda" href="#">Quero ser revendedor <svg class="i"><use href="#i-seta"/></svg></a>
+    <a class="btn solid" id="btRevenda" href="revenda.html">Quero ser revendedor <svg class="i"><use href="#i-seta"/></svg></a>
   </section>
 </main>
 
@@ -251,7 +252,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <div class="wrap">
     <div class="fbox">
       <a href="#" aria-label="MLZ Importados"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a>
-      <nav><a href="#colecao">Coleção</a><a href="#revenda">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
+      <nav><a href="#colecao">Coleção</a><a href="revenda.html">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
       <div class="social" id="social"></div>
       <span class="copy">© <span id="ano"></span> MLZ Importados · Produtos originais</span>
     </div>
@@ -435,8 +436,6 @@ function contatos() {
   const wa = linkWa('Olá! Vim pelo site da MLZ Importados.'), ig = igUser();
   const h = document.getElementById('hWa');
   if (wa) h.href = wa; else if (ig) { h.href = 'https://instagram.com/' + ig; h.innerHTML = '<svg class="i"><use href="#i-ig"/></svg>Instagram'; } else h.style.display = 'none';
-  const rev = linkWa('Olá! Tenho interesse em revender produtos da MLZ Importados.') || linkIg();
-  const br = document.getElementById('btRevenda'); if (rev) { br.href = rev; br.target = '_blank'; br.rel = 'noopener'; }
   const li = [];
   if (wa) li.push(`<li><a href="${wa}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp)}</a></li>`);
   const n2 = soDigitos(CFG.whatsapp2); if (n2) li.push(`<li><a href="https://wa.me/${n2.length <= 11 ? '55' + n2 : n2}?text=${encodeURIComponent('Olá! Vim pelo site da MLZ Importados.')}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp2)}</a></li>`);
