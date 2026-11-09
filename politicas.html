@@ -21,7 +21,7 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;heigh
 header img{height:20px}
 header a.volta{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px}
 header a.volta:hover{color:var(--txt)}
-.hero{padding:56px 0 26px}
+.hero{padding-top:56px;padding-bottom:26px}
 .eyebrow{font-family:var(--hd);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
 h1{font-family:var(--hd);font-weight:600;font-size:clamp(28px,4vw,40px);letter-spacing:-1px;margin:10px 0 8px;line-height:1.15}
 .hero p{color:var(--muted)}
@@ -44,6 +44,35 @@ section strong{color:var(--txt);font-weight:500}
 .contato h2{font-size:17px;margin-bottom:6px}
 .contato ul{list-style:none;margin:10px 0 0;display:grid;gap:4px}
 .contato a{color:var(--gold-hi)}
+.resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-bottom:44px}
+@media(max-width:820px){.resumo{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.resumo{gap:8px}.rcard{padding:14px}.rcard b{font-size:13.5px}.rcard p{font-size:12.5px}}
+.rcard{border:1px solid var(--line);border-radius:16px;padding:18px;background:linear-gradient(160deg,rgba(255,255,255,.035),transparent)}
+.rcard span{font-family:var(--hd);font-size:11px;color:var(--gold);letter-spacing:2px}
+.rcard b{display:block;font-family:var(--hd);font-weight:600;font-size:15px;margin:6px 0 4px}
+.rcard p{font-size:13.5px;color:var(--muted);line-height:1.55}
+.rcard em,.tabela em{font-style:normal}
+.passos{margin:12px 0 0;padding:0;list-style:none;counter-reset:p;display:grid;gap:10px}
+.passos li{counter-increment:p;position:relative;padding-left:40px;color:var(--muted);font-size:15px}
+.passos li::before{content:counter(p);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;border:1px solid rgba(217,178,76,.4);color:var(--gold-hi);font-family:var(--hd);font-size:12px;display:grid;place-items:center}
+.passos b{color:var(--txt);font-weight:500}
+.nota{margin-top:14px!important;font-size:13.5px!important;color:var(--faint)!important}
+.tabela{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0 6px}
+.tabela>div{display:grid;grid-template-columns:220px 1fr;gap:16px;padding:13px 16px;border-top:1px solid var(--line);font-size:14.5px}
+.tabela>div:first-child{border-top:0}
+.tabela b{font-weight:500;color:var(--txt)}
+.tabela span{color:var(--muted)}
+.tabela.t3>div{grid-template-columns:190px 170px 1fr}
+.tabela .th{background:rgba(255,255,255,.03)}
+.tabela .th b,.tabela .th span{font-family:var(--hd);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
+@media(max-width:640px){.tabela>div,.tabela.t3>div{grid-template-columns:1fr;gap:3px}.tabela .th{display:none!important}.tabela.t3>div span:nth-of-type(1){color:var(--gold-hi);font-size:13px}}
+.alerta{border:1px solid rgba(217,178,76,.3);background:rgba(217,178,76,.07);border-radius:12px;padding:14px 16px;margin-bottom:6px}
+details{border:1px solid var(--line);border-radius:12px;padding:0 16px;margin-top:8px}
+summary{cursor:pointer;padding:13px 0;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--gold);font-size:18px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{padding-bottom:14px}
 footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;color:var(--faint)}
 </style>
 </head>
@@ -53,99 +82,186 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;col
 <div class="wrap hero">
   <div class="eyebrow">Transparência</div>
   <h1>Políticas e termos</h1>
-  <p>Última atualização: 09/11/2026</p>
+  <p>Regras claras para você comprar com tranquilidade. Última atualização: 09/11/2026.</p>
+</div>
+
+<div class="wrap resumo">
+  <div class="rcard"><span>01</span><b>100% originais</b><p>Nada de réplica ou contratipo. Procedência garantida em todo produto.</p></div>
+  <div class="rcard"><span>02</span><b>7 dias para desistir</b><p>Comprou a distância e mudou de ideia? Você tem 7 dias após receber.</p></div>
+  <div class="rcard"><span>03</span><b>Defeito é com a gente</b><p>Chegou avariado ou diferente do pedido? Trocamos ou devolvemos o valor.</p></div>
+  <div class="rcard"><span>04</span><b>Parcelado na loja</b><p>Pix, cartão ou parcelamento direto em até <em class="pmax">3</em>x, combinado no atendimento.</p></div>
+  <div class="rcard"><span>05</span><b>Seus dados protegidos</b><p>Usamos só para o seu pedido. Não vendemos nem repassamos para propaganda.</p></div>
+  <div class="rcard"><span>06</span><b>Atendimento humano</b><p>Tudo é combinado com uma pessoa de verdade, pelo WhatsApp ou Instagram.</p></div>
 </div>
 
 <div class="wrap layout">
   <nav class="toc">
+    <a href="#comprar">Como comprar</a>
+    <a href="#pagamento">Pagamento e parcelamento</a>
+    <a href="#entrega">Entrega e envio</a>
+    <a href="#trocas">Trocas e devoluções</a>
+    <a href="#originalidade">Originalidade e cuidados</a>
+    <a href="#revenda">Revenda e atacado</a>
+    <a href="#seguranca">Segurança e golpes</a>
     <a href="#privacidade">Política de privacidade</a>
     <a href="#termos">Termos de uso</a>
-    <a href="#trocas">Trocas e devoluções</a>
-    <a href="#entrega">Entrega e envio</a>
-    <a href="#pagamento">Pagamento e parcelamento</a>
-    <a href="#originalidade">Garantia de originalidade</a>
+    <a href="#duvidas">Dúvidas frequentes</a>
   </nav>
 
   <div>
-    <section id="privacidade">
-      <h2>Política de privacidade</h2>
-      <p>A MLZ Importados respeita a sua privacidade e trata dados pessoais de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD).</p>
-      <h3>Quais dados coletamos</h3>
-      <p>Este site é um catálogo: você não precisa criar conta nem informar dados para navegar. Só recebemos dados quando você fala com a gente pelo WhatsApp ou Instagram para fazer um pedido, como nome, telefone, endereço de entrega e informações de pagamento combinadas no atendimento.</p>
-      <h3>Para que usamos</h3>
-      <ul>
-        <li>Atender seu pedido, combinar pagamento e entrega;</li>
-        <li>Controlar vendas, parcelas e garantias;</li>
-        <li>Enviar avisos sobre o seu pedido e, se você permitir, novidades e promoções.</li>
-      </ul>
-      <h3>Compartilhamento</h3>
-      <p>Não vendemos nem alugamos seus dados. Eles só são compartilhados quando necessário para concluir a compra, por exemplo com transportadoras ou meios de pagamento, ou quando a lei exigir.</p>
-      <h3>Armazenamento e segurança</h3>
-      <p>Os dados ficam em sistemas com acesso restrito à equipe da MLZ e são guardados apenas pelo tempo necessário para as finalidades acima e para cumprir obrigações legais.</p>
-      <h3>Cookies e serviços de terceiros</h3>
-      <p>O site não usa cookies de publicidade. Ele utiliza serviços técnicos de hospedagem, banco de dados e fontes (Google Fonts), que podem registrar dados técnicos de acesso, como endereço IP, para funcionar.</p>
-      <h3>Seus direitos</h3>
-      <p>Você pode pedir a qualquer momento acesso, correção ou exclusão dos seus dados, ou deixar de receber mensagens promocionais. É só falar com a gente pelos canais de atendimento abaixo.</p>
+    <section id="comprar">
+      <h2>Como comprar</h2>
+      <p>O site é a nossa vitrine. A compra é fechada com o nosso atendimento, para você tirar dúvidas, escolher a melhor forma de pagamento e combinar a entrega do seu jeito.</p>
+      <ol class="passos">
+        <li><b>Escolha no catálogo.</b> Veja preço, notas olfativas e disponibilidade de cada produto.</li>
+        <li><b>Chame a gente.</b> Clique em “Pedir no WhatsApp” ou no Instagram. A mensagem já vai com o nome do produto.</li>
+        <li><b>Confirmamos tudo.</b> Disponibilidade, valor final, frete ou retirada e forma de pagamento.</li>
+        <li><b>Pagamento e reserva.</b> Com o pagamento (ou a entrada do parcelado) confirmado, o produto fica reservado no seu nome.</li>
+        <li><b>Entrega.</b> Você retira, recebe em mãos ou recebe pelo envio, com rastreio quando houver.</li>
+      </ol>
+      <p class="nota">O pedido só é considerado fechado quando o atendimento confirma por mensagem. Preço e estoque do site podem mudar até essa confirmação.</p>
     </section>
 
-    <section id="termos">
-      <h2>Termos de uso</h2>
+    <section id="pagamento">
+      <h2>Pagamento e parcelamento</h2>
+      <div class="tabela">
+        <div><b>Pix</b><span>Forma mais rápida. O pedido é liberado assim que o pagamento cai.</span></div>
+        <div><b>Cartão de crédito ou débito</b><span>Pela maquininha ou link de pagamento. As condições do cartão são informadas no atendimento.</span></div>
+        <div><b>Parcelado direto com a loja</b><span>Em até <em class="pmax">3</em>x, com datas de vencimento combinadas na hora da compra e registradas pela loja.</span></div>
+      </div>
+      <h3>Como funciona o parcelamento direto</h3>
       <ul>
-        <li>O site tem caráter de <strong>catálogo</strong>. Pedidos e pagamentos são feitos e confirmados pelo nosso atendimento no WhatsApp ou Instagram.</li>
-        <li>Um pedido só está confirmado depois que o atendimento confirma a disponibilidade e o pagamento é combinado.</li>
-        <li>Preços, promoções e estoque podem mudar sem aviso prévio. Promoções valem enquanto durar o estoque ou pelo período informado.</li>
-        <li>As fotos são ilustrativas. Embalagens podem variar conforme o lote do fabricante.</li>
-        <li>As descrições olfativas (notas de saída, corpo e fundo) são referências do fabricante e de fontes especializadas, e a percepção pode variar de pessoa para pessoa.</li>
-        <li>Marcas e nomes de produtos pertencem aos seus respectivos fabricantes. A MLZ é revendedora independente.</li>
-        <li>As condições para revendedores são tratadas individualmente, sob consulta.</li>
-        <li>Todo o conteúdo do site (textos, layout e identidade visual da MLZ) não pode ser copiado sem autorização.</li>
+        <li>Antes de fechar, você recebe o valor de cada parcela e as datas de vencimento, tudo por escrito no WhatsApp.</li>
+        <li>Cada pagamento é marcado no nosso controle, e você pode pedir seu extrato a qualquer momento.</li>
+        <li>Mandamos um lembrete quando a parcela estiver perto de vencer.</li>
+        <li>Se tiver algum imprevisto, chame a gente antes do vencimento. Sempre dá para conversar e ajustar.</li>
+        <li>Com parcelas em atraso, novas compras parceladas ficam suspensas até a regularização.</li>
+      </ul>
+      <h3>Promoções</h3>
+      <p>Preços promocionais, como o do Esquenta Black Friday, valem pelo período anunciado ou enquanto durar o estoque, e não se somam a outros descontos, salvo quando informado.</p>
+    </section>
+
+    <section id="entrega">
+      <h2>Entrega e envio</h2>
+      <div class="tabela">
+        <div><b>Retirada</b><span>Combine dia e horário com o atendimento. Sem custo de frete.</span></div>
+        <div><b>Entrega local</b><span>Entregamos em mãos na nossa região. A taxa e o horário são combinados antes do pagamento.</span></div>
+        <div><b>Envio para outras cidades</b><span>Pelos Correios ou por transportadora, com o valor do frete informado antes do pagamento e código de rastreio.</span></div>
+      </div>
+      <ul>
+        <li>O prazo começa a contar a partir da confirmação do pagamento.</li>
+        <li>Perfumes vão bem embalados e protegidos contra impacto e vazamento.</li>
+        <li>Confira seu endereço com atenção. Se o pedido voltar por endereço errado ou ausência repetida, pode ser cobrado um novo frete.</li>
+        <li>Ao receber, confira a embalagem. Se houver avaria, fotografe antes de abrir e fale com a gente em até 7 dias.</li>
       </ul>
     </section>
 
     <section id="trocas">
       <h2>Trocas e devoluções</h2>
-      <h3>Desistência da compra</h3>
-      <p>Em compras feitas a distância (WhatsApp, Instagram ou site), você pode desistir em até <strong>7 dias corridos após receber o produto</strong>, conforme o art. 49 do Código de Defesa do Consumidor. O produto deve ser devolvido sem sinais de uso, com embalagem, lacre e acessórios.</p>
-      <h3>Produto com defeito ou divergente</h3>
-      <p>Se o produto chegar com defeito, avariado ou diferente do pedido, avise a gente pelos canais de atendimento com fotos ou vídeo. O prazo para reclamar de defeitos aparentes é de <strong>30 dias</strong> após o recebimento (art. 26 do CDC). Faremos a troca, o conserto quando couber, ou a devolução do valor.</p>
-      <h3>Como funciona</h3>
-      <ul>
-        <li>Fale com o atendimento informando o pedido e o motivo.</li>
-        <li>Vamos combinar a forma de devolução do produto.</li>
-        <li>Após o recebimento e a conferência, a troca é enviada ou o valor é devolvido pelo mesmo meio de pagamento.</li>
-      </ul>
-      <p>Por questões de higiene, perfumes com sinais de uso não são aceitos para devolução por desistência. Isso não afeta seus direitos em caso de defeito.</p>
-    </section>
-
-    <section id="entrega">
-      <h2>Entrega e envio</h2>
-      <ul>
-        <li>A forma de entrega (retirada, entrega local ou envio) e o valor do frete são combinados no atendimento, antes do pagamento.</li>
-        <li>O prazo começa a contar após a confirmação do pagamento e é informado no fechamento do pedido.</li>
-        <li>Nos envios, passamos o código de rastreio sempre que o serviço oferecer.</li>
-        <li>Confira o endereço informado. Se houver erro no endereço, um novo frete pode ser cobrado.</li>
-        <li>Ao receber, confira a embalagem. Se houver avaria, registre com fotos e fale com a gente.</li>
-      </ul>
-    </section>
-
-    <section id="pagamento">
-      <h2>Pagamento e parcelamento</h2>
-      <ul>
-        <li>Aceitamos <strong>Pix</strong>, <strong>cartão de crédito</strong>, <strong>cartão de débito</strong> e <strong>parcelamento</strong>, conforme combinado no atendimento.</li>
-        <li>O parcelamento mostrado no site é uma referência. As condições finais (número de parcelas e datas) são confirmadas no atendimento.</li>
-        <li>Nas vendas parceladas direto com a loja, cada parcela tem uma data de vencimento combinada. Avisamos pelo WhatsApp quando uma parcela estiver próxima do vencimento ou atrasada.</li>
-        <li>Nenhum pagamento é feito pelo site. Faça pagamentos apenas pelos canais oficiais listados abaixo e confirme sempre os dados com o nosso atendimento.</li>
-      </ul>
+      <p>Seguimos o Código de Defesa do Consumidor e vamos além quando possível. Veja o que vale em cada caso:</p>
+      <div class="tabela t3">
+        <div class="th"><b>Situação</b><span>Prazo</span><span>O que acontece</span></div>
+        <div><b>Desisti da compra</b><span>7 dias corridos após receber (art. 49 do CDC)</span><span>Produto lacrado e sem uso é devolvido e você recebe o valor integral, incluindo o frete pago.</span></div>
+        <div><b>Chegou com defeito ou avariado</b><span>30 dias após receber (art. 26 do CDC)</span><span>Trocamos por outro igual ou devolvemos o valor. O frete é por nossa conta.</span></div>
+        <div><b>Recebi o produto errado</b><span>7 dias após receber</span><span>Enviamos o produto certo e buscamos o errado sem custo para você.</span></div>
+        <div><b>Não gostei do cheiro após usar</b><span>Não se aplica</span><span>Por higiene, perfume usado não é trocado por gosto pessoal. Por isso, tire todas as dúvidas sobre as notas antes de comprar.</span></div>
+      </div>
+      <h3>Passo a passo</h3>
+      <ol class="passos">
+        <li>Chame o atendimento com o nome do produto e o motivo. Em caso de defeito, mande fotos ou vídeo.</li>
+        <li>Combinamos a devolução: entrega em mãos, retirada ou envio com frete pago.</li>
+        <li>Conferimos o produto em até 3 dias úteis após recebê-lo.</li>
+        <li>Mandamos a troca ou devolvemos o valor pela mesma forma de pagamento. Em compras parceladas, as parcelas que faltam são canceladas.</li>
+      </ol>
     </section>
 
     <section id="originalidade">
-      <h2>Garantia de originalidade</h2>
-      <p>Todos os produtos vendidos pela MLZ Importados são <strong>100% originais</strong>, adquiridos de fornecedores com procedência. Não vendemos réplicas, contratipos ou decants sem identificação.</p>
-      <p>Se tiver qualquer dúvida sobre a autenticidade de um produto comprado com a gente, fale com o atendimento. Analisamos o caso e, se for o caso, aplicamos as garantias desta página.</p>
+      <h2>Originalidade e cuidados</h2>
+      <p>Todos os produtos da MLZ Importados são <strong>100% originais</strong> e vêm de fornecedores com procedência. Não vendemos réplicas, contratipos, “inspirações” nem decants sem identificação.</p>
+      <h3>Sobre os perfumes árabes</h3>
+      <ul>
+        <li>Perfumes árabes costumam ter alta concentração e projeção. A fixação e o rastro variam conforme a pele, o clima e a quantidade aplicada.</li>
+        <li>Nos primeiros borrifos, alguns frascos têm uma saída alcoólica mais forte. Isso é normal e melhora depois de alguns usos.</li>
+        <li>Embalagens e cores de frasco podem mudar entre lotes do fabricante sem afetar a originalidade.</li>
+        <li>As notas de saída, corpo e fundo mostradas no site são referências do fabricante e de fontes especializadas.</li>
+      </ul>
+      <h3>Para o seu perfume durar mais</h3>
+      <ul>
+        <li>Guarde em local fresco, longe do sol e do calor. Evite o banheiro, por causa do vapor.</li>
+        <li>Mantenha o frasco tampado e, se possível, na caixa original.</li>
+        <li>Aplique na pele hidratada e nos pontos de pulsação. Não esfregue os pulsos.</li>
+      </ul>
+      <p>Se tiver qualquer dúvida sobre a autenticidade de um produto comprado com a gente, fale com o atendimento. Se a autenticidade não for comprovada, devolvemos o valor integral.</p>
+    </section>
+
+    <section id="revenda">
+      <h2>Revenda e atacado</h2>
+      <p>A MLZ Importados atende consumidores finais e também <strong>revendedores</strong>. Quem quiser revender recebe condições especiais por quantidade, tabela de preços própria e apoio com fotos e conteúdo para divulgação.</p>
+      <ul>
+        <li>As condições são passadas individualmente, de acordo com o volume do pedido.</li>
+        <li>Pedidos de revenda seguem estas mesmas políticas de originalidade e defeito. A desistência de 7 dias vale para compras de consumidor final.</li>
+        <li>Para começar, chame no WhatsApp e diga que quer revender.</li>
+      </ul>
+    </section>
+
+    <section id="seguranca">
+      <h2>Segurança e golpes</h2>
+      <div class="alerta">
+        <p><strong>Só falamos com você pelos canais oficiais listados no fim desta página.</strong> Se alguém usar o nome da MLZ com outro número ou outro perfil, não pague e avise a gente.</p>
+      </div>
+      <ul>
+        <li>Nunca pedimos senhas, códigos recebidos por SMS ou dados completos do cartão por mensagem.</li>
+        <li>Antes de fazer um Pix, confira se o recebedor é o informado pelo nosso atendimento.</li>
+        <li>O site não recebe pagamentos. Nenhuma página que peça pagamento dentro do site é nossa.</li>
+      </ul>
+    </section>
+
+    <section id="privacidade">
+      <h2>Política de privacidade</h2>
+      <p>A MLZ Importados trata dados pessoais de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD) e é a responsável pelos dados tratados nos seus atendimentos.</p>
+      <h3>Quais dados coletamos</h3>
+      <p>Para navegar no catálogo você não precisa criar conta nem informar nada. Só recebemos dados quando você fala com a gente para comprar: nome, telefone, endereço de entrega e o histórico de pedidos e parcelas.</p>
+      <h3>Para que usamos</h3>
+      <ul>
+        <li>Fechar e entregar o seu pedido (execução de contrato);</li>
+        <li>Controlar pagamentos, parcelas, trocas e garantias;</li>
+        <li>Cumprir obrigações legais e fiscais;</li>
+        <li>Enviar novidades e promoções, só se você quiser. É possível sair a qualquer momento.</li>
+      </ul>
+      <h3>Com quem compartilhamos</h3>
+      <p>Não vendemos nem alugamos seus dados. Eles só são compartilhados quando necessário: com a transportadora para a entrega, com o meio de pagamento escolhido, ou quando a lei exigir.</p>
+      <h3>Armazenamento e segurança</h3>
+      <p>Os dados ficam em um sistema protegido por login, com acesso apenas da equipe autorizada da MLZ. Guardamos pelo tempo necessário para o atendimento e pelos prazos exigidos em lei.</p>
+      <h3>Cookies</h3>
+      <p>O site não usa cookies de publicidade nem rastreadores de anúncios. Os serviços técnicos de hospedagem, banco de dados e fontes (Google Fonts) podem registrar dados técnicos de acesso, como o endereço IP, para o site funcionar.</p>
+      <h3>Seus direitos</h3>
+      <p>Você pode pedir acesso, correção, cópia ou exclusão dos seus dados, ou retirar o consentimento para mensagens promocionais. Respondemos em até 15 dias pelos canais abaixo.</p>
+    </section>
+
+    <section id="termos">
+      <h2>Termos de uso</h2>
+      <ul>
+        <li>Ao usar este site, você concorda com estas políticas.</li>
+        <li>O site é um <strong>catálogo</strong>. Pedidos e pagamentos são feitos com o atendimento pelo WhatsApp ou Instagram.</li>
+        <li>Preços, promoções e estoque podem mudar sem aviso. Se houver erro evidente de preço no site, avisamos antes de fechar o pedido e você decide se segue com a compra.</li>
+        <li>As fotos são ilustrativas e podem ter pequenas diferenças de cor ou embalagem.</li>
+        <li>Marcas e nomes de produtos pertencem aos seus fabricantes. A MLZ Importados é uma revendedora independente.</li>
+        <li>Textos, fotos, layout e identidade visual da MLZ não podem ser copiados sem autorização.</li>
+        <li>Estas políticas podem ser atualizadas. A data da última versão fica sempre no topo da página.</li>
+      </ul>
+    </section>
+
+    <section id="duvidas">
+      <h2>Dúvidas frequentes</h2>
+      <details><summary>Posso pagar uma parte no Pix e parcelar o resto?</summary><p>Pode. Combine a entrada e as parcelas com o atendimento e tudo fica registrado por escrito.</p></details>
+      <details><summary>O produto que aparece no site está disponível?</summary><p>O site só mostra produtos com estoque. Mesmo assim, confirmamos a disponibilidade antes de fechar, porque as vendas acontecem o tempo todo.</p></details>
+      <details><summary>Consigo reservar um perfume para pagar depois?</summary><p>A reserva acontece com o pagamento ou a entrada confirmada. Sem isso, o produto continua disponível para outros clientes.</p></details>
+      <details><summary>Como sei qual perfume combina comigo?</summary><p>Veja a família olfativa e as notas no site e chame a gente. Indicamos opções pelo seu gosto, pelo clima e pela ocasião.</p></details>
+      <details><summary>Vocês emitem comprovante?</summary><p>Sim. Você recebe o resumo da compra com produtos, valores e parcelas pelo WhatsApp.</p></details>
     </section>
 
     <div class="contato">
-      <h2>Fale com a gente</h2>
+      <h2>Canais oficiais de atendimento</h2>
       <p style="color:var(--muted)">Dúvidas sobre estas políticas, seus dados ou um pedido:</p>
       <ul id="contatos"><li>Chame a gente no direct do Instagram</li></ul>
     </div>
@@ -164,6 +280,7 @@ document.getElementById('ano').textContent = new Date().getFullYear();
     for (const k of ['whatsapp', 'whatsapp2']) { const n = soDigitos(cfg[k]); if (n) li.push(`<li>WhatsApp: <a target="_blank" rel="noopener" href="https://wa.me/${n.length <= 11 ? '55' + n : n}">${esc(cfg[k])}</a></li>`); }
     const ig = (cfg.instagram || '').replace(/^@/, ''); if (ig) li.push(`<li>Instagram: <a target="_blank" rel="noopener" href="https://instagram.com/${esc(ig)}">@${esc(ig)}</a></li>`);
     if (li.length) document.getElementById('contatos').innerHTML = li.join('');
+    const pm = parseInt(cfg.parcelas_max, 10); if (pm > 0) document.querySelectorAll('.pmax').forEach(e => e.textContent = pm);
   } catch (e) { console.error(e); }
 })();
 </script>
