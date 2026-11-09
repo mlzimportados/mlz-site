@@ -50,19 +50,20 @@ header nav a:hover{color:var(--txt)}
 .btn.solid:hover{background:var(--gold-hi)}
 .btn.ghost{border:1px solid var(--line);color:var(--txt)}
 .btn.ghost:hover{border-color:rgba(255,255,255,.3)}
-.stage{position:relative;height:min(62vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer}
+.stage{touch-action:pan-y;user-select:none;-webkit-user-select:none;position:relative;height:min(62vh,520px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer}
 .stage .halo{position:absolute;left:50%;top:44%;width:78%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(217,178,76,.20),rgba(217,178,76,.05) 60%,transparent)}
 .stage .ring{position:absolute;left:50%;top:44%;width:66%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(217,178,76,.22)}
 .stage .floor{position:absolute;left:50%;bottom:92px;width:62%;height:34px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
 .slides{position:absolute;inset:0 0 100px 0}
 .slide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;opacity:0;transform:translateY(18px) scale(.97);transition:opacity .8s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
 .slide.on{opacity:1;transform:none}
-.slide img{max-width:78%;max-height:100%;object-fit:contain;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+.slide img{-webkit-user-drag:none;pointer-events:none;max-width:78%;max-height:100%;object-fit:contain;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
 .caption{position:relative;text-align:center;height:88px}
 .caption .cb{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--faint)}
 .caption .cn{font-family:var(--hd);font-weight:600;font-size:20px;margin:4px 0 4px}
 .caption .cp{font-size:15px;color:var(--gold-hi)}
 .caption .cp s{color:var(--faint);margin-right:8px;font-size:13px}
+.swipe{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--faint)}
 .dots{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px}
 .dots button{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22);transition:.3s}
 .dots button.on{background:var(--gold);height:22px;border-radius:3px}
@@ -136,13 +137,26 @@ section.blk{padding:76px 0 0}
 .rev h3{font-family:var(--hd);font-weight:600;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.5px;margin-top:8px}
 .rev p{color:var(--muted);margin-top:8px;max-width:520px;line-height:1.5}
 
-footer{margin-top:80px;border-top:1px solid var(--line);padding:44px 0 50px;color:var(--muted);font-size:14px}
-footer .wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:30px}
-@media(max-width:760px){footer .wrap{grid-template-columns:1fr}}
-footer img{height:20px;margin-bottom:14px}
-footer h4{font-family:var(--hd);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--txt);margin-bottom:12px;font-weight:600}
-footer li{list-style:none;margin-bottom:8px}
-footer .copy{grid-column:1/-1;font-size:12.5px;color:var(--faint);padding-top:20px;border-top:1px solid var(--line)}
+footer{margin-top:80px;border-top:1px solid var(--line);padding:50px 0 0;color:var(--muted);font-size:14px;background:linear-gradient(180deg,rgba(255,255,255,.015),transparent)}
+.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.2fr 1fr;gap:34px}
+@media(max-width:980px){.fgrid{grid-template-columns:repeat(3,1fr)}.fbrand{grid-column:1/-1}}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr 1fr;gap:28px 18px}}
+.fbrand img{height:20px;margin-bottom:14px}
+.fbrand p{max-width:320px;line-height:1.6}
+.social{display:flex;gap:8px;margin-top:18px}
+.social a{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--txt);transition:.2s}
+.social a:hover{border-color:var(--gold);color:var(--gold-hi)}
+footer h4{font-family:var(--hd);font-size:11.5px;letter-spacing:2px;text-transform:uppercase;color:var(--txt);margin-bottom:14px;font-weight:600}
+footer li{list-style:none;margin-bottom:9px;line-height:1.4}
+#contatos li{white-space:nowrap}
+footer li a:hover{color:var(--gold-hi)}
+.pgto{display:flex;flex-wrap:wrap;gap:6px}
+.pgto span{font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid var(--line);color:var(--txt)}
+.selo{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12.5px}
+.selo svg{color:var(--gold)}
+.fbar{margin-top:44px;border-top:1px solid var(--line);padding:20px 0 26px;display:flex;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;font-size:12.5px;color:var(--faint)}
+.fbar nav{display:flex;gap:18px;flex-wrap:wrap}
+.fbar a:hover{color:var(--txt)}
 
 .sheet{position:fixed;inset:0;z-index:50;background:rgba(3,8,15,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .sheet.on{opacity:1;pointer-events:auto}
@@ -184,6 +198,7 @@ footer .copy{grid-column:1/-1;font-size:12.5px;color:var(--faint);padding-top:20
   <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>
   <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
   <symbol id="i-seta" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 </svg>
 
@@ -208,6 +223,7 @@ footer .copy{grid-column:1/-1;font-size:12.5px;color:var(--faint);padding-top:20
       <div class="halo"></div><div class="ring"></div><div class="floor"></div>
       <div class="slides" id="slides"></div>
       <div class="caption" id="caption"></div>
+      <div class="swipe">Arraste para ver mais</div>
       <div class="dots" id="dots"></div>
     </div>
   </div>
@@ -235,10 +251,23 @@ footer .copy{grid-column:1/-1;font-size:12.5px;color:var(--faint);padding-top:20
 
 <footer>
   <div class="wrap">
-    <div><img src="img/logo_mlz_v4.png" alt="MLZ Importados"><p style="max-width:300px;line-height:1.6">Importados 100% originais, com preço justo e procedência garantida.</p></div>
-    <div><h4>Compre com segurança</h4><ul><li>Produtos originais</li><li>Pix, cartão ou parcelado</li><li>Entrega e envio combinados</li></ul></div>
-    <div><h4>Contato</h4><ul id="contatos"></ul></div>
-    <div class="copy">© <span id="ano"></span> MLZ Importados</div>
+    <div class="fgrid">
+      <div class="fbrand"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"><p>Importados 100% originais, com preço justo e procedência garantida. Varejo e distribuição.</p>
+        <div class="social" id="social"></div></div>
+      <div><h4>Loja</h4><ul><li><a href="#colecao">Coleção</a></li><li><a href="#aromas">Encontre pelo aroma</a></li><li><a href="#colecao">Marcas</a></li><li><a href="#revenda">Seja revendedor</a></li></ul></div>
+      <div><h4>Atendimento</h4><ul id="contatos"></ul></div>
+      <div><h4>Políticas</h4><ul>
+        <li><a href="politicas.html#privacidade">Política de privacidade</a></li>
+        <li><a href="politicas.html#termos">Termos de uso</a></li>
+        <li><a href="politicas.html#trocas">Trocas e devoluções</a></li>
+        <li><a href="politicas.html#entrega">Entrega e envio</a></li>
+        <li><a href="politicas.html#pagamento">Pagamento e parcelamento</a></li>
+        <li><a href="politicas.html#originalidade">Garantia de originalidade</a></li></ul></div>
+      <div><h4>Pagamento</h4><div class="pgto"><span>Pix</span><span>Cartão de crédito</span><span>Débito</span><span>Parcelado</span></div>
+        <div class="selo"><svg class="i"><use href="#i-escudo"/></svg>Produtos originais</div></div>
+    </div>
+    <div class="fbar"><span>© <span id="ano"></span> MLZ Importados · Preços e estoque sujeitos a alteração.</span>
+      <nav><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a><a href="politicas.html#trocas">Trocas</a></nav></div>
   </div>
 </footer>
 
@@ -290,7 +319,24 @@ function montarSpot() {
   };
   const auto = () => { clearInterval(spotTimer); if (dest.length > 1) spotTimer = setInterval(() => mostrar(spotIdx + 1), 4200); };
   document.getElementById('dots').onclick = (e) => { const b = e.target.closest('button'); if (b) { e.stopPropagation(); mostrar(+b.dataset.i); auto(); } };
-  document.getElementById('stage').onclick = (e) => { if (!e.target.closest('#dots')) abrir(+document.getElementById('stage').dataset.id); };
+  // arrastar (dedo ou mouse) para trocar o perfume
+  const st = document.getElementById('stage'); let x0 = null, dx = 0, arrastou = false, pid = null;
+  const slideAtual = () => document.querySelectorAll('.slide')[spotIdx];
+  st.addEventListener('pointerdown', (e) => { if (e.target.closest('#dots') || dest.length < 2) return; x0 = e.clientX; dx = 0; arrastou = false; pid = e.pointerId; clearInterval(spotTimer); });
+  st.addEventListener('pointermove', (e) => {
+    if (x0 === null || e.pointerId !== pid) return; dx = e.clientX - x0;
+    if (Math.abs(dx) > 6) { arrastou = true; try { st.setPointerCapture(pid); } catch (_) {} }
+    const s = slideAtual(); if (s && arrastou) { s.style.transition = 'none'; s.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`; s.style.opacity = String(Math.max(.3, 1 - Math.abs(dx) / 400)); }
+  });
+  const soltar = () => {
+    if (x0 === null) return; const s = slideAtual();
+    if (s) { s.style.transition = ''; s.style.transform = ''; s.style.opacity = ''; }
+    if (arrastou && Math.abs(dx) > 50) mostrar(spotIdx + (dx < 0 ? 1 : -1));
+    x0 = null; auto();
+  };
+  st.addEventListener('pointerup', soltar); st.addEventListener('pointercancel', soltar);
+  st.addEventListener('dragstart', (e) => e.preventDefault());
+  st.onclick = (e) => { if (arrastou) { arrastou = false; return; } if (!e.target.closest('#dots')) abrir(+st.dataset.id); };
   mostrar(0); auto();
 }
 
@@ -404,6 +450,10 @@ function contatos() {
   if (ig) li.push(`<li><a href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener">@${esc(ig)}</a></li>`);
   if (!li.length) li.push('<li>Chame a gente no direct do Instagram</li>');
   document.getElementById('contatos').innerHTML = li.join('');
+  const so = [];
+  if (ig) so.push(`<a href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener" aria-label="Instagram"><svg class="i"><use href="#i-ig"/></svg></a>`);
+  if (wa) so.push(`<a href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>`);
+  document.getElementById('social').innerHTML = so.join('');
 }
 document.getElementById('ano').textContent = new Date().getFullYear();
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
