@@ -248,6 +248,11 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .eprow.eph{font-size:11.5px;color:var(--muted);margin-bottom:2px}
 .epl{display:none}
 @media(max-width:560px){.eprow{grid-template-columns:28px 1fr 1fr}.eprow [name=pago_em]{grid-column:2/-1}.eprow.eph span:last-child{display:none}.epl{display:block;font-size:10.5px;color:var(--muted);line-height:1.1}.eprow{margin-bottom:14px}}
+.cadres{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cadres div{display:flex;flex-direction:column;gap:3px}
+.cadres span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.cadres b{font-size:16px}
+@media(max-width:640px){.cadres{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -295,6 +300,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
       <button data-tab="resumo" class="on"><svg class="i"><use href="#i-home"/></svg>Resumo</button>
       <button data-tab="vendas"><svg class="i"><use href="#i-users"/></svg>Vendas</button>
       <button data-tab="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button>
+      <button data-tab="cad"><svg class="i"><use href="#i-tag"/></svg>Cadastrar</button>
       <button data-tab="estoque"><svg class="i"><use href="#i-box"/></svg>Estoque</button>
       <button data-tab="invest"><svg class="i"><use href="#i-trend"/></svg>Investidores</button>
       <button data-tab="ajustes"><svg class="i"><use href="#i-cog"/></svg>Ajustes</button>
@@ -308,6 +314,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
     <div id="v-resumo"></div>
     <div id="v-vendas" class="hide"></div>
     <div id="v-nova" class="hide"></div>
+    <div id="v-cad" class="hide"></div>
     <div id="v-estoque" class="hide"></div>
     <div id="v-invest" class="hide"></div>
     <div id="v-ajustes" class="hide"></div>
@@ -322,7 +329,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [] };
-const UI = { tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', invAbertos: new Set() };
+const UI = { tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', invAbertos: new Set(), cadModo: 'novo' };
 const $ = (s) => document.querySelector(s);
 const FORMAS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Crediário (parcelado direto)', 'Transferência'];
 const CANAIS = ['WhatsApp', 'Instagram', 'Presencial', 'Outro'];
@@ -375,8 +382,12 @@ function numeros() {
     if (v.data.slice(0, 7) === mes) lucroMes += lv;
   }
   const lucroBruto = vendido - custoVend, lucroMLZ = lucroBruto - parteInv;
+  // investimento da MLZ = custo do estoque próprio + custo dos produtos próprios já vendidos
+  let custoVendMLZ = 0;
+  for (const v of D.vendas) for (const i of v.venda_itens) if (i.produto_id && !i.investidor_id) custoVendMLZ += i.quantidade * (+i.custo_unit || 0);
+  const custoEstMLZ = estoqueSplit().mlz.custo, investMLZ = custoVendMLZ + custoEstMLZ;
   const pagoInv = (D.investidores || []).reduce((s, i) => s + i.repasses.reduce((a, r) => a + +r.valor, 0), 0);
-  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv };
+  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv, custoVendMLZ, custoEstMLZ, investMLZ };
 }
 // estoque separado: unidades livres dos lotes de investidores x resto da MLZ
 function estoqueSplit() {
@@ -433,7 +444,13 @@ function vResumo() {
         <div class="kpi caixa"><div class="l">Lucro da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Este mês: ${brl(n.lucroMes)}</div></div>
         <div class="kpi"><div class="l">Margem</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
       </div>
-      ${n.semCusto ? `<div class="hint" style="color:var(--warn);margin-top:8px">${n.semCusto} unidade${n.semCusto === 1 ? '' : 's'} vendida${n.semCusto === 1 ? '' : 's'} sem custo cadastrado: o lucro aparece maior do que é. Cadastre o custo dos produtos em Estoque.</div>` : ''}
+      <div class="kpis" style="margin-top:10px">
+        <div class="kpi"><div class="l"><svg class="i"><use href="#i-wallet"/></svg>Investido pela MLZ</div><div class="v num">${brl(n.investMLZ)}</div><div class="s">Custo pago nos produtos da loja</div></div>
+        <div class="kpi"><div class="l">Capital que já voltou</div><div class="v num">${brl(n.custoVendMLZ)}</div><div class="s">Custo dos produtos vendidos</div></div>
+        <div class="kpi"><div class="l">Ainda em estoque</div><div class="v num">${brl(n.custoEstMLZ)}</div><div class="s">Pelo custo pago</div></div>
+        <div class="kpi caixa"><div class="l">Retorno do investimento</div><div class="v num">${n.investMLZ ? (n.lucroMLZ / n.investMLZ * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : 0}%</div><div class="s">Lucro da MLZ ÷ investido</div></div>
+      </div>
+      ${n.semCusto ? `<div class="hint" style="color:var(--warn);margin-top:8px">${n.semCusto} unidade${n.semCusto === 1 ? '' : 's'} vendida${n.semCusto === 1 ? '' : 's'} sem custo cadastrado: o lucro aparece maior do que é. Cadastre o custo dos produtos em Estoque ou em Cadastrar → Repor estoque.</div>` : ''}
     </div>
     <div class="sec"><h3><svg class="i"><use href="#i-box"/></svg>Estoque para vender</h3>
       <div class="kpis">
@@ -759,6 +776,72 @@ async function salvarVenda(btn) {
   } catch (e) { console.error(e); toast('Erro: ' + e.message); btn.disabled = false; }
 }
 
+// ---------- CADASTRAR (compra de produto) ----------
+function vCad() {
+  const novo = UI.cadModo === 'novo';
+  const fams = ['Amadeirado', 'Especiado', 'Gourmand', 'Frutado', 'Aromático', 'Floral', 'Cítrico', 'Aquático'];
+  $('#v-cad').innerHTML = `
+    <div class="ph"><div><h2 class="t">Cadastrar produto</h2><div class="sub">Registre o que foi pago e por quanto vamos vender. Entra no estoque e nas métricas de investimento e retorno.</div></div></div>
+    <div class="seg" id="cadModo" style="margin-bottom:14px"><button class="${novo ? 'on' : ''}" data-cm="novo">Produto novo</button><button class="${novo ? '' : 'on'}" data-cm="repor">Repor estoque de um produto</button></div>
+    <form id="fcad" class="form">
+      ${novo ? `<div class="card"><h3>Produto</h3>
+        <div class="fotoprev"><img id="cImg" src="img/logo_gold.png"><label class="btn sm line">Escolher foto<input type="file" id="cFile" accept="image/*" hidden></label></div>
+        <div class="grid2" style="margin-top:10px"><label class="f">Nome<input class="in" name="nome" required placeholder="Ex.: Khamrah"></label>
+        <label class="f">Marca<input class="in" name="marca" placeholder="Ex.: Lattafa"></label></div>
+        <div class="grid3"><label class="f">Categoria<select class="in" name="categoria_id">${D.cats.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select></label>
+        <label class="f">Tipo<input class="in" name="tipo" placeholder="Ex.: Eau de Parfum"></label>
+        <label class="f">Família / aroma<input class="in" name="familia" list="famCad" placeholder="Ex.: Gourmand"><datalist id="famCad">${fams.map(f => `<option value="${f}">`).join('')}</datalist></label></div>
+        <label class="f">Descrição (aparece no site). Notas em linhas “Saída: …”, “Corpo: …”, “Fundo: …”<textarea class="in" name="descricao" placeholder="Saída: Canela, Cardamomo&#10;Corpo: Tâmara, Praliné&#10;Fundo: Baunilha, Fava tonka"></textarea></label>
+      </div>` : `<div class="card"><h3>Produto</h3>
+        <label class="f">Qual produto chegou?<select class="in" name="produto_id" required><option value="">Escolha…</option>${[...D.produtos].sort((a, b) => nomeProd(a).localeCompare(nomeProd(b))).map(p => `<option value="${p.id}">${esc(nomeProd(p))} · ${p.estoque} em estoque${+p.custo ? ' · custo ' + brl(p.custo) : ' · sem custo'}</option>`).join('')}</select></label>
+        <div class="hint">Comprado com dinheiro de investidor? Lance em Investidores → Compra, para o lucro ir para ele.</div>
+      </div>`}
+      <div class="card"><h3>Compra e preço</h3>
+        <div class="grid3"><label class="f">Quantidade comprada<input class="in num" type="number" min="${novo ? 0 : 1}" name="qtd" value="1" required></label>
+        <label class="f">Custo pago por unidade<input class="in num" name="custo" inputmode="decimal" placeholder="0,00" required></label>
+        <label class="f">Data da compra<input class="in" type="date" name="data" value="${hojeISO()}"></label></div>
+        <div class="grid2"><label class="f">Preço de venda<input class="in num" name="preco" inputmode="decimal" placeholder="0,00" ${novo ? 'required' : ''}></label>
+        <label class="f">Preço promocional (opcional)<input class="in num" name="preco_promo" inputmode="decimal" placeholder="opcional"></label></div>
+        ${novo ? `<div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" name="ativo" checked>Mostrar no site</label><label class="chk"><input type="checkbox" name="destaque">Destaque na vitrine</label></div>` : ''}
+        <div class="cadres" id="cadRes"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end"><button class="btn gold" id="cadSalvar">${novo ? 'Cadastrar produto' : 'Adicionar ao estoque'}</button></div>
+    </form>`;
+  const fm = $('#fcad'); let arquivo = null;
+  if (novo) $('#cFile').onchange = (e) => { arquivo = e.target.files[0]; if (arquivo) $('#cImg').src = URL.createObjectURL(arquivo); };
+  else fm.produto_id.onchange = () => { const p = D.produtos.find(x => x.id === +fm.produto_id.value); if (!p) return; const v = (x) => x ? (+x).toFixed(2).replace('.', ',') : ''; fm.custo.value = v(p.custo); fm.preco.value = v(p.preco); fm.preco_promo.value = v(p.preco_promo); calc(); };
+  const calc = () => {
+    const q = parseInt(fm.qtd.value, 10) || 0, c = num(fm.custo.value), pr = num(fm.preco.value), pp = num(fm.preco_promo.value);
+    const venda = pp > 0 && pp < pr ? pp : pr, inv = q * c, rec = q * venda, luc = rec - inv;
+    $('#cadRes').innerHTML = `<div><span>Investimento</span><b class="num">${brl(inv)}</b></div><div><span>Vendendo tudo</span><b class="num">${brl(rec)}</b></div>
+      <div><span>Lucro previsto</span><b class="num" style="color:${luc >= 0 ? 'var(--ok)' : 'var(--bad)'}">${brl(luc)}</b></div><div><span>Lucro por unidade</span><b class="num">${brl(venda - c)}${venda ? ` · ${Math.round((venda - c) / venda * 100)}%` : ''}</b></div>`;
+  };
+  fm.addEventListener('input', calc); calc();
+  fm.onsubmit = async (e) => {
+    e.preventDefault(); const f = Object.fromEntries(new FormData(fm));
+    const q = parseInt(f.qtd, 10) || 0, custo = num(f.custo), preco = num(f.preco), promo = num(f.preco_promo);
+    if (custo <= 0) return toast('Informe o custo pago');
+    $('#cadSalvar').disabled = true;
+    try {
+      if (novo) {
+        const d = { nome: f.nome.trim(), marca: f.marca.trim() || null, categoria_id: +f.categoria_id || null, tipo: f.tipo.trim() || null, familia: f.familia.trim() || null, descricao: f.descricao.trim() || null,
+          custo, preco, preco_promo: promo > 0 ? promo : null, estoque: q, ativo: f.ativo === 'on', destaque: f.destaque === 'on' };
+        if (arquivo) d.imagem = await api.enviarFoto(arquivo);
+        await api.salvarProduto(d); toast('Produto cadastrado');
+      } else {
+        const p = D.produtos.find(x => x.id === +f.produto_id); if (!p) { $('#cadSalvar').disabled = false; return toast('Escolha o produto'); }
+        const atual = Math.max(0, p.estoque), cAtual = +p.custo || custo;
+        const medio = r2((atual * cAtual + q * custo) / (atual + q)); // custo médio
+        const d = { id: p.id, estoque: atual + q, custo: medio };
+        if (preco > 0) d.preco = preco; d.preco_promo = promo > 0 ? promo : null;
+        await api.salvarProduto(d); toast(`Estoque atualizado: ${atual + q} un. · custo médio ${brl(medio)}`);
+      }
+      await carregar(); vCad();
+    } catch (err) { toast('Erro: ' + err.message); $('#cadSalvar').disabled = false; }
+  };
+}
+$('#v-cad').addEventListener('click', (e) => { const b = e.target.closest('[data-cm]'); if (b) { UI.cadModo = b.dataset.cm; vCad(); } });
+
 // ---------- ESTOQUE ----------
 function vEstoque() {
   const n = numeros(), q = UI.qEst.toLowerCase();
@@ -1076,7 +1159,7 @@ $('#v-ajustes').addEventListener('click', async (e) => {
 });
 
 // ---------- navegação ----------
-const VIEWS = { resumo: vResumo, vendas: vVendas, nova: vNova, estoque: vEstoque, invest: vInvest, ajustes: vAjustes };
+const VIEWS = { resumo: vResumo, vendas: vVendas, nova: vNova, cad: vCad, estoque: vEstoque, invest: vInvest, ajustes: vAjustes };
 function irPara(tab) {
   UI.tab = tab;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
