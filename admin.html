@@ -531,6 +531,7 @@ function vVendas() {
 }
 
 // entrega / retirada de cada venda
+const msgRetirada = () => `Seu pedido já pode ser retirado${D.cfg.retirada_endereco ? ' em ' + D.cfg.retirada_endereco : ''}${D.cfg.retirada_horario ? '. ' + D.cfg.retirada_horario.replace(/^./, x => x.toUpperCase()) : ''}. Te esperamos!`;
 const ROT_ENT = { entrega: { pendente: 'A enviar', enviado: 'Enviado', entregue: 'Entregue' }, retirada: { pendente: 'A retirar', enviado: 'Separado', entregue: 'Retirado' } };
 function linkWaCli(cid, msg) { const t = soDigitos(cliObj(cid).telefone); return t ? `https://wa.me/${t.length <= 11 ? '55' + t : t}?text=${encodeURIComponent(msg)}` : ''; }
 function htmlEnt(v, compacto) {
@@ -539,11 +540,11 @@ function htmlEnt(v, compacto) {
   const maps = v.endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.endereco)}` : '';
   const msg = v.entrega === 'entrega'
     ? (st === 'enviado' ? `Olá, ${nome}! Seu pedido da MLZ Company saiu para entrega.` : `Olá, ${nome}! Recebemos o pagamento do seu pedido na MLZ Company. Ele vai para: ${v.endereco}. Já já te aviso quando sair para entrega!`)
-    : (st === 'enviado' ? `Olá, ${nome}! Seu pedido da MLZ Company já está separado para retirada. Qual o melhor horário para você?` : `Olá, ${nome}! Recebemos o pagamento do seu pedido na MLZ Company. Vamos combinar o dia e o horário da retirada?`);
+    : (st === 'enviado' ? `Olá, ${nome}! Seu pedido da MLZ Company já está separado. ${msgRetirada()}` : `Olá, ${nome}! Recebemos o pagamento do seu pedido na MLZ Company. ${msgRetirada()}`);
   const wa = linkWaCli(v.cliente_id, msg);
   return `<div class="ent"><svg class="i"><use href="#i-${v.entrega === 'entrega' ? 'truck' : 'store'}"/></svg><div class="gr">
     <div><b>${v.entrega === 'entrega' ? 'Entrega' : 'Retirada'}</b>${compacto ? ` · ${esc(cliNome(v.cliente_id))} · ${dataBR(v.data)}` : ''}</div>
-    ${v.endereco ? `<div class="m">${esc(v.endereco)}</div>` : v.entrega === 'retirada' ? '<div class="m">Cliente retira com a gente.</div>' : ''}
+    ${v.endereco ? `<div class="m">${esc(v.endereco)}</div>` : v.entrega === 'retirada' ? `<div class="m">Retira em: ${esc(D.cfg.retirada_endereco || 'loja')}${D.cfg.retirada_horario ? ' · ' + esc(D.cfg.retirada_horario) : ''}</div>` : ''}
     <div class="est">${['pendente', 'enviado', 'entregue'].map(k => `<button class="${st === k ? 'on' : ''}" data-ent="${v.id}" data-st="${k}">${r[k]}</button>`).join('')}
       ${maps ? `<a class="btn sm line" target="_blank" rel="noopener" href="${maps}" title="Abrir no mapa"><svg class="i"><use href="#i-pin"/></svg></a>` : ''}
       ${wa ? `<a class="btn sm line" target="_blank" rel="noopener" href="${wa}" title="Avisar no WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>
@@ -578,7 +579,7 @@ function htmlPedidosSite() {
     ${ps.map(p => { const tel = soDigitos(p.telefone), n = tel.length <= 11 ? '55' + tel : tel;
       const itens = (p.itens || []).map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(', ');
       const quando = new Date(p.pago_em || p.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-      const msg = p.status === 'pago' ? `Olá, ${p.nome.split(' ')[0]}! Recebemos o pagamento do seu pedido na MLZ Company (${itens}). ${p.entrega === 'retirada' ? 'Vamos combinar o dia e o horário da retirada?' : 'Vamos combinar a entrega?'}`
+      const msg = p.status === 'pago' ? `Olá, ${p.nome.split(' ')[0]}! Recebemos o pagamento do seu pedido na MLZ Company (${itens}). ${p.entrega === 'retirada' ? msgRetirada() : 'Vamos combinar a entrega?'}`
         : `Olá, ${p.nome.split(' ')[0]}! Vi que você começou um pedido no site da MLZ Company (${itens}). Ficou alguma dúvida? Posso te ajudar a finalizar!`;
       return `<div class="linha"><div class="gr"><div class="n">${esc(p.nome)} · <span class="num">${brl(p.total)}</span></div>
         <div class="m">${quando} · ${itens}${p.entrega ? ' · ' + (p.entrega === 'retirada' ? 'Retirada' : 'Entrega') : ''}${p.status === 'pago' ? ` · ${rotulo[p.capture_method] || 'InfinitePay'}${p.installments > 1 ? ' ' + p.installments + 'x' : ''}` : ''}</div></div>
@@ -1219,6 +1220,8 @@ function vAjustes() {
         <label class="f">Instagram da loja<input class="in" name="instagram" value="${esc(c.instagram || '')}" placeholder="@mlzimportados"></label></div>
         <div class="grid2"><label class="f">Parcelamento mostrado no site<select class="in" name="parcelas_max">${[1, 2, 3, 4, 5, 6, 10, 12].map(n => `<option value="${n}" ${String(c.parcelas_max) === String(n) ? 'selected' : ''}>${n === 1 ? 'Não mostrar' : 'em até ' + n + 'x'}</option>`).join('')}</select></label></div>
         <div class="grid2"><label class="f">InfiniteTag (pagamento online no site)<input class="in" name="infinitepay_handle" value="${esc(c.infinitepay_handle || '')}" placeholder="vazio = desligado"></label></div>
+        <div class="grid2"><label class="f">Endereço de retirada<input class="in" name="retirada_endereco" value="${esc(c.retirada_endereco || '')}" placeholder="Rua, número, cidade"></label>
+        <label class="f">Horário de retirada<input class="in" name="retirada_horario" value="${esc(c.retirada_horario || '')}" placeholder="Ex.: no mesmo dia, das 8:00 às 18:00"></label></div>
         <label class="f">Faixa de promoção no topo (deixe vazio para esconder)<input class="in" name="faixa_promo" value="${esc(c.faixa_promo || '')}" placeholder="Ex.: Esquenta Black Friday · 12% OFF"></label>
         <label class="f">Frase do topo do site<textarea class="in" name="mensagem_topo">${esc(c.mensagem_topo || '')}</textarea></label>
         <div><button class="btn gold">Salvar contatos</button></div>

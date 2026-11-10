@@ -225,10 +225,13 @@ footer{margin-top:64px;padding:0 0 22px}
 .crow.r3{grid-template-columns:1fr 64px}
 .cin.sm{height:42px;font-size:14.5px}
 .cconta{font-size:13px;color:var(--muted);text-align:center}
-.cconta a{display:inline-flex;align-items:center;gap:6px}
+.cconta a{display:inline}
+.cconta svg.i{vertical-align:-3px;margin-right:5px}
 .cconta b{color:var(--gold-hi);font-weight:500}
 .cconta svg.i{width:15px;height:15px}
-.cretira{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
+.cretira{font-size:13px;color:var(--muted);line-height:1.5;padding:11px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:1px}
+.cretira b{color:var(--txt);font-weight:500;font-size:13.5px}
+.cretira #retHor{color:var(--gold-hi)}
 .cretira[hidden]{display:none}
 .ctot{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--muted)}
 .ctot b{font-size:22px;color:var(--txt);font-weight:500}
@@ -337,7 +340,7 @@ footer{margin-top:64px;padding:0 0 22px}
       <div class="crow r3"><input class="cin sm" name="cidade" autocomplete="address-level2" placeholder="Cidade"><input class="cin sm" name="uf" autocomplete="address-level1" placeholder="UF" maxlength="2"></div>
       <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
     </div>
-    <div class="cretira" id="cretira" hidden>Você retira com a gente. Assim que o pagamento cair, chamamos no WhatsApp para combinar o dia e o horário.</div>
+    <div class="cretira" id="cretira" hidden><b>Retirada na loja</b><span id="retEnd">Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div>
     <div class="cerr" id="cerr"></div>
     <button class="btn solid buy" id="cpagar" type="submit"><svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento</button>
     <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span><span>Débito</span></div>
@@ -643,6 +646,8 @@ fC.addEventListener('submit', async e => {
 
 // ---------- contatos ----------
 function contatos() {
+  if (CFG.retirada_endereco) document.getElementById('retEnd').textContent = CFG.retirada_endereco;
+  if (CFG.retirada_horario) document.getElementById('retHor').textContent = CFG.retirada_horario.replace(/^./, x => x.toUpperCase());
   document.getElementById('promo').textContent = CFG.faixa_promo || '';
   if (CFG.mensagem_topo) document.getElementById('lead').textContent = CFG.mensagem_topo;
   const wa = linkWa('Olá! Vim pelo site da MLZ Company.'), ig = igUser();

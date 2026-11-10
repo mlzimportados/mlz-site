@@ -90,6 +90,7 @@ main.mini-w{max-width:440px}
 .barl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint)}
 .barl .ok{color:var(--muted)}
 .pa{display:flex;gap:16px;margin-top:8px}
+.ret{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.45}
 .pa:empty{display:none}
 .pa .link{padding:4px 0;font-size:13.5px}
 .vazio.grande{display:grid;justify-items:center;gap:12px;padding:44px 20px;margin-top:14px;border:0}
@@ -309,6 +310,7 @@ function htmlPedido(p) {
         <div class="m">${n} · ${dataBR(p.data)} · ${brl(p.total)}</div></div>
       <span class="badge ${r ? r[1] : p.pago ? 'b-ok' : 'b-wait'}">${r ? r[0] : p.pago ? 'Pago' : 'Em aberto'}</span></div>
     ${et && k < 3 ? `<div class="bar"><i style="width:${(k / 3) * 100}%"></i></div><div class="barl">${et.map((e, i) => `<span class="${i <= k ? 'ok' : ''}">${e}</span>`).join('')}</div>` : ''}
+    ${p.entrega === 'retirada' && p.entrega_status !== 'entregue' && CFG.retirada_endereco ? `<div class="ret">Retire em ${esc(CFG.retirada_endereco)}${CFG.retirada_horario ? ' · ' + esc(CFG.retirada_horario) : ''}</div>` : ''}
     <div class="pa">${prods.length ? `<button class="link" data-denovo="${p.id}">Comprar de novo</button>` : ''}${p.recibo ? `<a class="link" href="${esc(p.recibo)}" target="_blank" rel="noopener">Comprovante</a>` : ''}</div>
   </article>`;
 }

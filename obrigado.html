@@ -43,7 +43,7 @@ let local = ''; try { local = localStorage.getItem('mlz_ultimo_pedido') || ''; }
 let pedido = q.get('order_nsu') || local;
 const tx = q.get('transaction_nsu') || '', slug = q.get('slug') || q.get('invoice_slug') || '', recibo = q.get('receipt_url') || '';
 const WA = '<svg viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/></svg>';
-let CFG = {}, LOGADO = false;
+let CFG = {}, LOGADO = false, RET = false; try { RET = JSON.parse(localStorage.getItem('mlz_cliente') || '{}').modo === 'retirada'; } catch (_) {}
 const linkWa = (t) => { const n = soDigitos(CFG.whatsapp); return n ? `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(t)}` : 'index.html'; };
 function tela(tipo) {
   const b = document.getElementById('box');
@@ -51,8 +51,8 @@ function tela(tipo) {
     try { localStorage.removeItem('mlz_sacola'); localStorage.removeItem('mlz_ultimo_pedido'); } catch (_) {}
     b.className = 'box ok';
     b.innerHTML = `<div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1>Pagamento aprovado!</h1>
-      <p>Obrigado pela compra. Agora é só chamar a gente no WhatsApp para combinar a entrega ou a retirada.</p>
-      <div class="btns"><a class="btn solid" target="_blank" rel="noopener" href="${linkWa('Olá! Acabei de pagar meu pedido no site da MLZ Company e quero combinar a entrega.' + (pedido ? ' Pedido: ' + pedido.slice(0, 8) : ''))}">${WA}Combinar a entrega</a>
+      ${RET ? `<p>Obrigado pela compra! Seu pedido pode ser retirado em <b style="color:var(--txt);font-weight:500">${esc(CFG.retirada_endereco || 'nossa loja')}</b>${CFG.retirada_horario ? '. ' + esc(CFG.retirada_horario.replace(/^./, x => x.toUpperCase())) : ''}.</p>` : '<p>Obrigado pela compra. Agora é só chamar a gente no WhatsApp para combinar a entrega.</p>'}
+      <div class="btns"><a class="btn solid" target="_blank" rel="noopener" href="${linkWa((RET ? 'Olá! Acabei de pagar meu pedido no site da MLZ Company e vou retirar na loja.' : 'Olá! Acabei de pagar meu pedido no site da MLZ Company e quero combinar a entrega.') + (pedido ? ' Pedido: ' + pedido.slice(0, 8) : ''))}">${WA}${RET ? 'Avisar que vou retirar' : 'Combinar a entrega'}</a>
       ${recibo ? `<a class="btn ghost" target="_blank" rel="noopener" href="${esc(recibo)}">Ver comprovante</a>` : ''}${LOGADO ? '<a class="btn ghost" href="conta.html">Acompanhar meu pedido</a>' : ''}<a class="btn ghost" href="index.html">Voltar para a loja</a></div>
       ${LOGADO ? '' : '<p style="font-size:13px;margin-top:18px">Quer acompanhar seus pedidos e salvar o endereço? <a href="conta.html?modo=cadastro" style="color:var(--gold-hi)">Crie sua conta</a>.</p>'}`;
   } else if (tipo === 'pendente') {
