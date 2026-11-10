@@ -11,3 +11,10 @@
   for = "/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# o site mudou para o Cloudflare: quem abrir o endereço antigo vai para o novo
+[[redirects]]
+  from = "/*"
+  to = "https://mlzcompany.mlzimportadosx.workers.dev/:splat"
+  status = 301
+  force = true
