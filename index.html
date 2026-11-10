@@ -217,6 +217,10 @@ footer{margin-top:64px;padding:0 0 22px}
 .cmodo svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cend{display:grid;gap:8px}
 .cend[hidden]{display:none}
+.cends{display:flex;gap:6px;flex-wrap:wrap}
+.cends[hidden]{display:none}
+.cends button{min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--muted);text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cends button.on{border-color:var(--gold);color:var(--gold-hi);background:rgba(217,178,76,.1)}
 .crow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .crow.r3{grid-template-columns:1fr 64px}
 .cin.sm{height:42px;font-size:14.5px}
@@ -325,6 +329,7 @@ footer{margin-top:64px;padding:0 0 22px}
     <input class="cin" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
     <div class="cmodo" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
     <div class="cend" id="cend">
+      <div class="cends" id="cends" hidden></div>
       <div class="crow"><input class="cin sm" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" maxlength="9"><input class="cin sm" name="numero" inputmode="numeric" placeholder="Número"></div>
       <input class="cin sm" name="rua" autocomplete="address-line1" placeholder="Rua">
       <input class="cin sm" name="complemento" placeholder="Complemento (opcional)">
@@ -559,9 +564,23 @@ async function carregarConta() {
   try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); return; }
   const f = document.getElementById('cft');
   if (CONTA.nome) f.nome.value = CONTA.nome; if (CONTA.telefone) f.tel.value = CONTA.telefone;
-  if (CONTA.endereco) CAMPOS_END.forEach(k => { f[k].value = CONTA.endereco[k] || ''; });
+  ENDS = CONTA.enderecos || (CONTA.endereco ? [CONTA.endereco] : []);
+  if (ENDS.length) { usarEndereco(0); renderEnds(); }
   document.getElementById('cconta').innerHTML = `<a href="conta.html"><svg class="i"><use href="#i-user"/></svg>Comprando como <b>${esc(CONTA.nome ? CONTA.nome.split(' ')[0] : CONTA.email || 'você')}</b>${CONTA.endereco ? ' · endereço salvo' : ''}</a>`;
 }
+
+let ENDS = [], SEL = -1;
+function usarEndereco(i) {
+  const f = document.getElementById('cft'); SEL = i;
+  CAMPOS_END.forEach(k => { f[k].value = i >= 0 ? (ENDS[i][k] || '') : ''; });
+  f.cep.dataset.ok = i >= 0 ? soDigitos(ENDS[i].cep) : '';
+}
+function renderEnds() {
+  const el = document.getElementById('cends'); el.hidden = !ENDS.length;
+  el.innerHTML = ENDS.map((e, i) => `<button type="button" data-end="${i}" class="${SEL === i ? 'on' : ''}" title="${esc([e.rua, e.numero].filter(Boolean).join(', '))}">${esc(e.apelido || [e.rua, e.numero].filter(Boolean).join(', ') || 'Endereço ' + (i + 1))}</button>`).join('')
+    + `<button type="button" data-end="-1" class="${SEL === -1 ? 'on' : ''}">+ Outro endereço</button>`;
+}
+document.getElementById('cends').addEventListener('click', e => { const b = e.target.closest('[data-end]'); if (!b) return; usarEndereco(+b.dataset.end); renderEnds(); if (SEL === -1) document.getElementById('cft').cep.focus(); });
 
 // ---------- entrega ou retirada ----------
 const CAMPOS_END = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'referencia'];
@@ -603,6 +622,7 @@ fC.addEventListener('submit', async e => {
   if (soDigitos(tel).length < 10) { er.textContent = 'Informe seu WhatsApp com DDD.'; return f.tel.focus(); }
   const end = {}; CAMPOS_END.forEach(k => end[k] = f[k].value.trim());
   end.uf = end.uf.toUpperCase();
+  if (SEL >= 0 && ENDS[SEL] && CAMPOS_END.every(k => (ENDS[SEL][k] || '').trim().toUpperCase() === end[k].toUpperCase())) { end.id = ENDS[SEL].id || ''; end.apelido = ENDS[SEL].apelido || ''; }
   if (MODO === 'entrega') {
     const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !end[k] || (k === 'cep' && soDigitos(end.cep).length !== 8));
     if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }

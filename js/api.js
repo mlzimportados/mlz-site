@@ -37,6 +37,7 @@ function criarApi(opts = {}) {
     recuperarSenha: async (email) => ok(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/conta.html' })),
     aoMudarLogin: (cb) => sb.auth.onAuthStateChange((ev, s) => cb(ev, s)),
     minhaConta: async () => ok(await sb.rpc('minha_conta')),
+    salvarEnderecos: async (lista) => ok(await sb.rpc('salvar_meus_enderecos', { p_lista: lista })),
     salvarConta: async (nome, telefone, endereco) => ok(await sb.rpc('salvar_minha_conta', { p_nome: nome, p_telefone: telefone, p_endereco: endereco })),
     // admin
     produtos: async () => ok(await sb.rpc('admin_produtos')),

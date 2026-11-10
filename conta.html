@@ -64,6 +64,18 @@ label{display:grid;gap:6px;font-size:13px;color:var(--muted);min-width:0}
 .spin{width:28px;height:28px;border:3px solid rgba(217,178,76,.25);border-top-color:var(--gold);border-radius:50%;animation:g 1s linear infinite}
 @keyframes g{to{transform:rotate(360deg)}}
 .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.end{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-radius:16px;padding:13px 15px}
+.end+.end{margin-top:8px}
+.end.ed{border-color:var(--gold)}
+.end .gr{flex:1;min-width:200px}
+.end .n{font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.end .m{color:var(--muted);font-size:13.5px;margin-top:3px;line-height:1.45;overflow-wrap:anywhere}
+.eacts{display:flex;gap:6px;flex-wrap:wrap}
+.mini{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);font-size:13px;color:var(--muted)}
+.mini:hover{color:var(--txt)}
+.mini.red{color:var(--bad);border-color:rgba(255,143,122,.3)}
+.fend{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.fend h3{font-family:var(--hd);font-weight:600;font-size:15px;margin-bottom:4px}
 @media(max-width:420px){.row{grid-template-columns:1fr}.row.r3{grid-template-columns:1fr 70px}}
 </style>
 </head>
@@ -155,11 +167,15 @@ const ROT = { entrega: { pendente: ['Preparando o envio', 'b-wait'], enviado: ['
   retirada: { pendente: ['Separando o pedido', 'b-wait'], enviado: ['Pronto para retirar', 'b-env'], entregue: ['Retirado', 'b-ok'] } };
 const CAMPOS = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'referencia'];
 
+const fmtEnd = (e) => [[e.rua, e.numero, e.complemento].filter(Boolean).join(', '), e.bairro, [e.cidade, e.uf].filter(Boolean).join('/'), e.cep ? 'CEP ' + e.cep : ''].filter(Boolean).join(' - ');
+let EDIT = null; // null = fechado, -1 = novo, n = editando o n-ésimo
+
 async function abrirConta(acabouDeEntrar) {
   app.innerHTML = '<div class="load"><div class="spin"></div></div>';
-  try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); CONTA = { compras: [] }; }
+  try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); CONTA = { compras: [], enderecos: [] }; }
+  CONTA.enderecos = CONTA.enderecos || [];
   if (acabouDeEntrar && voltarSacola) return seguir();
-  const e = CONTA.endereco || {}, cs = CONTA.compras || [];
+  const cs = CONTA.compras || [];
   app.innerHTML = `
     <div class="ola"><div><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}!</h1><div class="em">${esc(CONTA.email || '')}</div></div>
       <button class="btn ghost sm" id="sair">Sair</button></div>
@@ -172,41 +188,80 @@ async function abrirConta(acabouDeEntrar) {
           ${p.entrega ? `<div class="ent"><svg class="i"><use href="#i-${p.entrega === 'entrega' ? 'truck' : 'store'}"/></svg>${p.entrega === 'entrega' ? esc(p.endereco || 'Entrega') : 'Retirada com a gente'}</div>` : ''}</div>`; }).join('')
         : '<div class="vazio">Você ainda não tem pedidos por aqui.<br><a class="link" href="index.html#colecao">Ver a coleção</a></div>'}
     </div>
-    <div class="box"><h2><svg class="i"><use href="#i-pin"/></svg>Meus dados e endereço</h2>
+    <div class="box" id="bEnd"></div>
+    <div class="box"><h2><svg class="i"><use href="#i-user"/></svg>Meus dados</h2>
       <form id="fd" novalidate>
         <div class="row"><label>Nome<input class="in" name="nome" autocomplete="name" value="${esc(CONTA.nome || '')}"></label>
         <label>WhatsApp com DDD<input class="in" name="tel" inputmode="tel" autocomplete="tel" value="${esc(CONTA.telefone || '')}"></label></div>
-        <div class="row"><label>CEP<input class="in" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" value="${esc(e.cep || '')}"></label>
-        <label>Número<input class="in" name="numero" value="${esc(e.numero || '')}"></label></div>
-        <label>Rua<input class="in" name="rua" autocomplete="address-line1" value="${esc(e.rua || '')}"></label>
-        <div class="row"><label>Complemento<input class="in" name="complemento" value="${esc(e.complemento || '')}" placeholder="Opcional"></label>
-        <label>Bairro<input class="in" name="bairro" value="${esc(e.bairro || '')}"></label></div>
-        <div class="row r3"><label>Cidade<input class="in" name="cidade" autocomplete="address-level2" value="${esc(e.cidade || '')}"></label>
-        <label>UF<input class="in" name="uf" maxlength="2" autocomplete="address-level1" value="${esc(e.uf || '')}"></label></div>
-        <label>Ponto de referência<input class="in" name="referencia" value="${esc(e.referencia || '')}" placeholder="Opcional"></label>
         <div class="msg" id="dm"></div>
-        <div class="acts"><button class="btn solid" id="db">Salvar meus dados</button><a class="btn ghost" href="index.html#colecao">Continuar comprando</a></div>
+        <div class="acts"><button class="btn solid">Salvar meus dados</button><a class="btn ghost" href="index.html#colecao">Continuar comprando</a></div>
       </form></div>`;
   document.getElementById('sair').onclick = async () => { await api.sair(); CONTA = null; MODO = 'entrar'; telaAuth(); };
   const f = document.getElementById('fd');
-  f.cep.addEventListener('input', async () => {
-    let c = soDigitos(f.cep.value).slice(0, 8); f.cep.value = c.length > 5 ? c.slice(0, 5) + '-' + c.slice(5) : c;
-    if (c.length !== 8 || f.cep.dataset.ok === c) return; f.cep.dataset.ok = c;
-    try { const d = await (await fetch(`https://viacep.com.br/ws/${c}/json/`)).json(); if (d.erro) return;
-      if (d.logradouro) f.rua.value = d.logradouro; if (d.bairro) f.bairro.value = d.bairro; if (d.localidade) f.cidade.value = d.localidade; if (d.uf) f.uf.value = d.uf;
-      (d.logradouro ? f.numero : f.rua).focus(); } catch (_) {}
-  });
   f.onsubmit = async (ev) => {
     ev.preventDefault(); const m = document.getElementById('dm'); m.className = 'msg er';
     const nome = f.nome.value.trim(), tel = f.tel.value.trim();
     if (!nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
     if (tel && soDigitos(tel).length < 10) { m.textContent = 'Informe o WhatsApp com DDD.'; return f.tel.focus(); }
-    const end = {}; CAMPOS.forEach(k => end[k] = f[k].value.trim()); end.uf = end.uf.toUpperCase();
-    const temEnd = CAMPOS.some(k => end[k]);
-    try { await api.salvarConta(nome, tel, temEnd ? end : null); m.className = 'msg ok'; m.textContent = 'Dados salvos! Na próxima compra é só confirmar.'; }
+    try { await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel; m.className = 'msg ok'; m.textContent = 'Dados salvos!'; }
     catch (err) { m.textContent = traduz(err.message); }
   };
+  EDIT = null; renderEnderecos();
 }
+
+function renderEnderecos(msg = '', tipo = 'ok') {
+  const L = CONTA.enderecos, box = document.getElementById('bEnd');
+  const e = EDIT === null ? null : EDIT === -1 ? {} : L[EDIT];
+  box.innerHTML = `<h2><svg class="i"><use href="#i-pin"/></svg>Meus endereços</h2>
+    ${L.length ? L.map((x, i) => `<div class="end ${EDIT === i ? 'ed' : ''}"><div class="gr"><div class="n">${esc(x.apelido || 'Endereço ' + (i + 1))}${i === 0 ? ' <span class="badge b-ok">Principal</span>' : ''}</div><div class="m">${esc(fmtEnd(x))}</div></div>
+      <div class="eacts"><button type="button" class="mini" data-eed="${i}">Editar</button>${i ? `<button type="button" class="mini" data-epr="${i}">Tornar principal</button>` : ''}<button type="button" class="mini red" data-edel="${i}">Excluir</button></div></div>`).join('')
+      : '<div class="vazio">Nenhum endereço salvo ainda.</div>'}
+    <div class="msg ${tipo}" id="em">${msg}</div>
+    ${e ? `<form id="fe" class="fend" novalidate>
+      <h3>${EDIT === -1 ? 'Novo endereço' : 'Editar endereço'}</h3>
+      <label>Nome do endereço<input class="in" name="apelido" maxlength="40" value="${esc(e.apelido || '')}" placeholder="Ex.: Casa, Trabalho, Casa da mãe"></label>
+      <div class="row"><label>CEP<input class="in" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" value="${esc(e.cep || '')}"></label>
+      <label>Número<input class="in" name="numero" value="${esc(e.numero || '')}"></label></div>
+      <label>Rua<input class="in" name="rua" autocomplete="address-line1" value="${esc(e.rua || '')}"></label>
+      <div class="row"><label>Complemento<input class="in" name="complemento" value="${esc(e.complemento || '')}" placeholder="Opcional"></label>
+      <label>Bairro<input class="in" name="bairro" value="${esc(e.bairro || '')}"></label></div>
+      <div class="row r3"><label>Cidade<input class="in" name="cidade" autocomplete="address-level2" value="${esc(e.cidade || '')}"></label>
+      <label>UF<input class="in" name="uf" maxlength="2" autocomplete="address-level1" value="${esc(e.uf || '')}"></label></div>
+      <label>Ponto de referência<input class="in" name="referencia" value="${esc(e.referencia || '')}" placeholder="Opcional"></label>
+      <div class="msg er" id="fem"></div>
+      <div class="acts"><button class="btn solid">Salvar endereço</button><button type="button" class="btn ghost" data-ecanc>Cancelar</button></div>
+    </form>` : (L.length < 10 ? '<button type="button" class="btn ghost sm" data-enovo style="margin-top:12px">+ Adicionar endereço</button>' : '')}`;
+  const fe = document.getElementById('fe'); if (!fe) return;
+  fe.cep.addEventListener('input', async () => {
+    let c = soDigitos(fe.cep.value).slice(0, 8); fe.cep.value = c.length > 5 ? c.slice(0, 5) + '-' + c.slice(5) : c;
+    if (c.length !== 8 || fe.cep.dataset.ok === c) return; fe.cep.dataset.ok = c;
+    try { const d = await (await fetch(`https://viacep.com.br/ws/${c}/json/`)).json(); if (d.erro) { document.getElementById('fem').textContent = 'CEP não encontrado. Confira ou preencha à mão.'; return; }
+      document.getElementById('fem').textContent = '';
+      if (d.logradouro) fe.rua.value = d.logradouro; if (d.bairro) fe.bairro.value = d.bairro; if (d.localidade) fe.cidade.value = d.localidade; if (d.uf) fe.uf.value = d.uf;
+      (d.logradouro ? fe.numero : fe.rua).focus(); } catch (_) {}
+  });
+  fe.onsubmit = async (ev) => {
+    ev.preventDefault(); const m = document.getElementById('fem');
+    const n = { id: e.id || '', apelido: fe.apelido.value.trim() }; CAMPOS.forEach(k => n[k] = fe[k].value.trim()); n.uf = n.uf.toUpperCase();
+    const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !n[k] || (k === 'cep' && soDigitos(n.cep).length !== 8));
+    if (falta) { m.textContent = `Informe ${falta[1]}.`; return fe[falta[0]].focus(); }
+    const L2 = [...L]; if (EDIT === -1) L2.push(n); else L2[EDIT] = n;
+    await gravar(L2, 'Endereço salvo!');
+  };
+}
+async function gravar(lista, ok) {
+  try { CONTA.enderecos = await api.salvarEnderecos(lista); EDIT = null; renderEnderecos(ok); }
+  catch (err) { const m = document.getElementById('fem') || document.getElementById('em'); m.className = 'msg er'; m.textContent = traduz(err.message); }
+}
+app.addEventListener('click', async (ev) => {
+  const b = ev.target.closest('[data-eed],[data-epr],[data-edel],[data-enovo],[data-ecanc]'); if (!b || !CONTA) return;
+  const L = CONTA.enderecos;
+  if (b.dataset.enovo !== undefined) { EDIT = -1; renderEnderecos(); return document.querySelector('#fe [name=apelido]').focus(); }
+  if (b.dataset.ecanc !== undefined) { EDIT = null; return renderEnderecos(); }
+  if (b.dataset.eed) { EDIT = +b.dataset.eed; renderEnderecos(); return document.getElementById('fe').scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  if (b.dataset.epr) { const i = +b.dataset.epr; return gravar([L[i], ...L.filter((_, k) => k !== i)], 'Endereço principal atualizado!'); }
+  if (b.dataset.edel) { const i = +b.dataset.edel; if (!confirm(`Excluir o endereço "${L[i].apelido || fmtEnd(L[i])}"?`)) return; return gravar(L.filter((_, k) => k !== i), 'Endereço excluído.'); }
+});
 
 (async () => {
   let s = null; try { s = await api.sessao(); } catch (_) {}
