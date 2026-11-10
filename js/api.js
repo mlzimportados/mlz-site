@@ -47,6 +47,7 @@ function criarApi() {
     registrarVenda: async (v) => ok(await sb.rpc('registrar_venda', v)),
     excluirVenda: async (id) => ok(await sb.from('vendas').delete().eq('id', id)),
     marcarParcela: async (id, pagoEm) => ok(await sb.from('parcelas').update({ pago_em: pagoEm }).eq('id', id)),
+    salvarEntrega: async (id, d) => ok(await sb.from('vendas').update(d).eq('id', id)),
     salvarParcela: async ({ id, ...d }) => ok(await sb.from('parcelas').update(d).eq('id', id)),
     pedidos: async () => ok(await sb.from('pedidos').select('*').order('criado_em', { ascending: false }).limit(50)),
     salvarConfig: async (obj) => ok(await sb.from('config').upsert(Object.entries(obj).map(([chave, valor]) => ({ chave, valor })))),

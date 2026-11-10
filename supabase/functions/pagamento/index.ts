@@ -1,6 +1,6 @@
 // Pagamento online MLZ Company via Checkout InfinitePay.
 // Ações (POST JSON, campo "acao"):
-//   criar     { nome, telefone, itens:[{id, qtd}] }  -> { url, order_nsu }
+//   criar     { nome, telefone, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
 //   confirmar { order_nsu, transaction_nsu, slug }   -> { status }   (página de retorno)
 //   webhook   corpo enviado pela InfinitePay (sem "acao", via ?webhook=1)
 // O pagamento só é aceito depois de conferido no payment_check da InfinitePay.
@@ -34,6 +34,15 @@ async function criar(b: any, req: Request) {
   if (!nome || telefone.replace(/\D/g, "").length < 10) return json({ erro: "Informe nome e WhatsApp com DDD." }, 400);
   const pedidos = (Array.isArray(b.itens) ? b.itens : []).map((i: any) => ({ id: +i.id, qtd: Math.max(1, Math.min(20, parseInt(i.qtd, 10) || 1)) })).filter((i: any) => i.id > 0);
   if (!pedidos.length) return json({ erro: "Sacola vazia." }, 400);
+  const entrega = b.entrega === "retirada" ? "retirada" : b.entrega === "entrega" ? "entrega" : null;
+  let endereco: Record<string, string> | null = null;
+  if (entrega === "entrega") {
+    const e = b.endereco || {}, t = (k: string, n = 120) => String(e[k] || "").trim().slice(0, n);
+    endereco = { cep: t("cep").replace(/\D/g, "").slice(0, 8), rua: t("rua"), numero: t("numero", 20), complemento: t("complemento"), bairro: t("bairro", 80), cidade: t("cidade", 80), uf: t("uf", 2).toUpperCase(), referencia: t("referencia", 160) };
+    if (endereco.cep.length !== 8 || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || endereco.uf.length !== 2)
+      return json({ erro: "Preencha o endereço completo para a entrega." }, 400);
+    endereco.cep = endereco.cep.slice(0, 5) + "-" + endereco.cep.slice(5);
+  }
   const tag = await handle(); if (!tag) return json({ erro: "Pagamento online ainda não está ativo. Chame a gente no WhatsApp." }, 503);
   const { data: prods, error } = await sb.from("produtos").select("id,nome,marca,preco,preco_promo,estoque,ativo").in("id", pedidos.map((i: any) => i.id));
   if (error) throw error;
@@ -47,7 +56,7 @@ async function criar(b: any, req: Request) {
     itens.push({ produto_id: p.id, descricao: [p.marca, p.nome].filter(Boolean).join(" "), quantidade: i.qtd, preco_unit: r2(preco) });
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*netlify\.app$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;

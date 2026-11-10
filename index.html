@@ -208,7 +208,18 @@ footer{margin-top:64px;padding:0 0 22px}
 .cq{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px}
 .cq button{width:32px;height:32px;font-size:17px;color:var(--muted)}
 .cq span{min-width:18px;text-align:center;font-size:14px}
-.cft{padding:16px 22px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:grid;gap:10px}
+.cft{padding:16px 22px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:grid;gap:10px;max-height:72vh;overflow:auto}
+.cmodo{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border:1px solid var(--line);border-radius:14px}
+.cmodo button{height:40px;border-radius:10px;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:7px}
+.cmodo button.on{background:rgba(217,178,76,.14);color:var(--gold-hi)}
+.cmodo svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cend{display:grid;gap:8px}
+.cend[hidden]{display:none}
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.crow.r3{grid-template-columns:1fr 64px}
+.cin.sm{height:42px;font-size:14.5px}
+.cretira{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
+.cretira[hidden]{display:none}
 .ctot{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--muted)}
 .ctot b{font-size:22px;color:var(--txt);font-weight:500}
 .cin{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font:inherit;font-size:15px;outline:0}
@@ -303,10 +314,20 @@ footer{margin-top:64px;padding:0 0 22px}
     <div class="ctot"><span>Total</span><b id="ctot">R$ 0,00</b></div>
     <input class="cin" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
+    <div class="cmodo" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
+    <div class="cend" id="cend">
+      <div class="crow"><input class="cin sm" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" maxlength="9"><input class="cin sm" name="numero" inputmode="numeric" placeholder="Número"></div>
+      <input class="cin sm" name="rua" autocomplete="address-line1" placeholder="Rua">
+      <input class="cin sm" name="complemento" placeholder="Complemento (opcional)">
+      <input class="cin sm" name="bairro" placeholder="Bairro">
+      <div class="crow r3"><input class="cin sm" name="cidade" autocomplete="address-level2" placeholder="Cidade"><input class="cin sm" name="uf" autocomplete="address-level1" placeholder="UF" maxlength="2"></div>
+      <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
+    </div>
+    <div class="cretira" id="cretira" hidden>Você retira com a gente. Assim que o pagamento cair, chamamos no WhatsApp para combinar o dia e o horário.</div>
     <div class="cerr" id="cerr"></div>
     <button class="btn solid buy" id="cpagar" type="submit"><svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento</button>
     <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span><span>Débito</span></div>
-    <div class="cnote">Pagamento seguro pela InfinitePay. A entrega é combinada com a gente pelo WhatsApp logo depois.</div>
+    <div class="cnote">Pagamento seguro pela InfinitePay. Depois do pagamento, confirmamos o envio ou a retirada pelo WhatsApp.</div>
   </form>
 </div></div>
 
@@ -520,17 +541,54 @@ document.getElementById('cart').addEventListener('click', e => {
   it.qtd = Math.min(p.estoque, it.qtd + +b.dataset.d); if (+b.dataset.d > 0 && it.qtd === p.estoque && it.qtd > 0) document.getElementById('cerr').textContent = p.estoque === 1 ? 'Só temos 1 unidade desse.' : `Só temos ${p.estoque} unidades desse.`;
   SACOLA = SACOLA.filter(i => i.qtd > 0); salvarSacola(); renderSacola();
 });
-try { const d = JSON.parse(localStorage.getItem('mlz_cliente') || '{}'); const f = document.getElementById('cft'); if (d.nome) f.nome.value = d.nome; if (d.tel) f.tel.value = d.tel; } catch (_) {}
-document.getElementById('cft').addEventListener('submit', async e => {
+// ---------- entrega ou retirada ----------
+const CAMPOS_END = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'referencia'];
+let MODO = 'entrega';
+function setModo(m) {
+  MODO = m === 'retirada' ? 'retirada' : 'entrega';
+  document.querySelectorAll('#cmodo [data-modo]').forEach(b => b.classList.toggle('on', b.dataset.modo === MODO));
+  document.getElementById('cend').hidden = MODO !== 'entrega';
+  document.getElementById('cretira').hidden = MODO !== 'retirada';
+  document.getElementById('cerr').textContent = '';
+}
+document.getElementById('cmodo').addEventListener('click', e => { const b = e.target.closest('[data-modo]'); if (b) setModo(b.dataset.modo); });
+const fC = document.getElementById('cft');
+fC.cep.addEventListener('input', async () => {
+  let c = soDigitos(fC.cep.value).slice(0, 8);
+  fC.cep.value = c.length > 5 ? c.slice(0, 5) + '-' + c.slice(5) : c;
+  if (c.length !== 8 || fC.cep.dataset.ok === c) return;
+  fC.cep.dataset.ok = c;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${c}/json/`); const d = await r.json();
+    if (d.erro) { document.getElementById('cerr').textContent = 'CEP não encontrado. Confira ou preencha o endereço à mão.'; return; }
+    document.getElementById('cerr').textContent = '';
+    if (d.logradouro) fC.rua.value = d.logradouro; if (d.bairro) fC.bairro.value = d.bairro;
+    if (d.localidade) fC.cidade.value = d.localidade; if (d.uf) fC.uf.value = d.uf;
+    (d.logradouro ? fC.numero : fC.rua).focus();
+  } catch (_) {}
+});
+try {
+  const d = JSON.parse(localStorage.getItem('mlz_cliente') || '{}');
+  if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel;
+  if (d.end) CAMPOS_END.forEach(k => { if (d.end[k]) fC[k].value = d.end[k]; });
+  if (d.modo) setModo(d.modo);
+} catch (_) {}
+fC.addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target, er = document.getElementById('cerr'); er.textContent = '';
   const nome = f.nome.value.trim(), tel = f.tel.value.trim();
   if (!SACOLA.length) return;
   if (!nome) { er.textContent = 'Informe seu nome.'; return f.nome.focus(); }
   if (soDigitos(tel).length < 10) { er.textContent = 'Informe seu WhatsApp com DDD.'; return f.tel.focus(); }
-  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel })); } catch (_) {}
+  const end = {}; CAMPOS_END.forEach(k => end[k] = f[k].value.trim());
+  end.uf = end.uf.toUpperCase();
+  if (MODO === 'entrega') {
+    const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !end[k] || (k === 'cep' && soDigitos(end.cep).length !== 8));
+    if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }
+  }
+  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
   try {
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA });
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null });
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }

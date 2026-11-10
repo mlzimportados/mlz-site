@@ -118,6 +118,13 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .b-pago{background:var(--okbg);color:var(--ok)}
 .b-atrasado{background:var(--badbg);color:var(--bad)}
 .b-aberto{background:var(--waitbg);color:var(--wait)}
+.ent{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:13.5px}
+.ent>svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--gold-hi)}
+.ent .gr{flex:1;min-width:0}.ent .m{font-size:12.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.est{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.est button{height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line2);font-size:12px;color:var(--muted)}
+.est button.on{border-color:var(--gold);color:var(--gold-hi);background:rgba(217,178,76,.1)}
+.b-env{background:rgba(110,160,255,.14);color:#8fb4ff}
 .vazio{color:var(--muted);text-align:center;padding:36px 12px;border:1px dashed var(--line2);border-radius:14px;font-size:14px}
 
 /* filtros */
@@ -274,6 +281,9 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
   <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/><path d="M9.2 8.2c-.4 2.9 3.6 6.9 6.6 6.6l.9-1.6-2-1.1-1 .7a4 4 0 0 1-2.2-2.2l.7-1-1.1-2z"/></symbol>
   <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
 </svg>
 
@@ -511,10 +521,38 @@ function vVendas() {
   const segs = [['todos', 'Todos'], ['atrasado', 'Atrasados'], ['aberto', 'Em aberto'], ['pago', 'Pagos']];
   $('#v-vendas').innerHTML = `
     <div class="ph"><div><h2 class="t">Vendas por cliente</h2><div class="sub">Toque nas parcelas para marcar como pagas.</div></div><button class="btn gold" data-ir="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button></div>
+    ${htmlEntregas()}
     ${htmlPedidosSite()}
     <div class="barf"><input class="in" id="qVend" placeholder="Buscar cliente ou produto" value="${esc(UI.qVend)}"></div>
     <div class="seg" style="margin-bottom:14px">${segs.map(([k, l]) => `<button class="${UI.fVend === k ? 'on' : ''}" data-fv="${k}">${l} (${cont[k]})</button>`).join('')}</div>
     ${grupos.length ? grupos.map(cardCliente).join('') : `<div class="vazio">${D.vendas.length ? 'Nenhum cliente nesse filtro.' : 'Nenhuma venda registrada ainda. Toque em “Nova venda” para lançar a primeira.'}</div>`}`;
+}
+
+// entrega / retirada de cada venda
+const ROT_ENT = { entrega: { pendente: 'A enviar', enviado: 'Enviado', entregue: 'Entregue' }, retirada: { pendente: 'A retirar', enviado: 'Separado', entregue: 'Retirado' } };
+function linkWaCli(cid, msg) { const t = soDigitos(cliObj(cid).telefone); return t ? `https://wa.me/${t.length <= 11 ? '55' + t : t}?text=${encodeURIComponent(msg)}` : ''; }
+function htmlEnt(v, compacto) {
+  if (!v.entrega) return '';
+  const r = ROT_ENT[v.entrega], st = v.entrega_status || 'pendente', nome = cliNome(v.cliente_id).split(' ')[0];
+  const maps = v.endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.endereco)}` : '';
+  const msg = v.entrega === 'entrega'
+    ? (st === 'enviado' ? `Olá, ${nome}! Seu pedido da MLZ Company saiu para entrega.` : `Olá, ${nome}! Recebemos o pagamento do seu pedido na MLZ Company. Ele vai para: ${v.endereco}. Já já te aviso quando sair para entrega!`)
+    : (st === 'enviado' ? `Olá, ${nome}! Seu pedido da MLZ Company já está separado para retirada. Qual o melhor horário para você?` : `Olá, ${nome}! Recebemos o pagamento do seu pedido na MLZ Company. Vamos combinar o dia e o horário da retirada?`);
+  const wa = linkWaCli(v.cliente_id, msg);
+  return `<div class="ent"><svg class="i"><use href="#i-${v.entrega === 'entrega' ? 'truck' : 'store'}"/></svg><div class="gr">
+    <div><b>${v.entrega === 'entrega' ? 'Entrega' : 'Retirada'}</b>${compacto ? ` · ${esc(cliNome(v.cliente_id))} · ${dataBR(v.data)}` : ''}</div>
+    ${v.endereco ? `<div class="m">${esc(v.endereco)}</div>` : v.entrega === 'retirada' ? '<div class="m">Cliente retira com a gente.</div>' : ''}
+    <div class="est">${['pendente', 'enviado', 'entregue'].map(k => `<button class="${st === k ? 'on' : ''}" data-ent="${v.id}" data-st="${k}">${r[k]}</button>`).join('')}
+      ${maps ? `<a class="btn sm line" target="_blank" rel="noopener" href="${maps}" title="Abrir no mapa"><svg class="i"><use href="#i-pin"/></svg></a>` : ''}
+      ${wa ? `<a class="btn sm line" target="_blank" rel="noopener" href="${wa}" title="Avisar no WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>
+  </div></div>`;
+}
+function htmlEntregas() {
+  const vs = D.vendas.filter(v => v.entrega && v.entrega_status !== 'entregue');
+  if (!vs.length) return '';
+  return `<div class="card" style="margin-bottom:16px"><h3>Para entregar ou retirar (${vs.length})</h3>
+    ${vs.map(v => htmlEnt(v, true)).join('')}
+    <div class="hint">Vendas do site já chegam aqui com o endereço. Marque “Enviado” quando sair e “Entregue/Retirado” no fim: aí ela some desta lista.</div></div>`;
 }
 
 // pedidos feitos no site (InfinitePay). Os pagos já viram venda automaticamente.
@@ -526,10 +564,10 @@ function htmlPedidosSite() {
     ${ps.map(p => { const tel = soDigitos(p.telefone), n = tel.length <= 11 ? '55' + tel : tel;
       const itens = (p.itens || []).map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(', ');
       const quando = new Date(p.pago_em || p.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-      const msg = p.status === 'pago' ? `Olá, ${p.nome.split(' ')[0]}! Recebemos o pagamento do seu pedido na MLZ Company (${itens}). Vamos combinar a entrega?`
+      const msg = p.status === 'pago' ? `Olá, ${p.nome.split(' ')[0]}! Recebemos o pagamento do seu pedido na MLZ Company (${itens}). ${p.entrega === 'retirada' ? 'Vamos combinar o dia e o horário da retirada?' : 'Vamos combinar a entrega?'}`
         : `Olá, ${p.nome.split(' ')[0]}! Vi que você começou um pedido no site da MLZ Company (${itens}). Ficou alguma dúvida? Posso te ajudar a finalizar!`;
       return `<div class="linha"><div class="gr"><div class="n">${esc(p.nome)} · <span class="num">${brl(p.total)}</span></div>
-        <div class="m">${quando} · ${itens}${p.status === 'pago' ? ` · ${rotulo[p.capture_method] || 'InfinitePay'}${p.installments > 1 ? ' ' + p.installments + 'x' : ''}` : ''}</div></div>
+        <div class="m">${quando} · ${itens}${p.entrega ? ' · ' + (p.entrega === 'retirada' ? 'Retirada' : 'Entrega') : ''}${p.status === 'pago' ? ` · ${rotulo[p.capture_method] || 'InfinitePay'}${p.installments > 1 ? ' ' + p.installments + 'x' : ''}` : ''}</div></div>
         ${p.status === 'pago' ? badge('pago') : '<span class="badge b-aberto">Não pagou</span>'}
         ${tel ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>`; }).join('')}
     <div class="hint">Pedidos pagos entram sozinhos nas vendas abaixo, já como pagos. “Não pagou” é quem abriu o pagamento e não concluiu: vale chamar no WhatsApp.</div></div>`;
@@ -568,6 +606,7 @@ function cardVenda(v, tel) {
     <div class="parcs">${ps.map(p => { const s = stParc(p); return `<button class="pc ${s}" data-parc="${p.id}" title="${ROT[s]}">
       <span class="ck">${p.pago_em ? '<svg class="i"><use href="#i-check"/></svg>' : ''}</span>
       <b>${n > 1 ? `${p.numero}/${n}` : 'À vista'}</b><span class="num">${brl(p.valor)}</span><span>${p.pago_em ? 'pago ' + dataBR(p.pago_em).slice(0, 5) : 'vence ' + dataBR(p.vencimento).slice(0, 5)}</span></button>`; }).join('')}</div>
+    ${htmlEnt(v)}
     ${v.obs ? `<div class="hint">Obs.: ${esc(v.obs)}</div>` : ''}
     <div class="vacoes">${cobrar}<button class="btn sm line" data-editparc="${v.id}"><svg class="i"><use href="#i-edit"/></svg>Editar parcelas</button><button class="btn sm red" data-delvenda="${v.id}">Excluir venda</button></div>
   </div>`;
@@ -576,6 +615,12 @@ function cardVenda(v, tel) {
 $('#v-vendas').addEventListener('click', async (e) => {
   let b;
   if ((b = e.target.closest('[data-parc]'))) return alternarParcela(+b.dataset.parc);
+  if ((b = e.target.closest('[data-ent]'))) {
+    const v = D.vendas.find(x => x.id === +b.dataset.ent); if (!v) return;
+    const antes = v.entrega_status; v.entrega_status = b.dataset.st; vVendas();
+    try { await api.salvarEntrega(v.id, { entrega_status: b.dataset.st }); } catch (err) { v.entrega_status = antes; vVendas(); toast('Não foi possível salvar: ' + err.message); }
+    return;
+  }
   if ((b = e.target.closest('[data-tog]'))) { const id = +b.dataset.tog; UI.abertos.has(id) ? UI.abertos.delete(id) : UI.abertos.add(id); return vVendas(); }
   if ((b = e.target.closest('[data-fv]'))) { UI.fVend = b.dataset.fv; return vVendas(); }
   if ((b = e.target.closest('[data-ir]'))) return irPara(b.dataset.ir);
@@ -620,6 +665,7 @@ function editarCliente(id) {
     <label class="f">Nome<input class="in" name="nome" required value="${esc(c.nome)}"></label>
     <div class="grid2"><label class="f">WhatsApp<input class="in" name="telefone" inputmode="tel" value="${esc(c.telefone || '')}"></label>
     <label class="f">Instagram<input class="in" name="instagram" value="${esc(c.instagram || '')}"></label></div>
+    <label class="f">Endereço de entrega<input class="in" name="endereco" value="${esc(c.endereco || '')}" placeholder="Rua, número, bairro, cidade"></label>
     <label class="f">Observações<textarea class="in" name="obs">${esc(c.obs || '')}</textarea></label>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar</button></div></form>`);
   $('#fcli').onsubmit = async (e) => {
@@ -631,7 +677,7 @@ function editarCliente(id) {
 // ---------- NOVA VENDA ----------
 let NV;
 function novaVendaVazia() {
-  return { cliId: '', novoCli: { nome: '', telefone: '', instagram: '' }, data: hojeISO(), canal: 'WhatsApp', forma: 'Pix', obs: '',
+  return { cliId: '', novoCli: { nome: '', telefone: '', instagram: '' }, data: hojeISO(), canal: 'WhatsApp', forma: 'Pix', obs: '', ent: '', endTxt: '',
     itens: [{ prod: '', desc: '', qtd: 1, preco: '' }], modo: 'avista', recebido: true, nParc: 3, entrada: '', juros: '', jurosTipo: 'mes', primeiroVenc: addMeses(hojeISO(), 1), parcelas: [], parcelasEditadas: false };
 }
 const totalNV = () => r2(NV.itens.reduce((s, i) => s + (+i.qtd || 0) * (+String(i.preco).replace(',', '.') || 0), 0));
@@ -725,6 +771,10 @@ function vNova() {
           <div id="jbox">${htmlJuros()}</div>
           <div class="hint">Cartão de crédito parcelado na maquininha: marque as parcelas como pagas se o dinheiro já caiu para você.</div>`}
         <div id="pbox">${htmlParcelas()}</div><div id="pwarn">${htmlAviso()}</div>
+        <div class="grid2" style="margin-top:12px">
+          <label class="f">Entrega<select class="in" data-k="ent"><option value="" ${!NV.ent ? 'selected' : ''}>Não controlar</option><option value="entrega" ${NV.ent === 'entrega' ? 'selected' : ''}>Entregar no endereço</option><option value="retirada" ${NV.ent === 'retirada' ? 'selected' : ''}>Cliente retira</option></select></label>
+          ${NV.ent === 'entrega' ? `<label class="f">Endereço<input class="in" data-k="endTxt" value="${esc(NV.endTxt || (NV.cliId ? cliObj(NV.cliId).endereco || '' : ''))}" placeholder="Rua, número, bairro, cidade"></label>` : '<div></div>'}
+        </div>
         <label class="f" style="margin-top:12px">Observação<input class="in" data-k="obs" value="${esc(NV.obs)}" placeholder="Ex.: entrega sábado, cor, brinde…"></label>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn line" data-limpar>Limpar</button><button class="btn gold" data-salvar>Salvar venda</button></div>
@@ -789,8 +839,12 @@ async function salvarVenda(btn) {
     let cid = NV.cliId;
     if (!cid) { const c = await api.salvarCliente({ nome: NV.novoCli.nome.trim(), telefone: NV.novoCli.telefone.trim() || null, instagram: NV.novoCli.instagram.trim().replace(/^@/, '') || null }); cid = c.id; }
     const forma = NV.forma;
-    await api.registrarVenda({ p_cliente_id: +cid, p_data: NV.data, p_forma: forma, p_canal: NV.canal, p_obs: NV.obs || null, p_itens: itens,
+    const vid = await api.registrarVenda({ p_cliente_id: +cid, p_data: NV.data, p_forma: forma, p_canal: NV.canal, p_obs: NV.obs || null, p_itens: itens,
       p_parcelas: NV.parcelas.map(p => ({ numero: p.numero, valor: p.valor, vencimento: p.vencimento, pago_em: p.pago ? (p.vencimento <= hojeISO() ? p.vencimento : hojeISO()) : '' })) });
+    if (NV.ent && vid) {
+      const end = NV.ent === 'entrega' ? (NV.endTxt || (NV.cliId ? cliObj(NV.cliId).endereco || '' : '')).trim() || null : null;
+      try { await api.salvarEntrega(+vid, { entrega: NV.ent, endereco: end, entrega_status: 'pendente' }); if (end) await api.salvarCliente({ id: +cid, endereco: end }); } catch (e) { console.error(e); toast('Venda salva, mas a entrega não: ' + e.message); }
+    }
     toast('Venda registrada!');
     UI.abertos.add(+cid); NV = novaVendaVazia();
     await carregar(); irPara('vendas');
