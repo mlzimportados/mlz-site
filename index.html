@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MLZ Importados</title>
-<meta name="description" content="MLZ Importados: produtos importados 100% originais, com preço justo e procedência garantida.">
-<meta property="og:title" content="MLZ Importados">
+<title>MLZ Company</title>
+<meta name="description" content="MLZ Company: produtos importados 100% originais, com preço justo e procedência garantida.">
+<meta property="og:title" content="MLZ Company">
 <meta property="og:description" content="Importados 100% originais. Veja a coleção e peça pelo WhatsApp ou Instagram.">
 <meta property="og:image" content="img/logo_gold.png">
 <meta name="theme-color" content="#07111f">
@@ -204,7 +204,7 @@ footer{margin-top:64px;padding:0 0 22px}
 <div class="promo" id="promo"></div>
 <header>
   <div class="wrap">
-    <a href="#" class="logo"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a>
+    <a href="#" class="logo"><img src="img/logo_mlz_v4.png" alt="MLZ Company"></a>
     <nav><a href="#colecao">Coleção</a><a href="#aromas">Aromas</a><a href="revenda.html">Revenda</a></nav>
     <a class="hbtn" id="hWa" target="_blank" rel="noopener" href="#"><svg class="i"><use href="#i-wa"/></svg>Fale com a gente</a>
   </div>
@@ -251,10 +251,10 @@ footer{margin-top:64px;padding:0 0 22px}
 <footer>
   <div class="wrap">
     <div class="fbox">
-      <a href="#" aria-label="MLZ Importados"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a>
+      <a href="#" aria-label="MLZ Company"><img src="img/logo_mlz_v4.png" alt="MLZ Company"></a>
       <nav><a href="#colecao">Coleção</a><a href="revenda.html">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
       <div class="social" id="social"></div>
-      <span class="copy">© <span id="ano"></span> MLZ Importados · Produtos originais</span>
+      <span class="copy">© <span id="ano"></span> MLZ Company · Produtos originais</span>
     </div>
   </div>
 </footer>
@@ -433,12 +433,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); })
 function contatos() {
   document.getElementById('promo').textContent = CFG.faixa_promo || '';
   if (CFG.mensagem_topo) document.getElementById('lead').textContent = CFG.mensagem_topo;
-  const wa = linkWa('Olá! Vim pelo site da MLZ Importados.'), ig = igUser();
+  const wa = linkWa('Olá! Vim pelo site da MLZ Company.'), ig = igUser();
   const h = document.getElementById('hWa');
   if (wa) h.href = wa; else if (ig) { h.href = 'https://instagram.com/' + ig; h.innerHTML = '<svg class="i"><use href="#i-ig"/></svg>Instagram'; } else h.style.display = 'none';
   const li = [];
   if (wa) li.push(`<li><a href="${wa}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp)}</a></li>`);
-  const n2 = soDigitos(CFG.whatsapp2); if (n2) li.push(`<li><a href="https://wa.me/${n2.length <= 11 ? '55' + n2 : n2}?text=${encodeURIComponent('Olá! Vim pelo site da MLZ Importados.')}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp2)}</a></li>`);
+  const n2 = soDigitos(CFG.whatsapp2); if (n2) li.push(`<li><a href="https://wa.me/${n2.length <= 11 ? '55' + n2 : n2}?text=${encodeURIComponent('Olá! Vim pelo site da MLZ Company.')}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp2)}</a></li>`);
   if (ig) li.push(`<li><a href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener">@${esc(ig)}</a></li>`);
   if (!li.length) li.push('<li>Chame a gente no direct do Instagram</li>');
   const ct = document.getElementById('contatos'); if (ct) ct.innerHTML = li.join('');

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seja revendedor · MLZ Importados</title>
-<meta name="description" content="Revenda importados originais com a MLZ Importados: preço de revenda, procedência garantida e apoio para vender.">
+<title>Seja revendedor · MLZ Company</title>
+<meta name="description" content="Revenda importados originais com a MLZ Company: preço de revenda, procedência garantida e apoio para vender.">
 <meta name="theme-color" content="#07111f">
 <link rel="icon" href="img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -100,7 +100,7 @@ footer a{color:var(--muted);margin:0 8px}
   <symbol id="i-box" viewBox="0 0 24 24"><path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/></symbol>
 </svg>
 
-<header><div class="wrap"><a href="index.html"><img src="img/logo_mlz_v4.png" alt="MLZ Importados"></a><a class="volta" href="index.html">← Voltar para a loja</a></div></header>
+<header><div class="wrap"><a href="index.html"><img src="img/logo_mlz_v4.png" alt="MLZ Company"></a><a class="volta" href="index.html">← Voltar para a loja</a></div></header>
 
 <div class="hero">
   <div class="wrap">
@@ -179,7 +179,7 @@ footer a{color:var(--muted);margin:0 8px}
   </div>
 </section>
 
-<footer><div class="wrap">© <span id="ano"></span> MLZ Importados<br><a href="index.html">Loja</a><a href="politicas.html">Políticas</a><a href="politicas.html#privacidade">Privacidade</a></div></footer>
+<footer><div class="wrap">© <span id="ano"></span> MLZ Company<br><a href="index.html">Loja</a><a href="politicas.html">Políticas</a><a href="politicas.html#privacidade">Privacidade</a></div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/api.js"></script>
@@ -190,7 +190,7 @@ const waNum = (s) => { const n = soDigitos(s); return n ? (n.length <= 11 ? '55'
 (async () => {
   try { CFG = await criarApi().config(); } catch (e) { console.error(e); }
   const c = [];
-  const txt = encodeURIComponent('Olá! Tenho interesse em revender produtos da MLZ Importados.');
+  const txt = encodeURIComponent('Olá! Tenho interesse em revender produtos da MLZ Company.');
   for (const k of ['whatsapp', 'whatsapp2']) { const n = waNum(CFG[k]); if (n) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${txt}"><svg class="i"><use href="#i-wa"/></svg><span><small>WhatsApp</small>${esc(CFG[k])}</span></a>`); }
   const ig = (CFG.instagram || '').replace(/^@/, '');
   if (ig) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://ig.me/m/${esc(ig)}"><svg class="i"><use href="#i-ig"/></svg><span><small>Instagram</small>@${esc(ig)}</span></a>`);
@@ -202,7 +202,7 @@ document.getElementById('frev').addEventListener('submit', (e) => {
   if (!nome) { er.textContent = 'Informe seu nome.'; return f.nome.focus(); }
   if (soDigitos(tel).length < 10) { er.textContent = 'Informe um WhatsApp com DDD.'; return f.tel.focus(); }
   const canais = [...f.querySelectorAll('[name=canal]:checked')].map(x => x.value);
-  const linhas = ['Olá! Quero ser revendedor(a) da MLZ Importados.', '', `• Nome: ${nome}`, `• WhatsApp: ${tel}`];
+  const linhas = ['Olá! Quero ser revendedor(a) da MLZ Company.', '', `• Nome: ${nome}`, `• WhatsApp: ${tel}`];
   if (f.cidade.value.trim()) linhas.push(`• Cidade: ${f.cidade.value.trim()}`);
   if (f.ig.value.trim()) linhas.push(`• Instagram/loja: ${f.ig.value.trim()}`);
   if (canais.length) linhas.push(`• Vendo por: ${canais.join(', ')}`);

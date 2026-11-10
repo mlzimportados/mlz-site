@@ -1,4 +1,4 @@
-# MLZ Importados — site catálogo + painel
+# MLZ Company — site catálogo + painel
 
 - `index.html`: catálogo público (vitrine, filtro por aroma e por marca, detalhe com pirâmide de notas, pedido por WhatsApp/Instagram).
 - `admin.html`: painel restrito a administradores (vendas por cliente, parcelas, caixa, a receber, estoque, ajustes).
