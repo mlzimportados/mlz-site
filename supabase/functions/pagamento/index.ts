@@ -56,7 +56,7 @@ async function criar(b: any, req: Request) {
   try { link = await ip("/links", {
     handle: tag,
     order_nsu: ped.order_nsu,
-    items: itens.map((i) => ({ quantity: i.quantidade, price: Math.round(i.preco_unit * 100), description: i.descricao })),
+    items: itens.map((i, k) => ({ quantity: i.quantidade, price: Math.round(i.preco_unit * 100), description: (k ? "" : `Pedido #${ped.id} · `) + i.descricao })),
     redirect_url: `${site}/obrigado.html`,
     webhook_url: `${SB_URL}/functions/v1/pagamento?webhook=1`,
     customer: { name: nome, phone_number: "+" + (tel.length <= 11 ? "55" + tel : tel) },
@@ -64,23 +64,48 @@ async function criar(b: any, req: Request) {
     await sb.from("pedidos").update({ status: "cancelado", obs: String(e).slice(0, 300) }).eq("id", ped.id);
     throw e;
   }
+  console.log("link criado", ped.id, JSON.stringify(link).slice(0, 500));
   const url = link.url || link.checkout_url || link.link || link.payment_url;
   if (!url) throw new Error("InfinitePay não devolveu o link: " + JSON.stringify(link).slice(0, 300));
-  await sb.from("pedidos").update({ checkout_url: url, invoice_slug: link.slug || link.invoice_slug || null }).eq("id", ped.id);
+  await sb.from("pedidos").update({ checkout_url: url, invoice_slug: link.slug || link.invoice_slug || null, link_resp: link,
+    ip_order_nsu: (link.order_nsu && link.order_nsu !== ped.order_nsu) ? String(link.order_nsu) : null }).eq("id", ped.id);
   return json({ url, order_nsu: ped.order_nsu });
 }
 
+// acha o pedido do site: a InfinitePay pode devolver um order_nsu próprio dela
+const UUID = /^[0-9a-f-]{36}$/i;
+async function acharPedido(ip_nsu: string, local: string, itens: any[]) {
+  const sel = "id, order_nsu, ip_order_nsu, status, total";
+  if (UUID.test(ip_nsu || "")) {
+    const { data } = await sb.from("pedidos").select(sel).eq("order_nsu", ip_nsu).maybeSingle(); if (data) return data;
+  }
+  if (ip_nsu) {
+    const { data } = await sb.from("pedidos").select(sel).eq("ip_order_nsu", ip_nsu).maybeSingle(); if (data) return data;
+  }
+  const m = (Array.isArray(itens) ? itens : []).map((i: any) => String(i?.description || "").match(/Pedido #(\d+)/)).find(Boolean);
+  if (m) {
+    const { data } = await sb.from("pedidos").select(sel).eq("id", +m[1]).maybeSingle(); if (data) return data;
+  }
+  if (UUID.test(local || "")) {
+    const { data } = await sb.from("pedidos").select(sel).eq("order_nsu", local).maybeSingle(); if (data) return data;
+  }
+  return null;
+}
+
 // confere na InfinitePay e, se pago, registra a venda
-async function conferir(order_nsu: string, transaction_nsu: string, slug: string) {
-  if (!/^[0-9a-f-]{36}$/i.test(order_nsu || "")) return { status: "invalido" };
-  const { data: ped } = await sb.from("pedidos").select("status").eq("order_nsu", order_nsu).maybeSingle();
+async function conferir(ip_nsu: string, transaction_nsu: string, slug: string, local = "", itens: any[] = []) {
+  const ped: any = await acharPedido(ip_nsu, local, itens);
   if (!ped) return { status: "invalido" };
   if (ped.status === "pago") return { status: "pago" };
-  if (!transaction_nsu || !slug) return { status: ped.status };
-  const chk = await ip("/payment_check", { handle: await handle(), order_nsu, transaction_nsu, slug });
+  if (!transaction_nsu || !slug || !ip_nsu) return { status: ped.status };
+  const chk = await ip("/payment_check", { handle: await handle(), order_nsu: ip_nsu, transaction_nsu, slug });
+  console.log("payment_check", ped.id, JSON.stringify({ success: chk.success, paid: chk.paid, amount: chk.amount, paid_amount: chk.paid_amount, capture_method: chk.capture_method }));
   if (!chk.paid) return { status: "pendente" };
-  const { error } = await sb.rpc("confirmar_pedido", { p_order_nsu: order_nsu, p_transaction_nsu: transaction_nsu, p_slug: slug,
-    p_capture: chk.capture_method || null, p_installments: chk.installments || 1, p_paid: chk.paid_amount ? chk.paid_amount / 100 : null, p_receipt: chk.receipt_url || null });
+  const pago = chk.paid_amount ? chk.paid_amount / 100 : (chk.amount ? chk.amount / 100 : null);
+  if (pago !== null && pago + 0.009 < +ped.total) { console.error("valor pago menor que o pedido", ped.id, pago, ped.total); return { status: "pendente" }; }
+  if (!ped.ip_order_nsu && ip_nsu !== ped.order_nsu) await sb.from("pedidos").update({ ip_order_nsu: ip_nsu }).eq("id", ped.id);
+  const { error } = await sb.rpc("confirmar_pedido", { p_order_nsu: ped.order_nsu, p_transaction_nsu: transaction_nsu, p_slug: slug,
+    p_capture: chk.capture_method || null, p_installments: chk.installments || 1, p_paid: pago, p_receipt: chk.receipt_url || null });
   if (error) throw error;
   return { status: "pago" };
 }
@@ -91,12 +116,14 @@ Deno.serve(async (req) => {
   try {
     const b = await req.json().catch(() => ({}));
     if (new URL(req.url).searchParams.get("webhook")) {
-      const r = await conferir(b.order_nsu, b.transaction_nsu, b.invoice_slug || b.slug);
+      console.log("webhook", JSON.stringify({ keys: Object.keys(b), order_nsu: b.order_nsu, transaction_nsu: b.transaction_nsu, slug: b.invoice_slug || b.slug, paid_amount: b.paid_amount, capture_method: b.capture_method }));
+      const r = await conferir(b.order_nsu, b.transaction_nsu, b.invoice_slug || b.slug, "", b.items);
+      console.log("webhook resultado", JSON.stringify(r));
       // 400 faz a InfinitePay tentar de novo se ainda não conseguimos confirmar
       return json(r, r.status === "pago" ? 200 : 400);
     }
     if (b.acao === "criar") return await criar(b, req);
-    if (b.acao === "confirmar") return json(await conferir(b.order_nsu, b.transaction_nsu, b.slug));
+    if (b.acao === "confirmar") return json(await conferir(String(b.order_nsu || ""), b.transaction_nsu, b.slug, String(b.local || "")));
     return json({ erro: "ação inválida" }, 400);
   } catch (e) {
     console.error(e);

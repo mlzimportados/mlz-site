@@ -39,7 +39,8 @@ p{color:var(--muted);line-height:1.6}
 <script src="js/api.js"></script>
 <script>
 const q = new URLSearchParams(location.search);
-let pedido = q.get('order_nsu'); try { pedido = pedido || localStorage.getItem('mlz_ultimo_pedido'); } catch (_) {}
+let local = ''; try { local = localStorage.getItem('mlz_ultimo_pedido') || ''; } catch (_) {}
+let pedido = q.get('order_nsu') || local;
 const tx = q.get('transaction_nsu') || '', slug = q.get('slug') || q.get('invoice_slug') || '', recibo = q.get('receipt_url') || '';
 const WA = '<svg viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/></svg>';
 let CFG = {};
@@ -67,7 +68,7 @@ function tela(tipo) {
   if (!pedido) return tela('invalido');
   for (let i = 0; i < 12; i++) {
     try {
-      const r = await mlzPagamento({ acao: 'confirmar', order_nsu: pedido, transaction_nsu: tx, slug });
+      const r = await mlzPagamento({ acao: 'confirmar', order_nsu: pedido, transaction_nsu: tx, slug, local });
       if (r.status === 'pago') return tela('pago');
       if (r.status === 'invalido') return tela('invalido');
       tela('pendente');
