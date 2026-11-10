@@ -31,8 +31,9 @@ function criarApi() {
     trocarSenha: async (senha) => ok(await sb.auth.updateUser({ password: senha })),
     souAdmin: async () => { const s = (await sb.auth.getSession()).data.session; if (!s) return false; return ok(await sb.from('admins').select('user_id').eq('user_id', s.user.id)).length > 0; },
     // admin
-    produtos: async () => ok(await sb.from('produtos').select('*').order('nome')),
-    salvarProduto: async (p) => { const { id, ...d } = p; return id ? ok(await sb.from('produtos').update(d).eq('id', id).select().single()) : ok(await sb.from('produtos').insert(d).select().single()); },
+    produtos: async () => ok(await sb.rpc('admin_produtos')),
+    salvarProduto: async (p) => { const { id, ...d } = p; const r = id ? ok(await sb.from('produtos').update(d).eq('id', id).select('id').single()) : ok(await sb.from('produtos').insert(d).select('id').single()); return { ...d, id: r.id }; },
+    vincularConta: async (clienteId, email) => ok(await sb.rpc('vincular_conta', { p_cliente_id: clienteId, p_email: email || '' })),
     excluirProduto: async (id) => ok(await sb.from('produtos').delete().eq('id', id)),
     enviarFoto: async (file) => {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
