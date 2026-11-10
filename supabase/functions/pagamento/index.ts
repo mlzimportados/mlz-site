@@ -65,7 +65,7 @@ async function criar(b: any, req: Request) {
   const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
-  const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev)$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
+  const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev|workers\.dev)$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
   const tel = telefone.replace(/\D/g, "");
   let link: any;
   try { link = await ip("/links", {
