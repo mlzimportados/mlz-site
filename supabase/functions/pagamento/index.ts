@@ -9,7 +9,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const sb = createClient(SB_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const API = "https://api.checkout.infinitepay.io";
-const API_KEY = Deno.env.get("INFINITEPAY_API_KEY") || "";
+const API_KEY = (Deno.env.get("INFINITEPAY_API_KEY") || "").trim();
+console.log("InfinitePay API key configurada:", API_KEY ? "sim" : "não");
 const SITE_PADRAO = "https://mlzcompany.netlify.app";
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -51,14 +52,18 @@ async function criar(b: any, req: Request) {
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*netlify\.app$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
   const tel = telefone.replace(/\D/g, "");
-  const link = await ip("/links", {
+  let link: any;
+  try { link = await ip("/links", {
     handle: tag,
     order_nsu: ped.order_nsu,
     items: itens.map((i) => ({ quantity: i.quantidade, price: Math.round(i.preco_unit * 100), description: i.descricao })),
     redirect_url: `${site}/obrigado.html`,
     webhook_url: `${SB_URL}/functions/v1/pagamento?webhook=1`,
     customer: { name: nome, phone_number: "+" + (tel.length <= 11 ? "55" + tel : tel) },
-  });
+  }); } catch (e) {
+    await sb.from("pedidos").update({ status: "cancelado", obs: String(e).slice(0, 300) }).eq("id", ped.id);
+    throw e;
+  }
   const url = link.url || link.checkout_url || link.link || link.payment_url;
   if (!url) throw new Error("InfinitePay não devolveu o link: " + JSON.stringify(link).slice(0, 300));
   await sb.from("pedidos").update({ checkout_url: url, invoice_slug: link.slug || link.invoice_slug || null }).eq("id", ped.id);
