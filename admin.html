@@ -63,6 +63,13 @@ nav.tabs button{display:flex;align-items:center;gap:12px;height:42px;padding:0 1
 nav.tabs button:hover{color:var(--txt);background:rgba(255,255,255,.03)}
 nav.tabs button.on{background:rgba(217,178,76,.1);color:var(--gold-hi)}
 nav.tabs button.on svg{color:var(--gold)}
+nav.tabs button{position:relative}
+.nb{font-style:normal;margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--gold);color:#0b1a2e;font-size:11px;font-weight:600;display:grid;place-items:center}
+.nb:empty{display:none}
+.tl{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.tl span b{color:var(--txt);font-weight:500}
+.tl .no{color:var(--faint)}
+.eits{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
 .sidefoot{margin-top:auto;display:grid;gap:2px;border-top:1px solid var(--line);padding-top:14px}
 .sidefoot a,.sidefoot button{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:10px;color:var(--muted);font-size:14px}
 .sidefoot a:hover,.sidefoot button:hover{color:var(--txt);background:rgba(255,255,255,.03)}
@@ -77,6 +84,7 @@ main{margin-left:236px;padding:38px 44px 60px;max-width:1236px}
   nav.tabs button{flex:1;flex-direction:column;gap:4px;height:auto;padding:7px 2px;font-size:10.5px;justify-content:center}
   nav.tabs button svg{width:21px;height:21px}
   nav.tabs button.on{background:none}
+  .nb{position:absolute;top:2px;left:calc(50% + 5px);margin:0;min-width:16px;height:16px;font-size:9.5px;padding:0 4px}
   main{margin:0;padding:22px 16px 100px}
 }
 
@@ -312,6 +320,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
     <nav class="tabs" id="tabs">
       <button data-tab="resumo" class="on"><svg class="i"><use href="#i-home"/></svg>Resumo</button>
       <button data-tab="vendas"><svg class="i"><use href="#i-users"/></svg>Vendas</button>
+      <button data-tab="entregas"><svg class="i"><use href="#i-truck"/></svg>Entregas<em class="nb" id="nbEnt"></em></button>
       <button data-tab="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button>
       <button data-tab="cad"><svg class="i"><use href="#i-tag"/></svg>Cadastrar</button>
       <button data-tab="estoque"><svg class="i"><use href="#i-box"/></svg>Estoque</button>
@@ -326,6 +335,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
   <main>
     <div id="v-resumo"></div>
     <div id="v-vendas" class="hide"></div>
+    <div id="v-entregas" class="hide"></div>
     <div id="v-nova" class="hide"></div>
     <div id="v-cad" class="hide"></div>
     <div id="v-estoque" class="hide"></div>
@@ -534,7 +544,8 @@ function vVendas() {
 const msgRetirada = () => `Seu pedido já pode ser retirado${D.cfg.retirada_endereco ? ' em ' + D.cfg.retirada_endereco : ''}${D.cfg.retirada_horario ? '. ' + D.cfg.retirada_horario.replace(/^./, x => x.toUpperCase()) : ''}. Te esperamos!`;
 const ROT_ENT = { entrega: { pendente: 'A enviar', enviado: 'Enviado', entregue: 'Entregue' }, retirada: { pendente: 'A retirar', enviado: 'Separado', entregue: 'Retirado' } };
 function linkWaCli(cid, msg) { const t = soDigitos(cliObj(cid).telefone); return t ? `https://wa.me/${t.length <= 11 ? '55' + t : t}?text=${encodeURIComponent(msg)}` : ''; }
-function htmlEnt(v, compacto) {
+const hora = (t) => t ? new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às') : '';
+function htmlEnt(v, compacto, completo) {
   if (!v.entrega) return '';
   const r = ROT_ENT[v.entrega], st = v.entrega_status || 'pendente', nome = cliNome(v.cliente_id).split(' ')[0];
   const maps = v.endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.endereco)}` : '';
@@ -547,15 +558,73 @@ function htmlEnt(v, compacto) {
     ${v.endereco ? `<div class="m">${esc(v.endereco)}</div>` : v.entrega === 'retirada' ? `<div class="m">Retira em: ${esc(D.cfg.retirada_endereco || 'loja')}${D.cfg.retirada_horario ? ' · ' + esc(D.cfg.retirada_horario) : ''}</div>` : ''}
     <div class="est">${['pendente', 'enviado', 'entregue'].map(k => `<button class="${st === k ? 'on' : ''}" data-ent="${v.id}" data-st="${k}">${r[k]}</button>`).join('')}
       ${maps ? `<a class="btn sm line" target="_blank" rel="noopener" href="${maps}" title="Abrir no mapa"><svg class="i"><use href="#i-pin"/></svg></a>` : ''}
-      ${wa ? `<a class="btn sm line" target="_blank" rel="noopener" href="${wa}" title="Avisar no WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>
+      ${wa ? `<a class="btn sm line" target="_blank" rel="noopener" href="${wa}" title="Avisar no WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}
+      ${completo ? `<button class="btn sm line" data-editent="${v.id}" title="Editar entrega"><svg class="i"><use href="#i-edit"/></svg></button>` : ''}</div>
+    ${completo ? `<div class="eits">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(' · ')} · <b class="num">${brl(v.total)}</b></div>
+      <div class="tl"><span>Pago <b>${hora(v.criado_em) || dataBR(v.data)}</b></span>
+        <span class="${v.enviado_em ? '' : 'no'}">${r.enviado} ${v.enviado_em ? '<b>' + hora(v.enviado_em) + '</b>' : '—'}</span>
+        <span class="${v.entregue_em ? '' : 'no'}">${r.entregue} ${v.entregue_em ? '<b>' + hora(v.entregue_em) + '</b>' : '—'}</span></div>
+      ${v.entrega_obs ? `<div class="hint" style="margin-top:6px">Obs.: ${esc(v.entrega_obs)}</div>` : ''}` : ''}
   </div></div>`;
 }
+
+// ---------- ENTREGAS ----------
+function vEntregas() {
+  const F = UI.fEnt || 'fazer', T = UI.tEnt || 'todas', q = (UI.qEnt || '').toLowerCase();
+  const todas = D.vendas.filter(v => v.entrega);
+  const grupo = (v) => (v.entrega_status || 'pendente') === 'pendente' ? 'fazer' : v.entrega_status === 'enviado' ? 'caminho' : 'feitas';
+  const cont = { fazer: 0, caminho: 0, feitas: 0, todas: todas.length }; todas.forEach(v => cont[grupo(v)]++);
+  let vs = todas.filter(v => (F === 'todas' || grupo(v) === F) && (T === 'todas' || v.entrega === T)
+    && (!q || cliNome(v.cliente_id).toLowerCase().includes(q) || (v.endereco || '').toLowerCase().includes(q)));
+  vs.sort((a, b) => F === 'feitas' ? String(b.entregue_em || b.data).localeCompare(String(a.entregue_em || a.data)) : String(a.criado_em || a.data).localeCompare(String(b.criado_em || b.data)));
+  const segs = [['fazer', 'A fazer'], ['caminho', 'A caminho / separado'], ['feitas', 'Concluídas'], ['todas', 'Todas']];
+  $('#v-entregas').innerHTML = `
+    <div class="ph"><div><h2 class="t">Entregas e retiradas</h2><div class="sub">Toque na etapa para atualizar: o dia e o horário ficam gravados e o cliente vê na conta dele.</div></div></div>
+    <div class="barf"><input class="in" id="qEnt" placeholder="Buscar cliente ou endereço" value="${esc(UI.qEnt || '')}">
+      <select class="in" id="tEnt" style="flex:0 0 auto;min-width:160px"><option value="todas" ${T === 'todas' ? 'selected' : ''}>Entregas e retiradas</option><option value="entrega" ${T === 'entrega' ? 'selected' : ''}>Só entregas</option><option value="retirada" ${T === 'retirada' ? 'selected' : ''}>Só retiradas</option></select></div>
+    <div class="seg" style="margin-bottom:14px">${segs.map(([k, l]) => `<button class="${F === k ? 'on' : ''}" data-fe="${k}">${l} (${cont[k]})</button>`).join('')}</div>
+    <div class="card">${vs.length ? vs.map(v => htmlEnt(v, true, true)).join('') : `<div class="vazio">${todas.length ? 'Nada nesse filtro.' : 'Nenhuma venda com entrega ou retirada ainda. As vendas do site entram aqui sozinhas; nas vendas manuais, escolha “Entrega” ao lançar.'}</div>`}</div>`;
+}
+function contarEntregas() { const n = D.vendas.filter(v => v.entrega && (v.entrega_status || 'pendente') === 'pendente').length; const el = $('#nbEnt'); if (el) el.textContent = n || ''; }
+function editarEntrega(id) {
+  const v = D.vendas.find(x => x.id === id); if (!v) return;
+  abrirModal(`<h3>Entrega da venda de ${dataBR(v.data)}</h3><div class="sub" style="margin:-4px 0 12px">${esc(cliNome(v.cliente_id))} · ${brl(v.total)}</div><form id="fent" class="form">
+    <label class="f">Tipo<select class="in" name="entrega"><option value="entrega" ${v.entrega === 'entrega' ? 'selected' : ''}>Entrega no endereço</option><option value="retirada" ${v.entrega === 'retirada' ? 'selected' : ''}>Retirada na loja</option><option value="">Não controlar mais</option></select></label>
+    <label class="f">Endereço de entrega<textarea class="in" name="endereco" rows="3" placeholder="Rua, número, bairro, cidade, CEP">${esc(v.endereco || '')}</textarea></label>
+    <label class="f">Observação (horário combinado, quem recebe…)<input class="in" name="entrega_obs" value="${esc(v.entrega_obs || '')}" placeholder="Ex.: entregar depois das 14h, portaria"></label>
+    <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar</button></div></form>`);
+  $('#fent').onsubmit = async (e) => {
+    e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
+    const d = { entrega: f.entrega || null, endereco: f.endereco.trim() || null, entrega_obs: f.entrega_obs.trim() || null };
+    if (!d.entrega) d.entrega_status = null; else if (!v.entrega_status) d.entrega_status = 'pendente';
+    await tentar(() => api.salvarEntrega(id, d), 'Entrega atualizada'); fecharModal(); await carregar();
+  };
+}
+async function mudarEtapa(id, st) {
+  const v = D.vendas.find(x => x.id === id); if (!v) return;
+  const antes = { s: v.entrega_status, a: v.enviado_em, b: v.entregue_em }, agora = new Date().toISOString();
+  v.entrega_status = st;
+  if (st === 'pendente') { v.enviado_em = null; v.entregue_em = null; }
+  if (st === 'enviado') { v.enviado_em = v.enviado_em || agora; v.entregue_em = null; }
+  if (st === 'entregue') { v.entregue_em = agora; v.enviado_em = v.enviado_em || agora; }
+  renderTudo(); contarEntregas();
+  try { await api.salvarEntrega(v.id, { entrega_status: st }); }
+  catch (err) { v.entrega_status = antes.s; v.enviado_em = antes.a; v.entregue_em = antes.b; renderTudo(); contarEntregas(); toast('Não foi possível salvar: ' + err.message); }
+}
+$('#v-entregas').addEventListener('click', (e) => {
+  let b;
+  if ((b = e.target.closest('[data-ent]'))) return mudarEtapa(+b.dataset.ent, b.dataset.st);
+  if ((b = e.target.closest('[data-editent]'))) return editarEntrega(+b.dataset.editent);
+  if ((b = e.target.closest('[data-fe]'))) { UI.fEnt = b.dataset.fe; return vEntregas(); }
+});
+$('#v-entregas').addEventListener('input', (e) => { if (e.target.id === 'qEnt') { UI.qEnt = e.target.value; const pos = e.target.selectionStart; vEntregas(); const i = $('#qEnt'); i.focus(); i.setSelectionRange(pos, pos); } });
+$('#v-entregas').addEventListener('change', (e) => { if (e.target.id === 'tEnt') { UI.tEnt = e.target.value; vEntregas(); } });
 function htmlEntregas() {
   const vs = D.vendas.filter(v => v.entrega && v.entrega_status !== 'entregue');
   if (!vs.length) return '';
   return `<div class="card" style="margin-bottom:16px"><h3>Para entregar ou retirar (${vs.length})</h3>
     ${vs.map(v => htmlEnt(v, true)).join('')}
-    <div class="hint">Vendas do site já chegam aqui com o endereço. Marque “Enviado” quando sair e “Entregue/Retirado” no fim: aí ela some desta lista.</div></div>`;
+    <div class="hint">Marque “Enviado” quando sair e “Entregue/Retirado” no fim. Histórico completo na aba <button data-ir="entregas" style="color:var(--gold-hi)">Entregas</button>.</div></div>`;
 }
 
 // clientes que criaram conta no site
@@ -630,12 +699,8 @@ function cardVenda(v, tel) {
 $('#v-vendas').addEventListener('click', async (e) => {
   let b;
   if ((b = e.target.closest('[data-parc]'))) return alternarParcela(+b.dataset.parc);
-  if ((b = e.target.closest('[data-ent]'))) {
-    const v = D.vendas.find(x => x.id === +b.dataset.ent); if (!v) return;
-    const antes = v.entrega_status; v.entrega_status = b.dataset.st; vVendas();
-    try { await api.salvarEntrega(v.id, { entrega_status: b.dataset.st }); } catch (err) { v.entrega_status = antes; vVendas(); toast('Não foi possível salvar: ' + err.message); }
-    return;
-  }
+  if ((b = e.target.closest('[data-ent]'))) return mudarEtapa(+b.dataset.ent, b.dataset.st);
+  if ((b = e.target.closest('[data-editent]'))) return editarEntrega(+b.dataset.editent);
   if ((b = e.target.closest('[data-tog]'))) { const id = +b.dataset.tog; UI.abertos.has(id) ? UI.abertos.delete(id) : UI.abertos.add(id); return vVendas(); }
   if ((b = e.target.closest('[data-fv]'))) { UI.fVend = b.dataset.fv; return vVendas(); }
   if ((b = e.target.closest('[data-ir]'))) return irPara(b.dataset.ir);
@@ -1257,7 +1322,7 @@ $('#v-ajustes').addEventListener('click', async (e) => {
 });
 
 // ---------- navegação ----------
-const VIEWS = { resumo: vResumo, vendas: vVendas, nova: vNova, cad: vCad, estoque: vEstoque, invest: vInvest, ajustes: vAjustes };
+const VIEWS = { resumo: vResumo, vendas: vVendas, entregas: vEntregas, nova: vNova, cad: vCad, estoque: vEstoque, invest: vInvest, ajustes: vAjustes };
 function irPara(tab) {
   UI.tab = tab;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
@@ -1271,7 +1336,7 @@ $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button
 async function carregar() {
   const [produtos, clientes, vendas, cats, cfg, investidores, pedidos] = await Promise.all([api.produtos(), api.clientes(), api.vendas(), api.categorias(), api.config(), api.investidores(), api.pedidos().catch(() => [])]);
   Object.assign(D, { produtos, clientes, vendas, cats, cfg, investidores, pedidos });
-  renderTudo();
+  renderTudo(); contarEntregas();
 }
 
 async function iniciar() {
