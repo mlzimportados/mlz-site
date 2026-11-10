@@ -63,58 +63,41 @@ label{display:grid;gap:6px;font-size:13px;color:var(--muted);min-width:0}
 .load{display:grid;place-items:center;padding:70px 0}
 .spin{width:28px;height:28px;border:3px solid rgba(217,178,76,.25);border-top-color:var(--gold);border-radius:50%;animation:g 1s linear infinite}
 @keyframes g{to{transform:rotate(360deg)}}
-main.wide{max-width:1040px}main.dash{max-width:880px}
-.dhero{display:flex;align-items:center;gap:16px;padding:22px;border-radius:24px;border:1px solid rgba(217,178,76,.22);background:radial-gradient(80% 140% at 0% 0%,rgba(217,178,76,.16),transparent 60%),rgba(255,255,255,.02)}
-.av{width:62px;height:62px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--hd);font-weight:600;font-size:21px;color:#0b1a2e;background:linear-gradient(145deg,var(--gold-hi),var(--gold));box-shadow:0 8px 24px -8px rgba(217,178,76,.6)}
-.dh{flex:1;min-width:0}.dh .em{color:var(--faint);font-size:13.5px;margin-top:4px;overflow-wrap:anywhere}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
-.st{border:1px solid var(--line);border-radius:18px;padding:14px 16px;background:rgba(255,255,255,.02)}
-.st span{display:block;color:var(--faint);font-size:11.5px;letter-spacing:1px;text-transform:uppercase}
-.st b{display:block;font-family:var(--hd);font-weight:600;font-size:22px;margin-top:6px;color:var(--gold-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pend{display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px 16px;border-radius:18px;border:1px solid rgba(241,195,90,.35);background:rgba(241,195,90,.07)}
-.pend>svg.i{color:var(--wait);width:22px;height:22px}
-.pend .gr{flex:1;min-width:0}.pend small{display:block;color:var(--muted);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dtabs{display:flex;gap:6px;margin:20px 0 6px;padding:5px;border:1px solid var(--line);border-radius:16px;overflow-x:auto;scrollbar-width:none}
-.dtabs::-webkit-scrollbar{display:none}
-.dtabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 14px;border-radius:12px;color:var(--muted);font-size:14.5px;white-space:nowrap}
-.dtabs button.on{background:rgba(217,178,76,.14);color:var(--gold-hi)}
-.dtabs em{font-style:normal;font-size:11px;min-width:19px;height:19px;border-radius:99px;background:var(--gold);color:#0b1a2e;display:grid;place-items:center;padding:0 5px}
-.sh{font-family:var(--hd);font-weight:600;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin:20px 4px 10px}
-#tabc .ped{border-radius:20px;padding:18px;background:rgba(255,255,255,.02)}
-.ped .t b{font-size:16px}
-.trk{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);margin:18px 0 6px;position:relative}
-.trk::before,.trk::after{content:"";position:absolute;top:13px;left:12.5%;height:2px;border-radius:2px}
-.trk::before{right:12.5%;background:rgba(255,255,255,.08)}
-.trk::after{width:calc(var(--k) * 25%);background:linear-gradient(90deg,var(--ok),var(--gold-hi))}
-.trk li{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative;z-index:1;font-size:12px;color:var(--faint);text-align:center}
-.trk i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--bg2);border:2px solid rgba(255,255,255,.12)}
-.trk li.ok i{background:var(--ok);border-color:var(--ok);color:#06251a}
-.trk li.ok span{color:var(--txt)}
-.trk li.at i{box-shadow:0 0 0 5px rgba(79,209,139,.18)}
-.trk svg.i{width:14px;height:14px;stroke-width:2.6}
-.its{margin-top:12px;display:grid;gap:8px}
-.itm{display:flex;align-items:center;gap:12px;padding:8px;border-radius:14px;background:rgba(255,255,255,.025)}
-.itm img,.itm .ph{width:52px;height:52px;border-radius:11px;object-fit:contain;background:rgba(255,255,255,.04);flex:none}
-.itm .ph{display:grid;place-items:center;color:var(--faint)}
-.itm .gr{flex:1;min-width:0;font-size:14.5px;line-height:1.3}.itm small{color:var(--muted);font-size:12.5px}
-.itm>b{font-weight:500;font-size:14px;white-space:nowrap}
-.pf{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
-.pf .tt{color:var(--muted);font-size:14px}.pf .tt b{color:var(--txt);font-size:18px;font-weight:500;margin-left:6px}
-.pa{display:flex;gap:6px;flex-wrap:wrap}
-.pa .mini{display:inline-flex;align-items:center;gap:6px}
-.pa .mini svg.i{width:15px;height:15px}
-.vazio.grande{display:grid;justify-items:center;gap:8px;padding:40px 20px;margin-top:14px}
-.vazio.grande>svg.i{width:34px;height:34px;color:var(--gold)}
-.vazio.grande b{color:var(--txt);font-size:16px;font-weight:500}
-.vazio.grande .btn{margin-top:8px}
-.ajuda{display:flex;align-items:center;gap:14px;margin-top:22px;padding:16px 18px;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
-.ajuda>span{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(79,209,139,.12);color:var(--ok);flex:none}
-.ajuda div{flex:1}.ajuda b{font-weight:500;display:block}.ajuda small{color:var(--muted);font-size:13.5px}
-.ajuda>svg.i{color:var(--faint)}
+main.wide{max-width:1040px}
+main.mini-w{max-width:440px}
+
+.acard{margin-top:6vh}
+.seg1{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:18px;font-size:12.5px;color:var(--faint)}
+.seg1 svg.i{width:14px;height:14px}
+.dhero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:8px 2px 4px;border:0;background:none}
+.dhero h1{font-size:26px}
+.dhero .em{color:var(--faint);font-size:13.5px;margin-top:4px;overflow-wrap:anywhere}
+.pend{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:12px 14px 12px 16px;border-radius:14px;border:1px solid rgba(241,195,90,.3);background:rgba(241,195,90,.06);font-size:14px;color:var(--muted)}
+.pend b{color:var(--txt);font-weight:500}
+.dtabs{display:flex;gap:22px;margin:22px 0 8px;border-bottom:1px solid var(--line)}
+.dtabs button{padding:0 0 11px;color:var(--faint);font-size:15px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.dtabs button.on{color:var(--txt);border-bottom-color:var(--gold)}
+.dtabs em{font-style:normal;font-size:11px;color:var(--gold-hi)}
+#tabc .ped{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 2px;background:none}
+#tabc .ped+.ped{margin-top:0}
+.pt{display:flex;align-items:center;gap:13px}
+.pt img{width:48px;height:48px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.04);flex:none}
+.pt .gr{flex:1;min-width:0}
+.pt b{font-weight:500;font-size:15px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt .m{color:var(--faint);font-size:13px;margin-top:3px}
+.bar{height:3px;border-radius:3px;background:rgba(255,255,255,.08);margin:14px 0 7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
+.barl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint)}
+.barl .ok{color:var(--muted)}
+.pa{display:flex;gap:16px;margin-top:8px}
+.pa:empty{display:none}
+.pa .link{padding:4px 0;font-size:13.5px}
+.vazio.grande{display:grid;justify-items:center;gap:12px;padding:44px 20px;margin-top:14px;border:0}
 #tabc .box{margin-top:14px}
-#tabc .box .seg{margin-top:0}
-@media(max-width:560px){.dhero{flex-wrap:wrap;padding:18px}.dhero .btn{margin-left:auto}.av{width:52px;height:52px;font-size:18px}.stats{gap:8px}.st{padding:12px}.st span{font-size:10px;letter-spacing:.5px}.st b{font-size:17px}
-  .dtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.dtabs button{flex-direction:column;gap:3px;height:56px;padding:0 4px;font-size:11.5px;position:relative}.dtabs em{position:absolute;top:5px;right:calc(50% - 22px);min-width:16px;height:16px;font-size:10px}.trk li{font-size:11px}.pend{flex-wrap:wrap}.pend .btn{width:100%}}
+.sen summary{cursor:pointer;color:var(--muted);font-size:14.5px;list-style:none}
+.sen summary::-webkit-details-marker{display:none}
+.sen[open] summary{margin-bottom:14px;color:var(--txt)}
+main.dash{max-width:880px}
 
 .ag{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;min-height:calc(100vh - 140px);padding:10px 0 20px}
 .eyebrow{font-family:var(--hd);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
@@ -125,14 +108,13 @@ main.wide{max-width:1040px}main.dash{max-width:880px}
 .ben>span{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:linear-gradient(145deg,rgba(217,178,76,.22),rgba(217,178,76,.05));border:1px solid rgba(217,178,76,.3);color:var(--gold-hi)}
 .ben b{font-weight:500;font-size:15.5px;display:block}
 .ben small{color:var(--muted);font-size:14px;line-height:1.45}
-.acard{position:relative;border:1px solid rgba(217,178,76,.22);border-radius:26px;padding:28px 26px 24px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));box-shadow:0 30px 80px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)}
-.acard::before{content:"";position:absolute;inset:-1px;border-radius:26px;padding:1px;background:linear-gradient(160deg,rgba(241,214,138,.55),transparent 40%,transparent 70%,rgba(217,178,76,.3));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.acard .tabs{margin:0 0 22px}
-.at{font-family:var(--hd);font-weight:600;font-size:22px;letter-spacing:-.4px}
-.as{color:var(--muted);font-size:14.5px;margin:6px 0 18px;line-height:1.5}
+.acard{position:relative;border:1px solid var(--line);border-radius:24px;padding:30px 26px 22px;background:rgba(255,255,255,.02)}
+.acard .tabs{margin:0 0 16px}
+.at{font-family:var(--hd);font-weight:600;font-size:24px;letter-spacing:-.4px;text-align:center}
+.as{color:var(--faint);font-size:14px;margin:6px 0 20px;line-height:1.5;text-align:center}
 .fi{position:relative;display:block}
 .fi>svg.i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;width:17px;height:17px}
-.fi .in{padding-left:42px}
+
 .fi .in:focus+svg,.fi:focus-within>svg.i{color:var(--gold-hi)}
 .olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--faint)}
 .olho:hover{color:var(--txt)}
@@ -144,7 +126,7 @@ main.wide{max-width:1040px}main.dash{max-width:880px}
 .forca[data-n="2"] i:nth-child(-n+2){background:var(--wait)}
 .forca[data-n="3"] i{background:var(--ok)}
 .link.r{justify-self:end;padding:0 2px;font-size:13.5px;margin-top:-2px}
-.acard .btn.solid{width:100%;margin-top:4px;box-shadow:0 10px 30px -10px rgba(217,178,76,.55)}
+.acard .btn.solid{width:100%;margin-top:4px}
 .termos{font-size:12.5px;color:var(--faint);text-align:center;line-height:1.5}
 .termos a{color:var(--muted);text-decoration:underline}
 .seg{margin-top:22px;padding:16px 16px 14px;border-radius:18px;background:rgba(79,209,139,.05);border:1px solid rgba(79,209,139,.18)}
@@ -216,44 +198,25 @@ const traduz = (m) => {
 };
 const seguir = () => { if (voltarSacola) location.href = 'index.html#sacola'; };
 
-const SEG = `<div class="seg">
-  <div class="segh"><svg class="i"><use href="#i-escudo"/></svg>Seus dados ficam protegidos</div>
-  <ul>
-    <li><svg class="i"><use href="#i-cadeado"/></svg>Conexão criptografada de ponta a ponta (HTTPS/SSL)</li>
-    <li><svg class="i"><use href="#i-chave"/></svg>Senha guardada com criptografia: nem a MLZ consegue vê-la</li>
-    <li><svg class="i"><use href="#i-olho-x"/></svg>Seus dados não são vendidos nem compartilhados</li>
-    <li><svg class="i"><use href="#i-cartao"/></svg>Cartão processado pela InfinitePay: não guardamos dados do cartão</li>
-  </ul></div>`;
+const SEG = `<p class="seg1"><svg class="i"><use href="#i-cadeado"/></svg>Seus dados são criptografados e protegidos.</p>`;
 function telaAuth(msg = '', tipo = 'er') {
-  app.className = 'wide';
-  const tit = MODO === 'cadastro' ? 'Crie sua conta' : MODO === 'esqueci' ? 'Recuperar a senha' : 'Bem-vindo de volta';
-  const sub = MODO === 'cadastro' ? 'Leva menos de 1 minuto.' : MODO === 'esqueci' ? 'Digite seu e-mail que enviamos um link para criar uma senha nova.' : 'Entre para usar seus endereços salvos e ver seus pedidos.';
-  app.innerHTML = `<div class="ag">
-    <aside class="apan">
-      <div class="eyebrow">Sua conta MLZ</div>
-      <h1 class="big">Compre em segundos.<br><span>Acompanhe cada pedido.</span></h1>
-      <div class="bens">
-        <div class="ben"><span><svg class="i"><use href="#i-pin"/></svg></span><div><b>Endereços salvos</b><small>Casa, trabalho… é só escolher na hora de pagar.</small></div></div>
-        <div class="ben"><span><svg class="i"><use href="#i-truck"/></svg></span><div><b>Pedido em tempo real</b><small>Veja quando foi separado, enviado e entregue.</small></div></div>
-        <div class="ben"><span><svg class="i"><use href="#i-sacola"/></svg></span><div><b>Histórico de compras</b><small>Tudo o que você já comprou em um só lugar.</small></div></div>
-      </div>
-    </aside>
-    <section class="acard">
-      ${MODO !== 'esqueci' ? `<div class="tabs"><button class="${MODO === 'entrar' ? 'on' : ''}" data-modo="entrar">Entrar</button><button class="${MODO === 'cadastro' ? 'on' : ''}" data-modo="cadastro">Criar conta</button></div>` : ''}
+  app.className = 'mini-w';
+  const tit = MODO === 'cadastro' ? 'Criar conta' : MODO === 'esqueci' ? 'Recuperar senha' : 'Entrar';
+  const sub = MODO === 'esqueci' ? 'Enviaremos um link para o seu e-mail.' : 'Endereços salvos e seus pedidos em um só lugar.';
+  app.innerHTML = `<section class="acard">
       <h2 class="at">${tit}</h2><p class="as">${sub}</p>
+      ${MODO !== 'esqueci' ? `<div class="tabs"><button class="${MODO === 'entrar' ? 'on' : ''}" data-modo="entrar">Entrar</button><button class="${MODO === 'cadastro' ? 'on' : ''}" data-modo="cadastro">Criar conta</button></div>` : ''}
       <form id="fa" novalidate>
-        ${MODO === 'cadastro' ? '<label>Seu nome<span class="fi"><svg class="i"><use href="#i-user"/></svg><input class="in" name="nome" autocomplete="name" placeholder="Como podemos te chamar?" required></span></label>' : ''}
-        <label>E-mail<span class="fi"><svg class="i"><use href="#i-mail"/></svg><input class="in" name="email" type="email" autocomplete="email" inputmode="email" placeholder="voce@email.com" required></span></label>
-        ${MODO !== 'esqueci' ? `<label>Senha<span class="fi"><svg class="i"><use href="#i-cadeado"/></svg><input class="in" name="senha" type="password" autocomplete="${MODO === 'cadastro' ? 'new-password' : 'current-password'}" required minlength="6" placeholder="${MODO === 'cadastro' ? 'Mínimo de 6 caracteres' : 'Sua senha'}"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span></label>
-          ${MODO === 'cadastro' ? '<div class="forca" id="forca"><i></i><i></i><i></i><span></span></div>' : ''}` : ''}
+        ${MODO === 'cadastro' ? '<input class="in" name="nome" autocomplete="name" placeholder="Seu nome" aria-label="Seu nome" required>' : ''}
+        <input class="in" name="email" type="email" autocomplete="email" inputmode="email" placeholder="E-mail" aria-label="E-mail" required>
+        ${MODO !== 'esqueci' ? `<span class="fi"><input class="in" name="senha" type="password" autocomplete="${MODO === 'cadastro' ? 'new-password' : 'current-password'}" required minlength="6" placeholder="${MODO === 'cadastro' ? 'Senha (mínimo 6 caracteres)' : 'Senha'}" aria-label="Senha"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span>` : ''}
         ${MODO === 'entrar' ? '<button type="button" class="link r" data-modo="esqueci">Esqueci minha senha</button>' : ''}
         <div class="msg ${tipo}" id="am">${msg}</div>
-        <button class="btn solid" id="ab"><svg class="i"><use href="#i-cadeado"/></svg>${MODO === 'cadastro' ? 'Criar minha conta' : MODO === 'esqueci' ? 'Enviar link' : 'Entrar'}</button>
-        ${MODO === 'esqueci' ? '<button type="button" class="link" data-modo="entrar">Voltar para entrar</button>' : ''}
-        ${MODO === 'cadastro' ? '<p class="termos">Ao criar a conta você concorda com os <a href="politicas.html#termos">Termos</a> e a <a href="politicas.html#privacidade">Política de privacidade</a>.</p>' : ''}
+        <button class="btn solid" id="ab">${MODO === 'cadastro' ? 'Criar conta' : MODO === 'esqueci' ? 'Enviar link' : 'Entrar'}</button>
+        ${MODO === 'esqueci' ? '<button type="button" class="link" data-modo="entrar">Voltar</button>' : ''}
       </form>
       ${SEG}
-    </section></div>`;
+    </section>`;
   app.querySelector('#fa').onsubmit = enviarAuth;
   const sn = app.querySelector('#fa [name=senha]'), fz = document.getElementById('forca');
   if (sn && fz) sn.addEventListener('input', () => {
@@ -306,7 +269,7 @@ const CAMPOS = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf',
 const fmtEnd = (e) => [[e.rua, e.numero, e.complemento].filter(Boolean).join(', '), e.bairro, [e.cidade, e.uf].filter(Boolean).join('/'), e.cep ? 'CEP ' + e.cep : ''].filter(Boolean).join(' - ');
 let EDIT = null; // null = fechado, -1 = novo, n = editando o n-ésimo
 
-let TAB = ['pedidos', 'enderecos', 'dados', 'seguranca'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'pedidos', CFG = {};
+let TAB = ['pedidos', 'enderecos', 'dados'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'pedidos', CFG = {};
 const ETAPAS = { entrega: ['Pago', 'Preparando', 'Enviado', 'Entregue'], retirada: ['Pago', 'Separando', 'Pronto', 'Retirado'] };
 const passo = (st) => ({ pendente: 1, enviado: 2, entregue: 3 }[st || 'pendente'] ?? 1);
 const iniciais = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
@@ -324,25 +287,14 @@ async function abrirConta(acabouDeEntrar) {
 }
 
 function renderDash() {
-  const cs = CONTA.compras, emAnd = cs.filter(andamento).length, tot = cs.reduce((x, p) => x + +p.total, 0);
-  const tabs = [['pedidos', 'Pedidos', 'sacola'], ['enderecos', 'Endereços', 'pin'], ['dados', 'Meus dados', 'user'], ['seguranca', 'Segurança', 'escudo']];
-  const wa = linkWa('Olá! Preciso de ajuda com minha conta na MLZ Company.');
+  const emAnd = CONTA.compras.filter(andamento).length;
+  const tabs = [['pedidos', 'Pedidos'], ['enderecos', 'Endereços'], ['dados', 'Conta']];
   app.innerHTML = `
-    <section class="dhero">
-      <div class="av">${esc(iniciais(CONTA.nome || CONTA.email))}</div>
-      <div class="dh"><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}!</h1>
-        <div class="em">${esc(CONTA.email || '')}${CONTA.desde ? ' · cliente desde ' + mesAno(CONTA.desde) : ''}</div></div>
-      <button class="btn ghost sm" id="sair">Sair</button>
-    </section>
-    <div class="stats">
-      <div class="st"><span>Pedidos</span><b>${cs.length}</b></div>
-      <div class="st"><span>Em andamento</span><b>${emAnd}</b></div>
-      <div class="st"><span>Total em compras</span><b>${brl(tot)}</b></div>
-    </div>
-    ${CONTA.pendentes.map(p => `<div class="pend"><svg class="i"><use href="#i-relogio"/></svg><div class="gr"><b>Pedido aguardando pagamento · ${brl(p.total)}</b><small>${(p.itens || []).map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(', ')}</small></div><a class="btn solid sm" href="${esc(p.checkout_url)}">Pagar agora</a></div>`).join('')}
-    <nav class="dtabs">${tabs.map(([k, l, ic]) => `<button class="${TAB === k ? 'on' : ''}" data-tab="${k}"><svg class="i"><use href="#i-${ic}"/></svg><span>${l}</span>${k === 'pedidos' && emAnd ? `<em>${emAnd}</em>` : ''}</button>`).join('')}</nav>
-    <div id="tabc"></div>
-    ${wa ? `<a class="ajuda" href="${wa}" target="_blank" rel="noopener"><span><svg class="i"><use href="#i-wa"/></svg></span><div><b>Precisa de ajuda?</b><small>Fale com a gente no WhatsApp, respondemos rapidinho.</small></div><svg class="i"><use href="#i-seta"/></svg></a>` : ''}`;
+    <section class="dhero"><div class="dh"><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}</h1><div class="em">${esc(CONTA.email || '')}</div></div>
+      <button class="link" id="sair">Sair</button></section>
+    ${CONTA.pendentes.map(p => `<div class="pend"><div class="gr">Pagamento pendente · <b>${brl(p.total)}</b></div><a class="btn solid sm" href="${esc(p.checkout_url)}">Pagar</a></div>`).join('')}
+    <nav class="dtabs">${tabs.map(([k, l]) => `<button class="${TAB === k ? 'on' : ''}" data-tab="${k}">${l}${k === 'pedidos' && emAnd ? ` <em>${emAnd}</em>` : ''}</button>`).join('')}</nav>
+    <div id="tabc"></div>`;
   document.getElementById('sair').onclick = async () => { await api.sair(); CONTA = null; MODO = 'entrar'; telaAuth(); };
   renderTab();
 }
@@ -350,19 +302,14 @@ function renderDash() {
 function htmlPedido(p) {
   const n = p.pedido ? '#' + p.pedido : '#V' + p.id, et = p.entrega ? ETAPAS[p.entrega] : null, k = et ? passo(p.entrega_status) : 0;
   const r = p.entrega ? ROT[p.entrega][p.entrega_status || 'pendente'] : null;
-  const prods = (p.itens || []).filter(i => i.produto_id);
-  const wa = linkWa(`Olá! Quero falar sobre meu pedido ${n} de ${dataBR(p.data)} (${brl(p.total)}).`);
+  const prods = (p.itens || []).filter(i => i.produto_id), img = (p.itens || []).find(i => i.imagem);
   return `<article class="ped">
-    <div class="t"><div><b>Pedido ${n}</b><div class="m">${dataBR(p.data)} · ${esc(p.forma || '')}${p.parcelas > 1 ? ' · ' + p.parcelas + 'x' : ''}</div></div>
-      ${r ? `<span class="badge ${r[1]}">${r[0]}</span>` : p.pago ? '<span class="badge b-ok">Pago</span>' : '<span class="badge b-wait">Pagamento em aberto</span>'}</div>
-    ${et ? `<ol class="trk" style="--k:${k}">${et.map((e, i) => `<li class="${i <= k ? 'ok' : ''} ${i === k && k < 3 ? 'at' : ''}"><i>${i <= k ? '<svg class="i"><use href="#i-check"/></svg>' : ''}</i><span>${e}</span></li>`).join('')}</ol>` : ''}
-    <div class="its">${(p.itens || []).map(i => `<div class="itm">${i.imagem ? `<img src="${esc(i.imagem)}" alt="" loading="lazy">` : '<div class="ph"><svg class="i"><use href="#i-sacola"/></svg></div>'}
-      <div class="gr"><div>${esc(i.descricao)}</div><small>${i.quantidade}× ${brl(i.preco_unit)}</small></div><b>${brl(i.quantidade * i.preco_unit)}</b></div>`).join('')}</div>
-    ${p.entrega ? `<div class="ent"><svg class="i"><use href="#i-${p.entrega === 'entrega' ? 'truck' : 'store'}"/></svg>${p.entrega === 'entrega' ? esc(p.endereco || 'Entrega') : 'Retirada com a gente: combinamos dia e horário pelo WhatsApp'}</div>` : ''}
-    <div class="pf"><div class="tt">Total <b>${brl(p.total)}</b></div><div class="pa">
-      ${prods.length ? `<button class="mini" data-denovo="${p.id}"><svg class="i"><use href="#i-repetir"/></svg>Comprar de novo</button>` : ''}
-      ${p.recibo ? `<a class="mini" href="${esc(p.recibo)}" target="_blank" rel="noopener"><svg class="i"><use href="#i-recibo"/></svg>Comprovante</a>` : ''}
-      ${wa ? `<a class="mini" href="${wa}" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>Ajuda</a>` : ''}</div></div>
+    <div class="pt">${img ? `<img src="${esc(img.imagem)}" alt="" loading="lazy">` : ''}
+      <div class="gr"><b>${(p.itens || []).map(i => `${i.quantidade > 1 ? i.quantidade + '× ' : ''}${esc(i.descricao)}`).join(', ')}</b>
+        <div class="m">${n} · ${dataBR(p.data)} · ${brl(p.total)}</div></div>
+      <span class="badge ${r ? r[1] : p.pago ? 'b-ok' : 'b-wait'}">${r ? r[0] : p.pago ? 'Pago' : 'Em aberto'}</span></div>
+    ${et && k < 3 ? `<div class="bar"><i style="width:${(k / 3) * 100}%"></i></div><div class="barl">${et.map((e, i) => `<span class="${i <= k ? 'ok' : ''}">${e}</span>`).join('')}</div>` : ''}
+    <div class="pa">${prods.length ? `<button class="link" data-denovo="${p.id}">Comprar de novo</button>` : ''}${p.recibo ? `<a class="link" href="${esc(p.recibo)}" target="_blank" rel="noopener">Comprovante</a>` : ''}</div>
   </article>`;
 }
 
@@ -371,42 +318,38 @@ function renderTab() {
   document.querySelectorAll('.dtabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === TAB));
   if (TAB === 'pedidos') {
     const cs = CONTA.compras, and = cs.filter(andamento), fim = cs.filter(p => !andamento(p));
-    c.innerHTML = cs.length ? `${and.length ? `<h3 class="sh">Em andamento</h3>${and.map(htmlPedido).join('')}` : ''}${fim.length ? `<h3 class="sh">Concluídos</h3>${fim.map(htmlPedido).join('')}` : ''}`
-      : `<div class="vazio grande"><svg class="i"><use href="#i-sacola"/></svg><b>Nenhum pedido ainda</b>Quando você comprar, seus pedidos aparecem aqui com o andamento da entrega.<a class="btn solid sm" href="index.html#colecao">Ver a coleção</a></div>`;
+    c.innerHTML = cs.length ? [...and, ...fim].map(htmlPedido).join('')
+      : `<div class="vazio grande">Nenhum pedido ainda.<a class="btn solid sm" href="index.html#colecao">Ver a coleção</a></div>`;
   } else if (TAB === 'enderecos') {
     c.innerHTML = '<div class="box" id="bEnd"></div>'; EDIT = null; renderEnderecos();
-  } else if (TAB === 'dados') {
-    c.innerHTML = `<div class="box"><h2><svg class="i"><use href="#i-user"/></svg>Meus dados</h2>
+  } else {
+    c.innerHTML = `<div class="box">
       <form id="fd" novalidate>
-        <div class="row"><label>Nome<input class="in" name="nome" autocomplete="name" value="${esc(CONTA.nome || '')}"></label>
-        <label>WhatsApp com DDD<input class="in" name="tel" inputmode="tel" autocomplete="tel" value="${esc(CONTA.telefone || '')}"></label></div>
-        <label>E-mail<input class="in" value="${esc(CONTA.email || '')}" disabled></label>
+        <label>Nome<input class="in" name="nome" autocomplete="name" value="${esc(CONTA.nome || '')}"></label>
+        <label>WhatsApp<input class="in" name="tel" inputmode="tel" autocomplete="tel" value="${esc(CONTA.telefone || '')}" placeholder="Com DDD"></label>
         <div class="msg" id="dm"></div>
-        <div class="acts"><button class="btn solid">Salvar meus dados</button></div>
-      </form></div>`;
+        <button class="btn solid">Salvar</button>
+      </form></div>
+      <details class="box sen"><summary>Trocar senha</summary>
+      <form id="fs" novalidate>
+        <span class="fi"><input class="in" name="s1" type="password" autocomplete="new-password" placeholder="Senha nova (mínimo 6)" aria-label="Senha nova"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span>
+        <div class="msg" id="sm"></div><button class="btn ghost">Salvar senha</button>
+      </form></details>
+      ${SEG}`;
     const f = document.getElementById('fd');
     f.onsubmit = async (ev) => {
       ev.preventDefault(); const m = document.getElementById('dm'); m.className = 'msg er';
       const nome = f.nome.value.trim(), tel = f.tel.value.trim();
       if (!nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
       if (tel && soDigitos(tel).length < 10) { m.textContent = 'Informe o WhatsApp com DDD.'; return f.tel.focus(); }
-      try { await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel; m.className = 'msg ok'; m.textContent = 'Dados salvos!'; }
+      try { await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel; m.className = 'msg ok'; m.textContent = 'Salvo!'; }
       catch (err) { m.textContent = traduz(err.message); }
     };
-  } else {
-    c.innerHTML = `<div class="box"><h2><svg class="i"><use href="#i-cadeado"/></svg>Trocar senha</h2>
-      <form id="fs" novalidate>
-        <div class="row"><label>Senha nova<span class="fi"><svg class="i"><use href="#i-cadeado"/></svg><input class="in" name="s1" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span></label>
-        <label>Repita a senha<span class="fi"><svg class="i"><use href="#i-cadeado"/></svg><input class="in" name="s2" type="password" autocomplete="new-password"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span></label></div>
-        <div class="msg" id="sm"></div><div class="acts"><button class="btn solid">Salvar senha nova</button></div>
-      </form></div>
-      <div class="box">${SEG}</div>`;
-    const f = document.getElementById('fs');
-    f.onsubmit = async (ev) => {
+    const g = document.getElementById('fs');
+    g.onsubmit = async (ev) => {
       ev.preventDefault(); const m = document.getElementById('sm'); m.className = 'msg er';
-      if (f.s1.value.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return f.s1.focus(); }
-      if (f.s1.value !== f.s2.value) { m.textContent = 'As duas senhas não são iguais.'; return f.s2.focus(); }
-      try { await api.trocarSenha(f.s1.value); f.reset(); m.className = 'msg ok'; m.textContent = 'Senha trocada com sucesso!'; }
+      if (g.s1.value.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return g.s1.focus(); }
+      try { await api.trocarSenha(g.s1.value); g.reset(); m.className = 'msg ok'; m.textContent = 'Senha trocada!'; }
       catch (err) { m.textContent = traduz(err.message); }
     };
   }
