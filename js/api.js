@@ -4,6 +4,14 @@
 const MLZ_SUPABASE_URL = 'https://qcjvxxzkpvydwawkpbrq.supabase.co';
 const MLZ_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjanZ4eHprcHZ5ZHdhd2twYnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxODg4NjAsImV4cCI6MjEwOTc2NDg2MH0.8K8M7LmjbK9qMqbndj_Skt7oe1aGQzAtNREHPf0gsIg';
 
+// pagamento online (função no servidor que fala com a InfinitePay)
+async function mlzPagamento(body) {
+  if (window.MLZ_MOCK && window.MLZ_MOCK.pagamento) return window.MLZ_MOCK.pagamento(body);
+  const r = await fetch(MLZ_SUPABASE_URL + '/functions/v1/pagamento', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: MLZ_SUPABASE_KEY, Authorization: 'Bearer ' + MLZ_SUPABASE_KEY }, body: JSON.stringify(body) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.erro || 'Não foi possível iniciar o pagamento.');
+  return d;
+}
 const PROD_PUBLICO = 'id,nome,marca,categoria_id,tipo,descricao,familia,preco,preco_promo,estoque,imagem,ativo,destaque';
 
 function criarApi() {
@@ -40,6 +48,7 @@ function criarApi() {
     excluirVenda: async (id) => ok(await sb.from('vendas').delete().eq('id', id)),
     marcarParcela: async (id, pagoEm) => ok(await sb.from('parcelas').update({ pago_em: pagoEm }).eq('id', id)),
     salvarParcela: async ({ id, ...d }) => ok(await sb.from('parcelas').update(d).eq('id', id)),
+    pedidos: async () => ok(await sb.from('pedidos').select('*').order('criado_em', { ascending: false }).limit(50)),
     salvarConfig: async (obj) => ok(await sb.from('config').upsert(Object.entries(obj).map(([chave, valor]) => ({ chave, valor })))),
     investidores: async () => ok(await sb.from('investidores').select('*, aportes(*), repasses(*), lotes(*)').order('nome')),
     salvarInvestidor: async (x) => { const { id, ...d } = x; return id ? ok(await sb.from('investidores').update(d).eq('id', id).select().single()) : ok(await sb.from('investidores').insert(d).select().single()); },

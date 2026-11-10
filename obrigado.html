@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedido · MLZ Company</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07111f">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--line:rgba(255,255,255,.08);--gold:#d9b24c;--gold-hi:#f1d68a;--txt:#f2f4f8;--muted:rgba(226,232,242,.68);--ok:#4fd18b;--hd:Montserrat,system-ui,sans-serif}
+html,body{background:#07111f}
+body{font-family:Outfit,system-ui,sans-serif;color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;background:radial-gradient(60% 50% at 50% 0%,rgba(217,178,76,.12),transparent 70%),#07111f;text-align:center}
+a{color:inherit;text-decoration:none}
+.logo{height:20px;margin-bottom:34px}
+.box{width:min(460px,100%);border:1px solid var(--line);border-radius:24px;padding:34px 26px;background:rgba(255,255,255,.02)}
+.ic{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;border:1px solid rgba(217,178,76,.4)}
+.ic svg{width:30px;height:30px;fill:none;stroke:var(--gold-hi);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ok .ic{border-color:rgba(79,209,139,.5)}.ok .ic svg{stroke:var(--ok)}
+.spin{width:28px;height:28px;border:3px solid rgba(217,178,76,.25);border-top-color:var(--gold);border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+h1{font-family:var(--hd);font-weight:600;font-size:24px;letter-spacing:-.5px;margin-bottom:10px}
+p{color:var(--muted);line-height:1.6}
+.btns{display:grid;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;border-radius:999px;font-weight:500}
+.btn.solid{background:var(--gold);color:#0b1a2e}
+.btn.ghost{border:1px solid var(--line)}
+.btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<a href="index.html"><img class="logo" src="img/logo_mlz_company.png" alt="MLZ Company"></a>
+<div class="box" id="box"><div class="ic"><div class="spin"></div></div><h1>Confirmando seu pagamento…</h1><p>Só um instante.</p></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+let pedido = q.get('order_nsu'); try { pedido = pedido || localStorage.getItem('mlz_ultimo_pedido'); } catch (_) {}
+const tx = q.get('transaction_nsu') || '', slug = q.get('slug') || q.get('invoice_slug') || '', recibo = q.get('receipt_url') || '';
+const WA = '<svg viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/></svg>';
+let CFG = {};
+const linkWa = (t) => { const n = soDigitos(CFG.whatsapp); return n ? `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(t)}` : 'index.html'; };
+function tela(tipo) {
+  const b = document.getElementById('box');
+  if (tipo === 'pago') {
+    try { localStorage.removeItem('mlz_sacola'); localStorage.removeItem('mlz_ultimo_pedido'); } catch (_) {}
+    b.className = 'box ok';
+    b.innerHTML = `<div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1>Pagamento aprovado!</h1>
+      <p>Obrigado pela compra. Agora é só chamar a gente no WhatsApp para combinar a entrega ou a retirada.</p>
+      <div class="btns"><a class="btn solid" target="_blank" rel="noopener" href="${linkWa('Olá! Acabei de pagar meu pedido no site da MLZ Company e quero combinar a entrega.' + (pedido ? ' Pedido: ' + pedido.slice(0, 8) : ''))}">${WA}Combinar a entrega</a>
+      ${recibo ? `<a class="btn ghost" target="_blank" rel="noopener" href="${esc(recibo)}">Ver comprovante</a>` : ''}<a class="btn ghost" href="index.html">Voltar para a loja</a></div>`;
+  } else if (tipo === 'pendente') {
+    b.innerHTML = `<div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg></div><h1>Aguardando o pagamento</h1>
+      <p>Ainda não recebemos a confirmação. Se você pagou com Pix, ela costuma chegar em segundos: esta página atualiza sozinha.</p>
+      <div class="btns"><a class="btn ghost" target="_blank" rel="noopener" href="${linkWa('Olá! Fiz um pedido no site da MLZ Company e quero confirmar o pagamento.' + (pedido ? ' Pedido: ' + pedido.slice(0, 8) : ''))}">${WA}Falar com a gente</a><a class="btn ghost" href="index.html">Voltar para a loja</a></div>`;
+  } else {
+    b.innerHTML = `<h1>Não encontramos o pedido</h1><p>Se você pagou, fique tranquilo: chame a gente no WhatsApp que conferimos para você.</p>
+      <div class="btns"><a class="btn solid" target="_blank" rel="noopener" href="${linkWa('Olá! Fiz um pagamento no site da MLZ Company e quero confirmar.')}">${WA}Falar com a gente</a><a class="btn ghost" href="index.html">Voltar para a loja</a></div>`;
+  }
+}
+(async () => {
+  try { CFG = await criarApi().config(); } catch (_) {}
+  if (!pedido) return tela('invalido');
+  for (let i = 0; i < 12; i++) {
+    try {
+      const r = await mlzPagamento({ acao: 'confirmar', order_nsu: pedido, transaction_nsu: tx, slug });
+      if (r.status === 'pago') return tela('pago');
+      if (r.status === 'invalido') return tela('invalido');
+      tela('pendente');
+    } catch (e) { console.error(e); tela('pendente'); }
+    await new Promise(r => setTimeout(r, 5000));
+  }
+})();
+</script>
+</body>
+</html>

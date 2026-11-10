@@ -511,9 +511,28 @@ function vVendas() {
   const segs = [['todos', 'Todos'], ['atrasado', 'Atrasados'], ['aberto', 'Em aberto'], ['pago', 'Pagos']];
   $('#v-vendas').innerHTML = `
     <div class="ph"><div><h2 class="t">Vendas por cliente</h2><div class="sub">Toque nas parcelas para marcar como pagas.</div></div><button class="btn gold" data-ir="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button></div>
+    ${htmlPedidosSite()}
     <div class="barf"><input class="in" id="qVend" placeholder="Buscar cliente ou produto" value="${esc(UI.qVend)}"></div>
     <div class="seg" style="margin-bottom:14px">${segs.map(([k, l]) => `<button class="${UI.fVend === k ? 'on' : ''}" data-fv="${k}">${l} (${cont[k]})</button>`).join('')}</div>
     ${grupos.length ? grupos.map(cardCliente).join('') : `<div class="vazio">${D.vendas.length ? 'Nenhum cliente nesse filtro.' : 'Nenhuma venda registrada ainda. Toque em “Nova venda” para lançar a primeira.'}</div>`}`;
+}
+
+// pedidos feitos no site (InfinitePay). Os pagos já viram venda automaticamente.
+function htmlPedidosSite() {
+  const ps = (D.pedidos || []).filter(p => p.status !== 'cancelado').slice(0, 8);
+  if (!ps.length) return '';
+  const rotulo = { pix: 'Pix', credit_card: 'Cartão', debit_card: 'Débito' };
+  return `<div class="card" style="margin-bottom:16px"><h3>Pedidos do site</h3>
+    ${ps.map(p => { const tel = soDigitos(p.telefone), n = tel.length <= 11 ? '55' + tel : tel;
+      const itens = (p.itens || []).map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(', ');
+      const quando = new Date(p.pago_em || p.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const msg = p.status === 'pago' ? `Olá, ${p.nome.split(' ')[0]}! Recebemos o pagamento do seu pedido na MLZ Company (${itens}). Vamos combinar a entrega?`
+        : `Olá, ${p.nome.split(' ')[0]}! Vi que você começou um pedido no site da MLZ Company (${itens}). Ficou alguma dúvida? Posso te ajudar a finalizar!`;
+      return `<div class="linha"><div class="gr"><div class="n">${esc(p.nome)} · <span class="num">${brl(p.total)}</span></div>
+        <div class="m">${quando} · ${itens}${p.status === 'pago' ? ` · ${rotulo[p.capture_method] || 'InfinitePay'}${p.installments > 1 ? ' ' + p.installments + 'x' : ''}` : ''}</div></div>
+        ${p.status === 'pago' ? badge('pago') : '<span class="badge b-aberto">Não pagou</span>'}
+        ${tel ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>`; }).join('')}
+    <div class="hint">Pedidos pagos entram sozinhos nas vendas abaixo, já como pagos. “Não pagou” é quem abriu o pagamento e não concluiu: vale chamar no WhatsApp.</div></div>`;
 }
 
 function cardCliente(g) {
@@ -1126,6 +1145,7 @@ function vAjustes() {
         <label class="f">2º WhatsApp (aparece no rodapé)<input class="in" name="whatsapp2" inputmode="tel" value="${esc(c.whatsapp2 || '')}" placeholder="opcional"></label>
         <label class="f">Instagram da loja<input class="in" name="instagram" value="${esc(c.instagram || '')}" placeholder="@mlzimportados"></label></div>
         <div class="grid2"><label class="f">Parcelamento mostrado no site<select class="in" name="parcelas_max">${[1, 2, 3, 4, 5, 6, 10, 12].map(n => `<option value="${n}" ${String(c.parcelas_max) === String(n) ? 'selected' : ''}>${n === 1 ? 'Não mostrar' : 'em até ' + n + 'x'}</option>`).join('')}</select></label></div>
+        <div class="grid2"><label class="f">InfiniteTag (pagamento online no site)<input class="in" name="infinitepay_handle" value="${esc(c.infinitepay_handle || '')}" placeholder="vazio = desligado"></label></div>
         <label class="f">Faixa de promoção no topo (deixe vazio para esconder)<input class="in" name="faixa_promo" value="${esc(c.faixa_promo || '')}" placeholder="Ex.: Esquenta Black Friday · 12% OFF"></label>
         <label class="f">Frase do topo do site<textarea class="in" name="mensagem_topo">${esc(c.mensagem_topo || '')}</textarea></label>
         <div><button class="btn gold">Salvar contatos</button></div>
@@ -1143,7 +1163,7 @@ function vAjustes() {
       <div><button class="btn red" id="btSair"><svg class="i"><use href="#i-out"/></svg>Sair do painel</button></div>
     </div>`;
   $('#fcfg').onsubmit = async (e) => {
-    e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); f.instagram = f.instagram.trim().replace(/^@/, '');
+    e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); f.instagram = f.instagram.trim().replace(/^@/, ''); f.infinitepay_handle = (f.infinitepay_handle || '').trim().replace(/^\$/, '');
     await tentar(() => api.salvarConfig(f), 'Contatos salvos'); D.cfg = { ...D.cfg, ...f };
   };
   $('#fcat').onsubmit = async (e) => { e.preventDefault(); const nome = new FormData(e.target).get('nome').trim(); await tentar(() => api.salvarCategoria({ nome, ordem: D.cats.length + 1 }), 'Categoria criada'); await carregar(); };
@@ -1173,8 +1193,8 @@ $('#btSairLado').onclick = async () => { await api.sair(); location.reload(); };
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) irPara(b.dataset.tab); });
 
 async function carregar() {
-  const [produtos, clientes, vendas, cats, cfg, investidores] = await Promise.all([api.produtos(), api.clientes(), api.vendas(), api.categorias(), api.config(), api.investidores()]);
-  Object.assign(D, { produtos, clientes, vendas, cats, cfg, investidores });
+  const [produtos, clientes, vendas, cats, cfg, investidores, pedidos] = await Promise.all([api.produtos(), api.clientes(), api.vendas(), api.categorias(), api.config(), api.investidores(), api.pedidos().catch(() => [])]);
+  Object.assign(D, { produtos, clientes, vendas, cats, cfg, investidores, pedidos });
   renderTudo();
 }
 
