@@ -5,3 +5,9 @@
   for = "/admin.html"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
+
+# sempre buscar a versão nova das páginas e scripts
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
