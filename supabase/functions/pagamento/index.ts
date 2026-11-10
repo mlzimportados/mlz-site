@@ -10,7 +10,7 @@ const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const sb = createClient(SB_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const API = "https://api.checkout.infinitepay.io";
 const API_KEY = Deno.env.get("INFINITEPAY_API_KEY") || "";
-const SITE_PADRAO = "https://mlzimportados.netlify.app";
+const SITE_PADRAO = "https://mlzcompany.netlify.app";
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const r2 = (n: number) => Math.round(n * 100) / 100;
