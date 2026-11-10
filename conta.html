@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minha conta · MLZ Company</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07111f">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#07111f;--bg2:#0b1a2e;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--gold:#d9b24c;--gold-hi:#f1d68a;--txt:#f2f4f8;--muted:rgba(226,232,242,.66);--faint:rgba(226,232,242,.42);--ok:#4fd18b;--wait:#f1c35a;--bad:#ff8f7a;--hd:Montserrat,system-ui,sans-serif}
+html,body{background:var(--bg)}
+body{font-family:Outfit,system-ui,sans-serif;color:var(--txt);min-height:100vh;background:radial-gradient(60% 40% at 50% 0%,rgba(217,178,76,.10),transparent 70%),var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.top{max-width:720px;margin:0 auto;padding:22px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top img{height:20px}
+.top a.vl{font-size:14px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+main{max-width:720px;margin:0 auto;padding:10px 20px 60px}
+h1{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.5px}
+.sub{color:var(--muted);margin-top:6px;line-height:1.55}
+.box{border:1px solid var(--line);border-radius:22px;padding:24px 20px;background:rgba(255,255,255,.02);margin-top:20px}
+.box h2{font-family:var(--hd);font-weight:600;font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.box h2 svg{color:var(--gold-hi)}
+.auth{max-width:420px;margin:0 auto}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border:1px solid var(--line);border-radius:14px;margin:22px 0 4px}
+.tabs button{height:42px;border-radius:10px;color:var(--muted);font-size:15px}
+.tabs button.on{background:rgba(217,178,76,.14);color:var(--gold-hi)}
+form{display:grid;gap:10px}
+label{display:grid;gap:6px;font-size:13px;color:var(--muted);min-width:0}
+.in{width:100%;min-width:0;height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font:inherit;font-size:15.5px;outline:0}
+.in:focus{border-color:var(--gold)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row.r3{grid-template-columns:1fr 76px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 22px;border-radius:999px;font-weight:500;font-size:15.5px}
+.btn.solid{background:var(--gold);color:#0b1a2e}
+.btn.solid:disabled{opacity:.6}
+.btn.ghost{border:1px solid var(--line2)}
+.btn.sm{height:40px;font-size:14px;padding:0 16px}
+.link{color:var(--gold-hi);font-size:14px;text-align:center;padding:6px}
+.msg{font-size:14px;text-align:center;line-height:1.5;padding:2px 4px}
+.msg.er{color:var(--bad)}.msg.ok{color:var(--ok)}
+.msg:empty{display:none}
+.ola{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ola .em{color:var(--faint);font-size:13px;margin-top:4px;overflow-wrap:anywhere}
+.ped{border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.ped+.ped{margin-top:10px}
+.ped .t{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ped .t b{font-size:17px;font-weight:500}
+.ped .m{color:var(--muted);font-size:13px;margin-top:3px}
+.ped .it{font-size:14.5px;line-height:1.5;margin-top:8px}
+.ped .ent{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;white-space:nowrap;flex:none}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:rgba(79,209,139,.12);color:var(--ok)}
+.b-wait{background:rgba(241,195,90,.12);color:var(--wait)}
+.b-env{background:rgba(110,160,255,.14);color:#8fb4ff}
+.vazio{color:var(--muted);text-align:center;padding:26px 10px;border:1px dashed var(--line2);border-radius:14px;font-size:14px;line-height:1.6}
+.load{display:grid;place-items:center;padding:70px 0}
+.spin{width:28px;height:28px;border:3px solid rgba(217,178,76,.25);border-top-color:var(--gold);border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+@media(max-width:420px){.row{grid-template-columns:1fr}.row.r3{grid-template-columns:1fr 70px}}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a><a class="vl" href="index.html"><svg class="i"><use href="#i-voltar"/></svg>Voltar para a loja</a></div>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-voltar" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-sacola" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></symbol>
+</svg>
+<main id="app"><div class="load"><div class="spin"></div></div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+const api = criarApi({ conta: true });
+const app = document.getElementById('app');
+const q = new URLSearchParams(location.search);
+const voltarSacola = q.get('voltar') === 'sacola';
+let MODO = q.get('modo') === 'cadastro' ? 'cadastro' : 'entrar', RECUPERANDO = /type=recovery/.test(location.hash), CONTA = null;
+const traduz = (m) => {
+  m = String(m || '');
+  if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+  if (/Email not confirmed/i.test(m)) return 'Confirme seu e-mail primeiro: enviamos um link para a sua caixa de entrada.';
+  if (/already registered|already been registered/i.test(m)) return 'Esse e-mail já tem conta. Use "Entrar" ou "Esqueci minha senha".';
+  if (/at least 6|Password should/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/rate limit|too many/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
+  if (/invalid.*email|Unable to validate email/i.test(m)) return 'Confira o e-mail digitado.';
+  return m || 'Algo deu errado. Tente de novo.';
+};
+const seguir = () => { if (voltarSacola) location.href = 'index.html#sacola'; };
+
+function telaAuth(msg = '', tipo = 'er') {
+  app.innerHTML = `<div class="auth">
+    <h1>${MODO === 'cadastro' ? 'Criar sua conta' : MODO === 'esqueci' ? 'Recuperar a senha' : 'Entrar na sua conta'}</h1>
+    <p class="sub">${MODO === 'esqueci' ? 'Digite seu e-mail que enviamos um link para criar uma senha nova.' : 'Com a conta, seu endereço fica salvo para as próximas compras e você acompanha todos os seus pedidos.'}</p>
+    ${MODO !== 'esqueci' ? `<div class="tabs"><button class="${MODO === 'entrar' ? 'on' : ''}" data-modo="entrar">Entrar</button><button class="${MODO === 'cadastro' ? 'on' : ''}" data-modo="cadastro">Criar conta</button></div>` : ''}
+    <div class="box" style="margin-top:14px"><form id="fa" novalidate>
+      ${MODO === 'cadastro' ? '<label>Seu nome<input class="in" name="nome" autocomplete="name" required></label>' : ''}
+      <label>E-mail<input class="in" name="email" type="email" autocomplete="email" inputmode="email" required></label>
+      ${MODO !== 'esqueci' ? `<label>Senha<input class="in" name="senha" type="password" autocomplete="${MODO === 'cadastro' ? 'new-password' : 'current-password'}" required minlength="6" placeholder="${MODO === 'cadastro' ? 'Mínimo de 6 caracteres' : ''}"></label>` : ''}
+      <div class="msg ${tipo}" id="am">${msg}</div>
+      <button class="btn solid" id="ab">${MODO === 'cadastro' ? 'Criar minha conta' : MODO === 'esqueci' ? 'Enviar link' : 'Entrar'}</button>
+      ${MODO === 'entrar' ? '<button type="button" class="link" data-modo="esqueci">Esqueci minha senha</button>' : ''}
+      ${MODO === 'esqueci' ? '<button type="button" class="link" data-modo="entrar">Voltar para entrar</button>' : ''}
+    </form></div></div>`;
+  app.querySelector('#fa').onsubmit = enviarAuth;
+}
+app.addEventListener('click', (e) => { const b = e.target.closest('[data-modo]'); if (b) { MODO = b.dataset.modo; telaAuth(); } });
+
+async function enviarAuth(e) {
+  e.preventDefault(); const f = e.target, m = document.getElementById('am'), b = document.getElementById('ab');
+  const email = f.email.value.trim(), senha = f.senha ? f.senha.value : '', nome = f.nome ? f.nome.value.trim() : '';
+  m.className = 'msg er'; m.textContent = '';
+  if (MODO === 'cadastro' && !nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { m.textContent = 'Confira o e-mail digitado.'; return f.email.focus(); }
+  if (MODO !== 'esqueci' && senha.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return f.senha.focus(); }
+  b.disabled = true;
+  try {
+    if (MODO === 'esqueci') {
+      await api.recuperarSenha(email);
+      MODO = 'entrar'; return telaAuth('Se esse e-mail tiver conta, o link para criar a senha nova já está na sua caixa de entrada (confira o spam também).', 'ok');
+    }
+    if (MODO === 'cadastro') {
+      const r = await api.cadastrar(email, senha, nome);
+      if (!r.session) { MODO = 'entrar'; return telaAuth('Conta criada! Enviamos um link de confirmação para o seu e-mail. Clique nele e depois entre aqui.', 'ok'); }
+      try { await api.salvarConta(nome, '', null); } catch (_) {}
+    } else await api.entrar(email, senha);
+    await abrirConta(true);
+  } catch (err) { m.textContent = traduz(err.message); b.disabled = false; }
+}
+
+function telaNovaSenha(msg = '') {
+  app.innerHTML = `<div class="auth"><h1>Criar senha nova</h1><p class="sub">Escolha a senha que você vai usar para entrar.</p>
+    <div class="box"><form id="fn" novalidate><label>Senha nova<input class="in" name="senha" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo de 6 caracteres"></label>
+    <div class="msg er" id="nm">${msg}</div><button class="btn solid">Salvar senha</button></form></div></div>`;
+  app.querySelector('#fn').onsubmit = async (e) => {
+    e.preventDefault(); const s = e.target.senha.value, m = document.getElementById('nm');
+    if (s.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
+    try { await api.trocarSenha(s); RECUPERANDO = false; history.replaceState(null, '', 'conta.html'); await abrirConta(); }
+    catch (err) { m.textContent = traduz(err.message); }
+  };
+}
+
+const ROT = { entrega: { pendente: ['Preparando o envio', 'b-wait'], enviado: ['Saiu para entrega', 'b-env'], entregue: ['Entregue', 'b-ok'] },
+  retirada: { pendente: ['Separando o pedido', 'b-wait'], enviado: ['Pronto para retirar', 'b-env'], entregue: ['Retirado', 'b-ok'] } };
+const CAMPOS = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'referencia'];
+
+async function abrirConta(acabouDeEntrar) {
+  app.innerHTML = '<div class="load"><div class="spin"></div></div>';
+  try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); CONTA = { compras: [] }; }
+  if (acabouDeEntrar && voltarSacola) return seguir();
+  const e = CONTA.endereco || {}, cs = CONTA.compras || [];
+  app.innerHTML = `
+    <div class="ola"><div><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}!</h1><div class="em">${esc(CONTA.email || '')}</div></div>
+      <button class="btn ghost sm" id="sair">Sair</button></div>
+    <div class="box"><h2><svg class="i"><use href="#i-sacola"/></svg>Meus pedidos</h2>
+      ${cs.length ? cs.map(p => {
+        const r = p.entrega ? ROT[p.entrega][p.entrega_status || 'pendente'] : null;
+        return `<div class="ped"><div class="t"><b>${brl(p.total)}</b>${r ? `<span class="badge ${r[1]}">${r[0]}</span>` : p.pago ? '<span class="badge b-ok">Pago</span>' : '<span class="badge b-wait">Em aberto</span>'}</div>
+          <div class="m">${dataBR(p.data)} · ${esc(p.forma || '')}</div>
+          <div class="it">${(p.itens || []).map(i => `${i.quantidade}× ${esc(i.descricao)}`).join('<br>')}</div>
+          ${p.entrega ? `<div class="ent"><svg class="i"><use href="#i-${p.entrega === 'entrega' ? 'truck' : 'store'}"/></svg>${p.entrega === 'entrega' ? esc(p.endereco || 'Entrega') : 'Retirada com a gente'}</div>` : ''}</div>`; }).join('')
+        : '<div class="vazio">Você ainda não tem pedidos por aqui.<br><a class="link" href="index.html#colecao">Ver a coleção</a></div>'}
+    </div>
+    <div class="box"><h2><svg class="i"><use href="#i-pin"/></svg>Meus dados e endereço</h2>
+      <form id="fd" novalidate>
+        <div class="row"><label>Nome<input class="in" name="nome" autocomplete="name" value="${esc(CONTA.nome || '')}"></label>
+        <label>WhatsApp com DDD<input class="in" name="tel" inputmode="tel" autocomplete="tel" value="${esc(CONTA.telefone || '')}"></label></div>
+        <div class="row"><label>CEP<input class="in" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" value="${esc(e.cep || '')}"></label>
+        <label>Número<input class="in" name="numero" value="${esc(e.numero || '')}"></label></div>
+        <label>Rua<input class="in" name="rua" autocomplete="address-line1" value="${esc(e.rua || '')}"></label>
+        <div class="row"><label>Complemento<input class="in" name="complemento" value="${esc(e.complemento || '')}" placeholder="Opcional"></label>
+        <label>Bairro<input class="in" name="bairro" value="${esc(e.bairro || '')}"></label></div>
+        <div class="row r3"><label>Cidade<input class="in" name="cidade" autocomplete="address-level2" value="${esc(e.cidade || '')}"></label>
+        <label>UF<input class="in" name="uf" maxlength="2" autocomplete="address-level1" value="${esc(e.uf || '')}"></label></div>
+        <label>Ponto de referência<input class="in" name="referencia" value="${esc(e.referencia || '')}" placeholder="Opcional"></label>
+        <div class="msg" id="dm"></div>
+        <div class="acts"><button class="btn solid" id="db">Salvar meus dados</button><a class="btn ghost" href="index.html#colecao">Continuar comprando</a></div>
+      </form></div>`;
+  document.getElementById('sair').onclick = async () => { await api.sair(); CONTA = null; MODO = 'entrar'; telaAuth(); };
+  const f = document.getElementById('fd');
+  f.cep.addEventListener('input', async () => {
+    let c = soDigitos(f.cep.value).slice(0, 8); f.cep.value = c.length > 5 ? c.slice(0, 5) + '-' + c.slice(5) : c;
+    if (c.length !== 8 || f.cep.dataset.ok === c) return; f.cep.dataset.ok = c;
+    try { const d = await (await fetch(`https://viacep.com.br/ws/${c}/json/`)).json(); if (d.erro) return;
+      if (d.logradouro) f.rua.value = d.logradouro; if (d.bairro) f.bairro.value = d.bairro; if (d.localidade) f.cidade.value = d.localidade; if (d.uf) f.uf.value = d.uf;
+      (d.logradouro ? f.numero : f.rua).focus(); } catch (_) {}
+  });
+  f.onsubmit = async (ev) => {
+    ev.preventDefault(); const m = document.getElementById('dm'); m.className = 'msg er';
+    const nome = f.nome.value.trim(), tel = f.tel.value.trim();
+    if (!nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
+    if (tel && soDigitos(tel).length < 10) { m.textContent = 'Informe o WhatsApp com DDD.'; return f.tel.focus(); }
+    const end = {}; CAMPOS.forEach(k => end[k] = f[k].value.trim()); end.uf = end.uf.toUpperCase();
+    const temEnd = CAMPOS.some(k => end[k]);
+    try { await api.salvarConta(nome, tel, temEnd ? end : null); m.className = 'msg ok'; m.textContent = 'Dados salvos! Na próxima compra é só confirmar.'; }
+    catch (err) { m.textContent = traduz(err.message); }
+  };
+}
+
+(async () => {
+  let s = null; try { s = await api.sessao(); } catch (_) {}
+  api.aoMudarLogin && api.aoMudarLogin((ev) => { if (ev === 'PASSWORD_RECOVERY') { RECUPERANDO = true; telaNovaSenha(); } });
+  if (s && RECUPERANDO) return telaNovaSenha();
+  if (s) return abrirConta();
+  const erroUrl = new URLSearchParams(location.hash.slice(1)).get('error_description');
+  telaAuth(erroUrl ? 'O link expirou ou já foi usado. Peça um novo.' : '');
+})();
+</script>
+</body>
+</html>

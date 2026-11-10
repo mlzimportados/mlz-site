@@ -5,18 +5,20 @@ const MLZ_SUPABASE_URL = 'https://qcjvxxzkpvydwawkpbrq.supabase.co';
 const MLZ_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjanZ4eHprcHZ5ZHdhd2twYnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxODg4NjAsImV4cCI6MjEwOTc2NDg2MH0.8K8M7LmjbK9qMqbndj_Skt7oe1aGQzAtNREHPf0gsIg';
 
 // pagamento online (função no servidor que fala com a InfinitePay)
-async function mlzPagamento(body) {
-  if (window.MLZ_MOCK && window.MLZ_MOCK.pagamento) return window.MLZ_MOCK.pagamento(body);
-  const r = await fetch(MLZ_SUPABASE_URL + '/functions/v1/pagamento', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: MLZ_SUPABASE_KEY, Authorization: 'Bearer ' + MLZ_SUPABASE_KEY }, body: JSON.stringify(body) });
+// token = sessão da conta do cliente (opcional): liga o pedido à conta dele
+async function mlzPagamento(body, token) {
+  if (window.MLZ_MOCK && window.MLZ_MOCK.pagamento) return window.MLZ_MOCK.pagamento(body, token);
+  const r = await fetch(MLZ_SUPABASE_URL + '/functions/v1/pagamento', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: MLZ_SUPABASE_KEY, Authorization: 'Bearer ' + (token || MLZ_SUPABASE_KEY) }, body: JSON.stringify(body) });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.erro || 'Não foi possível iniciar o pagamento.');
   return d;
 }
 const PROD_PUBLICO = 'id,nome,marca,categoria_id,tipo,descricao,familia,preco,preco_promo,estoque,imagem,ativo,destaque';
 
-function criarApi() {
+// criarApi({ conta: true }) = páginas da loja: login do CLIENTE, separado do login do painel admin
+function criarApi(opts = {}) {
   if (window.MLZ_MOCK) return window.MLZ_MOCK;
-  const sb = window.supabase.createClient(MLZ_SUPABASE_URL, MLZ_SUPABASE_KEY);
+  const sb = window.supabase.createClient(MLZ_SUPABASE_URL, MLZ_SUPABASE_KEY, opts.conta ? { auth: { storageKey: 'mlz-conta-cliente' } } : {});
   const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
   return {
     sb,
@@ -30,6 +32,12 @@ function criarApi() {
     sair: async () => sb.auth.signOut(),
     trocarSenha: async (senha) => ok(await sb.auth.updateUser({ password: senha })),
     souAdmin: async () => { const s = (await sb.auth.getSession()).data.session; if (!s) return false; return ok(await sb.from('admins').select('user_id').eq('user_id', s.user.id)).length > 0; },
+    // conta do cliente (loja)
+    cadastrar: async (email, senha, nome) => ok(await sb.auth.signUp({ email, password: senha, options: { data: { nome }, emailRedirectTo: location.origin + '/conta.html' } })),
+    recuperarSenha: async (email) => ok(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/conta.html' })),
+    aoMudarLogin: (cb) => sb.auth.onAuthStateChange((ev, s) => cb(ev, s)),
+    minhaConta: async () => ok(await sb.rpc('minha_conta')),
+    salvarConta: async (nome, telefone, endereco) => ok(await sb.rpc('salvar_minha_conta', { p_nome: nome, p_telefone: telefone, p_endereco: endereco })),
     // admin
     produtos: async () => ok(await sb.rpc('admin_produtos')),
     salvarProduto: async (p) => { const { id, ...d } = p; const r = id ? ok(await sb.from('produtos').update(d).eq('id', id).select('id').single()) : ok(await sb.from('produtos').insert(d).select('id').single()); return { ...d, id: r.id }; },

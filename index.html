@@ -36,8 +36,10 @@ header nav{display:flex;gap:26px;margin-left:auto;font-size:14px;color:var(--mut
 header nav a:hover{color:var(--txt)}
 .hbtn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;border:1px solid rgba(217,178,76,.55);color:var(--gold-hi);font-size:14px;font-weight:500;transition:.2s;white-space:nowrap}
 .hbtn:hover{background:var(--gold);color:#0b1a2e}
-@media(max-width:760px){header nav{display:none}.hbtn{margin-left:auto}header .logo img{height:18px}}
-@media(max-width:370px){header .wrap{gap:10px}.hbtn{padding:0 12px;font-size:13px;gap:6px}header .logo img{height:15px}}
+.hconta{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);flex:none;margin-left:-16px;transition:.2s}
+.hconta:hover,.hconta.on{color:var(--gold-hi);border-color:rgba(217,178,76,.55)}
+@media(max-width:760px){header nav{display:none}.hbtn{margin-left:auto}header .logo img{height:18px}.hconta{margin-left:-18px}}
+@media(max-width:370px){header .wrap{gap:10px}.hconta{margin-left:-2px;width:34px;height:34px}.hbtn{padding:0 12px;font-size:13px;gap:6px}header .logo img{height:15px}}
 
 .spot{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
   background:radial-gradient(900px 520px at 72% 55%,rgba(40,84,140,.45),transparent 70%),radial-gradient(600px 400px at 0% 0%,rgba(217,178,76,.08),transparent 70%)}
@@ -218,6 +220,10 @@ footer{margin-top:64px;padding:0 0 22px}
 .crow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .crow.r3{grid-template-columns:1fr 64px}
 .cin.sm{height:42px;font-size:14.5px}
+.cconta{font-size:13px;color:var(--muted);text-align:center}
+.cconta a{display:inline-flex;align-items:center;gap:6px}
+.cconta b{color:var(--gold-hi);font-weight:500}
+.cconta svg.i{width:15px;height:15px}
 .cretira{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
 .cretira[hidden]{display:none}
 .ctot{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--muted)}
@@ -244,6 +250,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <symbol id="i-sacola" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
   <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></symbol>
   <symbol id="i-seta" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 </svg>
 
@@ -253,6 +260,7 @@ footer{margin-top:64px;padding:0 0 22px}
     <a href="#" class="logo"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a>
     <nav><a href="#colecao">Coleção</a><a href="#aromas">Aromas</a><a href="revenda.html">Revenda</a></nav>
     <a class="hbtn" id="hWa" target="_blank" rel="noopener" href="#"><svg class="i"><use href="#i-wa"/></svg>Fale com a gente</a>
+    <a class="hconta" id="hConta" href="conta.html" aria-label="Minha conta" title="Minha conta"><svg class="i"><use href="#i-user"/></svg></a>
   </div>
 </header>
 
@@ -298,7 +306,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <div class="wrap">
     <div class="fbox">
       <a href="#" aria-label="MLZ Company"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a>
-      <nav><a href="#colecao">Coleção</a><a href="revenda.html">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
+      <nav><a href="#colecao">Coleção</a><a href="conta.html">Minha conta</a><a href="revenda.html">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
       <div class="social" id="social"></div>
       <span class="copy">© <span id="ano"></span> MLZ Company · Produtos originais</span>
     </div>
@@ -312,6 +320,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <div class="cits" id="cits"></div>
   <form class="cft" id="cft" novalidate>
     <div class="ctot"><span>Total</span><b id="ctot">R$ 0,00</b></div>
+    <div class="cconta" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
     <input class="cin" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
     <div class="cmodo" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
@@ -334,7 +343,7 @@ footer{margin-top:64px;padding:0 0 22px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/api.js"></script>
 <script>
-const api = criarApi();
+const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
 
 // família olfativa (ou estilo de outros produtos): cor + frase
@@ -541,6 +550,19 @@ document.getElementById('cart').addEventListener('click', e => {
   it.qtd = Math.min(p.estoque, it.qtd + +b.dataset.d); if (+b.dataset.d > 0 && it.qtd === p.estoque && it.qtd > 0) document.getElementById('cerr').textContent = p.estoque === 1 ? 'Só temos 1 unidade desse.' : `Só temos ${p.estoque} unidades desse.`;
   SACOLA = SACOLA.filter(i => i.qtd > 0); salvarSacola(); renderSacola();
 });
+// ---------- conta do cliente ----------
+let SESSAO = null, CONTA = null;
+async function carregarConta() {
+  try { SESSAO = await api.sessao(); } catch (_) { SESSAO = null; }
+  if (!SESSAO) return;
+  document.getElementById('hConta').classList.add('on');
+  try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); return; }
+  const f = document.getElementById('cft');
+  if (CONTA.nome) f.nome.value = CONTA.nome; if (CONTA.telefone) f.tel.value = CONTA.telefone;
+  if (CONTA.endereco) CAMPOS_END.forEach(k => { f[k].value = CONTA.endereco[k] || ''; });
+  document.getElementById('cconta').innerHTML = `<a href="conta.html"><svg class="i"><use href="#i-user"/></svg>Comprando como <b>${esc(CONTA.nome ? CONTA.nome.split(' ')[0] : CONTA.email || 'você')}</b>${CONTA.endereco ? ' · endereço salvo' : ''}</a>`;
+}
+
 // ---------- entrega ou retirada ----------
 const CAMPOS_END = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'referencia'];
 let MODO = 'entrega';
@@ -588,7 +610,12 @@ fC.addEventListener('submit', async e => {
   try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
   try {
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null });
+    let token = '';
+    if (SESSAO) {
+      try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
+      if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
+    }
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }
@@ -622,6 +649,8 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
     limparSacola();
     contatos(); montarSpot(); montarAromas(); render();
     const m = location.hash.match(/^#p(\d+)$/); if (m) abrir(+m[1]);
+    await carregarConta();
+    if (location.hash === '#sacola' && SACOLA.length) { history.replaceState(null, '', location.pathname); abrirSacola(); }
   } catch (err) {
     console.error(err);
     document.getElementById('grade').innerHTML = '<div class="vazio">Não foi possível carregar a coleção agora. Tente de novo em instantes.</div>';

@@ -43,6 +43,12 @@ async function criar(b: any, req: Request) {
       return json({ erro: "Preencha o endereço completo para a entrega." }, 400);
     endereco.cep = endereco.cep.slice(0, 5) + "-" + endereco.cep.slice(5);
   }
+  // cliente logado no site: liga o pedido à conta dele
+  let user_id: string | null = null;
+  const tok = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (tok && tok.split(".").length === 3) {
+    try { const { data } = await sb.auth.getUser(tok); user_id = data?.user?.id || null; } catch { /* visitante */ }
+  }
   const tag = await handle(); if (!tag) return json({ erro: "Pagamento online ainda não está ativo. Chame a gente no WhatsApp." }, 503);
   const { data: prods, error } = await sb.from("produtos").select("id,nome,marca,preco,preco_promo,estoque,ativo").in("id", pedidos.map((i: any) => i.id));
   if (error) throw error;
@@ -56,7 +62,7 @@ async function criar(b: any, req: Request) {
     itens.push({ produto_id: p.id, descricao: [p.marca, p.nome].filter(Boolean).join(" "), quantidade: i.qtd, preco_unit: r2(preco) });
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*netlify\.app$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;

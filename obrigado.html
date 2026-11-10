@@ -43,7 +43,7 @@ let local = ''; try { local = localStorage.getItem('mlz_ultimo_pedido') || ''; }
 let pedido = q.get('order_nsu') || local;
 const tx = q.get('transaction_nsu') || '', slug = q.get('slug') || q.get('invoice_slug') || '', recibo = q.get('receipt_url') || '';
 const WA = '<svg viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/></svg>';
-let CFG = {};
+let CFG = {}, LOGADO = false;
 const linkWa = (t) => { const n = soDigitos(CFG.whatsapp); return n ? `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(t)}` : 'index.html'; };
 function tela(tipo) {
   const b = document.getElementById('box');
@@ -53,7 +53,8 @@ function tela(tipo) {
     b.innerHTML = `<div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h1>Pagamento aprovado!</h1>
       <p>Obrigado pela compra. Agora é só chamar a gente no WhatsApp para combinar a entrega ou a retirada.</p>
       <div class="btns"><a class="btn solid" target="_blank" rel="noopener" href="${linkWa('Olá! Acabei de pagar meu pedido no site da MLZ Company e quero combinar a entrega.' + (pedido ? ' Pedido: ' + pedido.slice(0, 8) : ''))}">${WA}Combinar a entrega</a>
-      ${recibo ? `<a class="btn ghost" target="_blank" rel="noopener" href="${esc(recibo)}">Ver comprovante</a>` : ''}<a class="btn ghost" href="index.html">Voltar para a loja</a></div>`;
+      ${recibo ? `<a class="btn ghost" target="_blank" rel="noopener" href="${esc(recibo)}">Ver comprovante</a>` : ''}${LOGADO ? '<a class="btn ghost" href="conta.html">Acompanhar meu pedido</a>' : ''}<a class="btn ghost" href="index.html">Voltar para a loja</a></div>
+      ${LOGADO ? '' : '<p style="font-size:13px;margin-top:18px">Quer acompanhar seus pedidos e salvar o endereço? <a href="conta.html?modo=cadastro" style="color:var(--gold-hi)">Crie sua conta</a>.</p>'}`;
   } else if (tipo === 'pendente') {
     b.innerHTML = `<div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg></div><h1>Aguardando o pagamento</h1>
       <p>Ainda não recebemos a confirmação. Se você pagou com Pix, ela costuma chegar em segundos: esta página atualiza sozinha.</p>
@@ -64,7 +65,7 @@ function tela(tipo) {
   }
 }
 (async () => {
-  try { CFG = await criarApi().config(); } catch (_) {}
+  try { const api = criarApi({ conta: true }); CFG = await api.config(); LOGADO = !!(await api.sessao()); } catch (_) {}
   if (!pedido) return tela('invalido');
   for (let i = 0; i < 12; i++) {
     try {

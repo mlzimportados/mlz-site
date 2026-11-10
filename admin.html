@@ -125,6 +125,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .est button{height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line2);font-size:12px;color:var(--muted)}
 .est button.on{border-color:var(--gold);color:var(--gold-hi);background:rgba(217,178,76,.1)}
 .b-env{background:rgba(110,160,255,.14);color:#8fb4ff}
+.tconta{color:var(--gold-hi)}
 .vazio{color:var(--muted);text-align:center;padding:36px 12px;border:1px dashed var(--line2);border-radius:14px;font-size:14px}
 
 /* filtros */
@@ -523,6 +524,7 @@ function vVendas() {
     <div class="ph"><div><h2 class="t">Vendas por cliente</h2><div class="sub">Toque nas parcelas para marcar como pagas.</div></div><button class="btn gold" data-ir="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button></div>
     ${htmlEntregas()}
     ${htmlPedidosSite()}
+    ${htmlContas()}
     <div class="barf"><input class="in" id="qVend" placeholder="Buscar cliente ou produto" value="${esc(UI.qVend)}"></div>
     <div class="seg" style="margin-bottom:14px">${segs.map(([k, l]) => `<button class="${UI.fVend === k ? 'on' : ''}" data-fv="${k}">${l} (${cont[k]})</button>`).join('')}</div>
     ${grupos.length ? grupos.map(cardCliente).join('') : `<div class="vazio">${D.vendas.length ? 'Nenhum cliente nesse filtro.' : 'Nenhuma venda registrada ainda. Toque em “Nova venda” para lançar a primeira.'}</div>`}`;
@@ -555,6 +557,18 @@ function htmlEntregas() {
     <div class="hint">Vendas do site já chegam aqui com o endereço. Marque “Enviado” quando sair e “Entregue/Retirado” no fim: aí ela some desta lista.</div></div>`;
 }
 
+// clientes que criaram conta no site
+function htmlContas() {
+  const cs = (D.clientes || []).filter(c => c.user_id);
+  if (!cs.length) return '';
+  return `<details class="card" style="margin-bottom:16px"><summary style="cursor:pointer"><h3 style="display:inline">Clientes com conta no site (${cs.length})</h3></summary><div style="margin-top:12px">
+    ${cs.map(c => { const t = soDigitos(c.telefone); const n = (D.vendas || []).filter(v => v.cliente_id === c.id).length;
+      return `<div class="linha"><div class="gr"><div class="n">${esc(c.nome)}</div><div class="m">${esc(c.email || '')}${c.telefone ? ' · ' + esc(c.telefone) : ''} · ${n} compra${n === 1 ? '' : 's'}${c.endereco ? ' · ' + esc(c.endereco) : ''}</div></div>
+        <button class="btn sm line" data-editcli="${c.id}" title="Editar"><svg class="i"><use href="#i-edit"/></svg></button>
+        ${t ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${t.length <= 11 ? '55' + t : t}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>`; }).join('')}
+    <div class="hint">Cliente que já comprava com você antes de criar a conta: abra “Editar cliente” no cadastro antigo e coloque o e-mail da conta para juntar o histórico.</div></div></details>`;
+}
+
 // pedidos feitos no site (InfinitePay). Os pagos já viram venda automaticamente.
 function htmlPedidosSite() {
   const ps = (D.pedidos || []).filter(p => p.status !== 'cancelado').slice(0, 8);
@@ -579,7 +593,7 @@ function cardCliente(g) {
   return `<div class="cli ${g.st}">
     <div class="chead" data-tog="${g.cid}">
       <div class="av">${esc(iniciais(g.c.nome))}</div>
-      <div class="gr"><div class="n">${esc(g.c.nome)}</div><div class="m">${g.vs.length} compra${g.vs.length === 1 ? '' : 's'}${g.c.telefone ? ' · ' + esc(g.c.telefone) : ''}${g.c.instagram ? ' · @' + esc(g.c.instagram.replace(/^@/, '')) : ''}</div></div>
+      <div class="gr"><div class="n">${esc(g.c.nome)}</div><div class="m">${g.vs.length} compra${g.vs.length === 1 ? '' : 's'}${g.c.telefone ? ' · ' + esc(g.c.telefone) : ''}${g.c.instagram ? ' · @' + esc(g.c.instagram.replace(/^@/, '')) : ''}${g.c.user_id ? ' · <span class="tconta" title="' + esc(g.c.email || '') + '">conta no site</span>' : ''}</div></div>
       ${badge(g.st)}
     </div>
     <div class="ctot"><div>Comprou<b class="num">${brl(g.total)}</b></div><div>Pagou<b class="num" style="color:var(--ok)">${brl(g.pago)}</b></div><div>Falta<b class="num" style="color:${g.total - g.pago > 0.004 ? 'var(--gold-hi)' : 'var(--muted)'}">${brl(g.total - g.pago)}</b></div></div>
@@ -666,11 +680,16 @@ function editarCliente(id) {
     <div class="grid2"><label class="f">WhatsApp<input class="in" name="telefone" inputmode="tel" value="${esc(c.telefone || '')}"></label>
     <label class="f">Instagram<input class="in" name="instagram" value="${esc(c.instagram || '')}"></label></div>
     <label class="f">Endereço de entrega<input class="in" name="endereco" value="${esc(c.endereco || '')}" placeholder="Rua, número, bairro, cidade"></label>
+    <label class="f">Conta no site (e-mail)<input class="in" name="conta" type="email" value="${esc(c.user_id ? c.email || '' : '')}" placeholder="Sem conta ligada"></label>
+    <div class="hint" style="margin-top:-4px">Com a conta ligada, o cliente vê todas as compras dele em “Minha conta” no site. Para desligar, apague o e-mail.</div>
     <label class="f">Observações<textarea class="in" name="obs">${esc(c.obs || '')}</textarea></label>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar</button></div></form>`);
   $('#fcli').onsubmit = async (e) => {
-    e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
-    await tentar(() => api.salvarCliente({ id, ...f }), 'Cliente atualizado'); fecharModal(); await carregar();
+    e.preventDefault(); const { conta, ...f } = Object.fromEntries(new FormData(e.target));
+    const antes = c.user_id ? (c.email || '') : '';
+    await tentar(() => api.salvarCliente({ id, ...f }), 'Cliente atualizado');
+    if (conta.trim().toLowerCase() !== antes.toLowerCase()) { try { await tentar(() => api.vincularConta(id, conta.trim()), conta.trim() ? 'Conta do site ligada' : 'Conta do site desligada'); } catch (_) { return; } }
+    fecharModal(); await carregar();
   };
 }
 
