@@ -94,7 +94,7 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
     const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
     const emp = String(o.company?.name || ""), srv = String(o.name || "");
     const nome = (semAcento(srv).includes(semAcento(emp)) ? srv : `${emp} ${srv}`).trim();
-    const op = { id: `${o._src}-${o.id}`, nome, preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
+    const op = { id: `${o._src}-${o.id}`, nome, via: o._src === "sf" ? "SuperFrete" : "Melhor Envio", preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
     const k = semAcento(nome).replace(/[^a-z0-9]/g, ""), atual = melhor.get(k);
     if (!atual || op.preco < atual.preco) melhor.set(k, op);
   }
@@ -144,7 +144,7 @@ async function criar(b: any, req: Request) {
     const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || cot.opcoes.find((o: any) => o.nome === String(b.frete_nome || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
     if (!op) return json({ erro: "Escolha uma opção de frete." }, 400);
     frete = op;
-    if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
+    if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}${op.via ? ` · ${op.via}` : ""}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
   const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete }).select("id, order_nsu").single();
