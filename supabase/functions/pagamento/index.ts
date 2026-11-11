@@ -100,14 +100,17 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
     const ke = semAcento(emp).replace(/\bexpress\b/g, "").replace(/[^a-z0-9]/g, "") || semAcento(nome);
     porEmp.set(ke, [...(porEmp.get(ke) || []), op]);
   }
-  const opcoes: any[] = [];
+  let opcoes: any[] = [];
   for (const lista of porEmp.values()) {
     const barata = [...lista].sort((a, b) => a.preco - b.preco || (a.dias || 99) - (b.dias || 99))[0];
     const rapida = [...lista].sort((a, b) => (a.dias || 99) - (b.dias || 99) || a.preco - b.preco)[0];
     opcoes.push(barata);
     if (rapida !== barata && (rapida.dias || 99) < (barata.dias || 99)) opcoes.push(rapida);
   }
-  opcoes.sort((a: any, b: any) => a.preco - b.preco);
+  // mesmo prazo em transportadoras diferentes: fica só a mais barata
+  const porPrazo = new Map<number, any>();
+  for (const o of opcoes) { const k = o.dias || 99, a = porPrazo.get(k); if (!a || o.preco < a.preco) porPrazo.set(k, o); }
+  opcoes = [...porPrazo.values()].sort((a: any, b: any) => a.preco - b.preco);
   if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
   return { cidade, uf, subtotal, opcoes };
 }
