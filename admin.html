@@ -1326,6 +1326,15 @@ function vAjustes() {
         <div class="grid2"><label class="f">Taxa do Pix (%)<input class="in num" name="taxa_pix" inputmode="decimal" value="${esc(c.taxa_pix || '')}" placeholder="0"></label>
         <label class="f">Taxa do débito na maquininha (%)<input class="in num" name="taxa_debito" inputmode="decimal" value="${esc(c.taxa_debito || '')}" placeholder="ex.: 1,37"></label></div>
         <div class="hint">O painel desconta essas taxas do lucro em cada venda. Vendas do site entram com a taxa e o desconto do Pix automaticamente.</div>
+        <h3 style="margin-top:8px">Frete do site</h3>
+        <div class="grid2"><label class="f">Cidade com entrega própria (taxa fixa)<input class="in" name="frete_local_cidade" value="${esc(c.frete_local_cidade || '')}" placeholder="Ponta Grossa"></label>
+        <label class="f">Taxa de entrega na cidade (R$) — vazio = combinar no WhatsApp, 0 = grátis<input class="in num" name="frete_local_valor" inputmode="decimal" value="${esc(c.frete_local_valor || '')}" placeholder="ex.: 10,00"></label>
+        <label class="f">Entrega grátis na cidade acima de (R$)<input class="in num" name="frete_local_gratis_acima" inputmode="decimal" value="${esc(c.frete_local_gratis_acima || '')}" placeholder="vazio = nunca"></label>
+        <label class="f">Prazo da entrega na cidade<input class="in" name="frete_local_prazo" value="${esc(c.frete_local_prazo || '')}" placeholder="ex.: no mesmo dia ou no dia seguinte"></label>
+        <label class="f">CEP de onde sai o envio<input class="in num" name="frete_cep_origem" value="${esc(c.frete_cep_origem || '')}" placeholder="84010-020"></label>
+        <label class="f">Peso de 1 produto embalado (kg)<input class="in num" name="frete_peso_kg" inputmode="decimal" value="${esc(c.frete_peso_kg || '')}" placeholder="0,5"></label>
+        <label class="f">Caixa de 1 produto: largura x altura x comprimento (cm)<input class="in num" name="frete_dimensoes" value="${esc(c.frete_dimensoes || '')}" placeholder="12x20x10"></label><div></div></div>
+        <div class="hint">Outras cidades: cotação automática do Melhor Envio (Correios, Jadlog…), quando o token estiver configurado no servidor.</div>
         <div class="grid2"><label class="f">Endereço de retirada<input class="in" name="retirada_endereco" value="${esc(c.retirada_endereco || '')}" placeholder="Rua, número, cidade"></label>
         <label class="f">Horário de retirada<input class="in" name="retirada_horario" value="${esc(c.retirada_horario || '')}" placeholder="Ex.: no mesmo dia, das 8:00 às 18:00"></label></div>
         <label class="f">Faixa de promoção no topo (deixe vazio para esconder)<input class="in" name="faixa_promo" value="${esc(c.faixa_promo || '')}" placeholder="Ex.: Esquenta Black Friday · 12% OFF"></label>

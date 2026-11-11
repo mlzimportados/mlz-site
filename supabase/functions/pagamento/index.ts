@@ -2,6 +2,7 @@
 // Ações (POST JSON, campo "acao"):
 //   criar     { nome, telefone, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
 //   confirmar { order_nsu, transaction_nsu, slug }   -> { status }   (página de retorno)
+//   frete     { cep, itens:[{id, qtd}] }              -> { cidade, uf, opcoes:[{id, nome, preco, prazo, combinar?}] }
 //   webhook   corpo enviado pela InfinitePay (sem "acao", via ?webhook=1)
 // O pagamento só é aceito depois de conferido no payment_check da InfinitePay.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -29,10 +30,58 @@ async function ip(path: string, body: unknown) {
   return d;
 }
 
+// ---------- frete ----------
+// Ponta Grossa (config frete_local_*) = taxa fixa; outras cidades = cotação do Melhor Envio (secret MELHORENVIO_TOKEN)
+const ME_TOKEN = (Deno.env.get("MELHORENVIO_TOKEN") || "").trim();
+const ME_API = (Deno.env.get("MELHORENVIO_URL") || "https://melhorenvio.com.br").replace(/\/$/, "");
+const semAcento = (t: string) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+const num = (t: unknown) => { const n = parseFloat(String(t ?? "").replace(",", ".")); return isFinite(n) ? n : NaN; };
+async function cfgs(chaves: string[]) {
+  const { data } = await sb.from("config").select("chave, valor").in("chave", chaves);
+  return Object.fromEntries((data || []).map((r: any) => [r.chave, String(r.valor ?? "").trim()]));
+}
+async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[]) {
+  const cep = String(cepIn || "").replace(/\D/g, "");
+  if (cep.length !== 8) throw new ErroCliente("Informe um CEP válido.");
+  const { data: prods } = await sb.from("produtos").select("id,preco,preco_promo").in("id", pedidos.map((i) => i.id));
+  const subtotal = r2(pedidos.reduce((s, i) => { const p: any = (prods || []).find((x: any) => x.id === i.id); if (!p) return s;
+    const pr = (p.preco_promo && +p.preco_promo > 0 && +p.preco_promo < +p.preco) ? +p.preco_promo : +p.preco; return s + pr * i.qtd; }, 0));
+  const c = await cfgs(["frete_local_cidade", "frete_local_valor", "frete_local_gratis_acima", "frete_local_prazo", "frete_cep_origem", "frete_peso_kg", "frete_dimensoes"]);
+  let cidade = "", uf = "";
+  try { const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`); const d = await r.json(); if (!d.erro) { cidade = d.localidade || ""; uf = d.uf || ""; } else throw new ErroCliente("CEP não encontrado."); }
+  catch (e) { if (e instanceof ErroCliente) throw e; }
+  const local = (c.frete_local_cidade || "Ponta Grossa").split(/[;,]/).map(semAcento).filter(Boolean);
+  if (cidade && uf === "PR" && local.includes(semAcento(cidade))) {
+    const v = num(c.frete_local_valor), gratis = num(c.frete_local_gratis_acima);
+    const combinar = !(v >= 0);
+    const preco = combinar ? 0 : (gratis > 0 && subtotal >= gratis ? 0 : r2(v));
+    return { cidade, uf, subtotal, opcoes: [{ id: "local", nome: `Entrega em ${cidade}`, preco, prazo: c.frete_local_prazo || "", combinar }] };
+  }
+  if (!ME_TOKEN) return { cidade, uf, subtotal, opcoes: [{ id: "combinar", nome: "Frete combinado pelo WhatsApp", preco: 0, prazo: "", combinar: true }] };
+  const [w, h, l] = (c.frete_dimensoes || "12x20x10").split(/[x×*,; ]+/).map(num);
+  const peso = num(c.frete_peso_kg) > 0 ? num(c.frete_peso_kg) : 0.5;
+  const qtd = pedidos.reduce((s, i) => s + i.qtd, 0);
+  const r = await fetch(`${ME_API}/api/v2/me/shipment/calculate`, { method: "POST",
+    headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": `Bearer ${ME_TOKEN}`, "User-Agent": "MLZ Company (contato@mlzcompany.com)" },
+    body: JSON.stringify({ from: { postal_code: (c.frete_cep_origem || "84010020").replace(/\D/g, "") }, to: { postal_code: cep },
+      products: [{ id: "mlz", width: w > 0 ? w : 12, height: h > 0 ? h : 20, length: l > 0 ? l : 10, weight: peso, insurance_value: r2(subtotal / Math.max(1, qtd)), quantity: qtd }],
+      options: { receipt: false, own_hand: false } }) });
+  const t = await r.text(); let d: any; try { d = JSON.parse(t); } catch { d = null; }
+  if (!r.ok || !Array.isArray(d)) { console.error("melhor envio", r.status, t.slice(0, 300)); throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes."); }
+  const opcoes = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0)
+    .map((o: any) => { const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
+      return { id: String(o.id), nome: `${o.company?.name || ""} ${o.name || ""}`.trim(), preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" }; })
+    .sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
+  if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
+  return { cidade, uf, subtotal, opcoes };
+}
+class ErroCliente extends Error {}
+const lerItens = (arr: unknown) => (Array.isArray(arr) ? arr : []).map((i: any) => ({ id: +i.id, qtd: Math.max(1, Math.min(20, parseInt(i.qtd, 10) || 1)) })).filter((i: any) => i.id > 0);
+
 async function criar(b: any, req: Request) {
   const nome = String(b.nome || "").trim().slice(0, 120), telefone = String(b.telefone || "").trim().slice(0, 30);
   if (!nome || telefone.replace(/\D/g, "").length < 10) return json({ erro: "Informe nome e WhatsApp com DDD." }, 400);
-  const pedidos = (Array.isArray(b.itens) ? b.itens : []).map((i: any) => ({ id: +i.id, qtd: Math.max(1, Math.min(20, parseInt(i.qtd, 10) || 1)) })).filter((i: any) => i.id > 0);
+  const pedidos = lerItens(b.itens);
   if (!pedidos.length) return json({ erro: "Sacola vazia." }, 400);
   const entrega = b.entrega === "retirada" ? "retirada" : b.entrega === "entrega" ? "entrega" : null;
   let endereco: Record<string, string> | null = null;
@@ -61,8 +110,17 @@ async function criar(b: any, req: Request) {
     if (!(preco > 0)) return json({ erro: `${p.nome} está sem preço. Chame a gente no WhatsApp.` }, 409);
     itens.push({ produto_id: p.id, descricao: [p.marca, p.nome].filter(Boolean).join(" "), quantidade: i.qtd, preco_unit: r2(preco) });
   }
+  // frete recalculado aqui (não confia no valor vindo do navegador)
+  let frete: any = null;
+  if (entrega === "entrega") {
+    const cot = await cotarFrete(endereco!.cep, pedidos);
+    const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
+    if (!op) return json({ erro: "Escolha uma opção de frete." }, 400);
+    frete = op;
+    if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
+  }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev|workers\.dev)$|^https:\/\/(www\.)?mlzcompany\.com$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
@@ -144,10 +202,12 @@ Deno.serve(async (req) => {
       // 400 faz a InfinitePay tentar de novo se ainda não conseguimos confirmar
       return json(r, r.status === "pago" ? 200 : 400);
     }
+    if (b.acao === "frete") return json(await cotarFrete(String(b.cep || ""), lerItens(b.itens)));
     if (b.acao === "criar") return await criar(b, req);
     if (b.acao === "confirmar") return json(await conferir(String(b.order_nsu || ""), b.transaction_nsu, b.slug, String(b.local || "")));
     return json({ erro: "ação inválida" }, 400);
   } catch (e) {
+    if (e instanceof ErroCliente) return json({ erro: e.message }, 400);
     console.error(e);
     return json({ erro: "Não foi possível processar o pagamento agora. Tente de novo ou chame a gente no WhatsApp." }, 500);
   }
