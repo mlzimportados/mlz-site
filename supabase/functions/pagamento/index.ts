@@ -31,7 +31,10 @@ async function ip(path: string, body: unknown) {
 }
 
 // ---------- frete ----------
-// Ponta Grossa (config frete_local_*) = taxa fixa; outras cidades = cotação do Melhor Envio (secret MELHORENVIO_TOKEN)
+// Ponta Grossa (config frete_local_*) = taxa fixa; outras cidades = cotação da SuperFrete (secret SUPERFRETE_TOKEN)
+// ou, sem ela, do Melhor Envio (secret MELHORENVIO_TOKEN)
+const SF_TOKEN = (Deno.env.get("SUPERFRETE_TOKEN") || "").trim();
+const SF_API = (Deno.env.get("SUPERFRETE_URL") || "https://api.superfrete.com").replace(/\/$/, "");
 const ME_TOKEN = (Deno.env.get("MELHORENVIO_TOKEN") || "").trim();
 const ME_API = (Deno.env.get("MELHORENVIO_URL") || "https://melhorenvio.com.br").replace(/\/$/, "");
 const semAcento = (t: string) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -57,24 +60,33 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
     const preco = combinar ? 0 : (gratis > 0 && subtotal >= gratis ? 0 : r2(v));
     return { cidade, uf, subtotal, opcoes: [{ id: "local", nome: `Entrega em ${cidade}`, preco, prazo: c.frete_local_prazo || "", combinar }] };
   }
-  if (!ME_TOKEN) return { cidade, uf, subtotal, opcoes: [{ id: "combinar", nome: "Frete combinado pelo WhatsApp", preco: 0, prazo: "", combinar: true }] };
+  if (!SF_TOKEN && !ME_TOKEN) return { cidade, uf, subtotal, opcoes: [{ id: "combinar", nome: "Frete combinado pelo WhatsApp", preco: 0, prazo: "", combinar: true }] };
   const [w, h, l] = (c.frete_dimensoes || "12x20x10").split(/[x×*,; ]+/).map(num);
   const peso = num(c.frete_peso_kg) > 0 ? num(c.frete_peso_kg) : 0.5;
   const qtd = pedidos.reduce((s, i) => s + i.qtd, 0);
-  const r = await fetch(`${ME_API}/api/v2/me/shipment/calculate`, { method: "POST",
-    headers: { "Accept": "application/json", "Content-Type": "application/json", "Authorization": `Bearer ${ME_TOKEN}`, "User-Agent": "MLZ Company (contato@mlzcompany.com)" },
-    body: JSON.stringify({ from: { postal_code: (c.frete_cep_origem || "84010020").replace(/\D/g, "") }, to: { postal_code: cep },
-      products: [{ id: "mlz", width: w > 0 ? w : 12, height: h > 0 ? h : 20, length: l > 0 ? l : 10, weight: peso, insurance_value: r2(subtotal / Math.max(1, qtd)), quantity: qtd }],
-      options: { receipt: false, own_hand: false } }) });
+  const origem = (c.frete_cep_origem || "84010020").replace(/\D/g, "");
+  const W = w > 0 ? w : 12, H = h > 0 ? h : 20, L = l > 0 ? l : 10;
+  const hdr = (tk: string) => ({ "Accept": "application/json", "Content-Type": "application/json", "Authorization": `Bearer ${tk}`, "User-Agent": "MLZ Company (contato@mlzcompany.com)" });
+  // SuperFrete: 1 PAC, 2 SEDEX, 17 Mini Envios, 3 Jadlog, 31 Loggi, 33 J&T (caixas empilhadas pela altura)
+  const r = SF_TOKEN
+    ? await fetch(`${SF_API}/api/v0/calculator`, { method: "POST", headers: hdr(SF_TOKEN),
+        body: JSON.stringify({ from: { postal_code: origem }, to: { postal_code: cep }, services: "1,2,17,3,31,33",
+          options: { own_hand: false, receipt: false, insurance_value: subtotal, use_insurance_value: false },
+          package: { height: Math.min(100, H * qtd), width: W, length: L, weight: r2(peso * qtd) } }) })
+    : await fetch(`${ME_API}/api/v2/me/shipment/calculate`, { method: "POST", headers: hdr(ME_TOKEN),
+        body: JSON.stringify({ from: { postal_code: origem }, to: { postal_code: cep },
+          products: [{ id: "mlz", width: W, height: H, length: L, weight: peso, insurance_value: r2(subtotal / Math.max(1, qtd)), quantity: qtd }],
+          options: { receipt: false, own_hand: false } }) });
   const t = await r.text(); let d: any; try { d = JSON.parse(t); } catch { d = null; }
-  if (!r.ok || !Array.isArray(d)) { console.error("melhor envio", r.status, t.slice(0, 300)); throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes."); }
+  if (!r.ok || !Array.isArray(d)) { console.error(SF_TOKEN ? "superfrete" : "melhor envio", r.status, t.slice(0, 300)); throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes."); }
   // transportadoras preferidas (config frete_empresas, ex.: "J&T"); se nenhuma atende o CEP, mostra as outras
   const pref = (c.frete_empresas || "").split(/[;,]/).map(semAcento).filter(Boolean);
   const validas = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0);
   const daPref = pref.length ? validas.filter((o: any) => pref.some((x) => semAcento(`${o.company?.name || ""} ${o.name || ""}`).includes(x))) : [];
   const opcoes = (daPref.length ? daPref : validas)
     .map((o: any) => { const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
-      return { id: String(o.id), nome: `${o.company?.name || ""} ${o.name || ""}`.trim(), preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" }; })
+      const emp = String(o.company?.name || ""), srv = String(o.name || "");
+      return { id: String(o.id), nome: (semAcento(srv).includes(semAcento(emp)) ? srv : `${emp} ${srv}`).trim(), preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" }; })
     .sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
   if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
   return { cidade, uf, subtotal, opcoes };
