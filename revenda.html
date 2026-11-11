@@ -144,7 +144,7 @@ footer a{color:var(--muted);margin:0 8px}
     <div class="info">
       <div class="eyebrow">Fale com a gente</div>
       <h2>Vamos conversar</h2>
-      <p>Preencha o formulário e toque em enviar: o WhatsApp abre com a sua mensagem pronta. Se preferir, chame direto por um dos canais.</p>
+      <p>Preencha o formulário e toque em enviar: o WhatsApp abre com a sua mensagem pronta. Se preferir, fale com a gente pelo Instagram ou por e-mail.</p>
       <div class="canais" id="canais"></div>
       <details><summary>Preciso ter CNPJ ou loja?</summary><p>Não necessariamente. Atendemos quem vende pelo Instagram, por catálogo ou para conhecidos, e também lojas. As condições são combinadas no atendimento.</p></details>
       <details><summary>Existe pedido mínimo?</summary><p>As condições variam conforme a quantidade. Mande seus dados que passamos os detalhes.</p></details>
@@ -193,7 +193,6 @@ const waNum = (s) => { const n = soDigitos(s); return n ? (n.length <= 11 ? '55'
   try { CFG = await criarApi().config(); } catch (e) { console.error(e); }
   const c = [];
   const txt = encodeURIComponent('Olá! Tenho interesse em revender produtos da MLZ Company.');
-  for (const k of ['whatsapp', 'whatsapp2']) { const n = waNum(CFG[k]); if (n) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${txt}"><svg class="i"><use href="#i-wa"/></svg><span><small>WhatsApp</small>${esc(CFG[k])}</span></a>`); }
   const ig = (CFG.instagram || '').replace(/^@/, '');
   if (ig) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://ig.me/m/${esc(ig)}"><svg class="i"><use href="#i-ig"/></svg><span><small>Instagram</small>@${esc(ig)}</span></a>`);
   const em = (CFG.email || '').trim();
