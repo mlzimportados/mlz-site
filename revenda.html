@@ -94,6 +94,7 @@ footer a{color:var(--muted);margin:0 8px}
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3.5 20.5l1.3-4.3A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.8c0 3.3 2.9 6.2 6.2 6.2l1.3-1.6-2-1-1 .8a4.6 4.6 0 0 1-2.7-2.7l.8-1-1-2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/></symbol>
   <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8" r="1.3"/></symbol>
   <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
@@ -195,6 +196,8 @@ const waNum = (s) => { const n = soDigitos(s); return n ? (n.length <= 11 ? '55'
   for (const k of ['whatsapp', 'whatsapp2']) { const n = waNum(CFG[k]); if (n) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${txt}"><svg class="i"><use href="#i-wa"/></svg><span><small>WhatsApp</small>${esc(CFG[k])}</span></a>`); }
   const ig = (CFG.instagram || '').replace(/^@/, '');
   if (ig) c.push(`<a class="canal" target="_blank" rel="noopener" href="https://ig.me/m/${esc(ig)}"><svg class="i"><use href="#i-ig"/></svg><span><small>Instagram</small>@${esc(ig)}</span></a>`);
+  const em = (CFG.email || '').trim();
+  if (em) c.push(`<a class="canal" href="mailto:${esc(em)}?subject=${encodeURIComponent('Quero ser revendedor(a) MLZ Company')}"><svg class="i"><use href="#i-mail"/></svg><span><small>E-mail</small>${esc(em)}</span></a>`);
   document.getElementById('canais').innerHTML = c.join('') || '<div class="canal">Chame a gente no direct do Instagram</div>';
 })();
 document.getElementById('frev').addEventListener('submit', (e) => {

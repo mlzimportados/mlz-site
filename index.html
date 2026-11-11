@@ -158,6 +158,8 @@ footer{margin-top:64px;padding:0 0 22px}
 .social a{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--txt);transition:.2s}
 .social a svg{width:14px;height:14px}
 .social a:hover{border-color:var(--gold);color:var(--gold-hi)}
+.fmail{font-size:12.5px;color:var(--muted,inherit);opacity:.85;letter-spacing:.02em}
+.fmail:hover{color:var(--gold-hi);opacity:1}
 @media(max-width:760px){.fbox{flex-wrap:wrap;justify-content:space-between;padding:12px 14px;gap:10px 12px}.fbox nav{order:3;flex-basis:100%;gap:4px 14px;font-size:12px;padding-top:10px;border-top:1px solid var(--line)}.fbox .copy{order:4;flex-basis:100%;text-align:center;font-size:11.5px}}
 
 .sheet{position:fixed;inset:0;z-index:50;background:rgba(3,8,15,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
@@ -252,6 +254,7 @@ footer{margin-top:64px;padding:0 0 22px}
 <body>
 <svg width="0" height="0" style="position:absolute">
   <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8A9 9 0 1 1 7.8 20.3L3 21"/><path d="M9.2 8.2c-.4 2.9 3.6 6.9 6.6 6.6l.9-1.6-2-1.1-1 .7a4 4 0 0 1-2.2-2.2l.7-1-1.1-2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5L12 13l8.5-6.5"/></symbol>
   <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></symbol>
   <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
@@ -316,6 +319,7 @@ footer{margin-top:64px;padding:0 0 22px}
       <a href="#" aria-label="MLZ Company"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a>
       <nav><a href="#colecao">Coleção</a><a href="conta.html">Minha conta</a><a href="revenda.html">Revenda</a><a href="politicas.html#pagamento">Pagamento</a><a href="politicas.html#entrega">Entrega</a><a href="politicas.html#trocas">Trocas</a><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos</a></nav>
       <div class="social" id="social"></div>
+      <a class="fmail" id="fmail" hidden></a>
       <span class="copy">© <span id="ano"></span> MLZ Company · Produtos originais</span>
     </div>
   </div>
@@ -658,12 +662,15 @@ function contatos() {
   if (wa) li.push(`<li><a href="${wa}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp)}</a></li>`);
   const n2 = soDigitos(CFG.whatsapp2); if (n2) li.push(`<li><a href="https://wa.me/${n2.length <= 11 ? '55' + n2 : n2}?text=${encodeURIComponent('Olá! Vim pelo site da MLZ Company.')}" target="_blank" rel="noopener">WhatsApp ${esc(CFG.whatsapp2)}</a></li>`);
   if (ig) li.push(`<li><a href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener">@${esc(ig)}</a></li>`);
+  const em = (CFG.email || '').trim(); if (em) li.push(`<li><a href="mailto:${esc(em)}">${esc(em)}</a></li>`);
   if (!li.length) li.push('<li>Chame a gente no direct do Instagram</li>');
   const ct = document.getElementById('contatos'); if (ct) ct.innerHTML = li.join('');
   const so = [];
   if (ig) so.push(`<a href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener" aria-label="Instagram"><svg class="i"><use href="#i-ig"/></svg></a>`);
   if (wa) so.push(`<a href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>`);
+  if (em) so.push(`<a href="mailto:${esc(em)}" aria-label="E-mail"><svg class="i"><use href="#i-mail"/></svg></a>`);
   document.getElementById('social').innerHTML = so.join('');
+  const fm = document.getElementById('fmail'); if (em) { fm.href = 'mailto:' + em; fm.textContent = em; fm.hidden = false; }
 }
 document.getElementById('ano').textContent = new Date().getFullYear();
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
