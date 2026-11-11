@@ -127,6 +127,10 @@ async function criar(b: any, req: Request) {
   if (!nome || telefone.replace(/\D/g, "").length < 10) return json({ erro: "Informe nome e WhatsApp com DDD." }, 400);
   const pedidos = lerItens(b.itens);
   if (!pedidos.length) return json({ erro: "Sacola vazia." }, 400);
+  // CPF obrigatório em todo pedido (entrega ou retirada)
+  const cpfD = String(b.cpf || "").replace(/\D/g, "");
+  if (!cpfValido(cpfD)) return json({ erro: "Informe um CPF válido de quem vai receber ou retirar o pedido." }, 400);
+  const cpf = `${cpfD.slice(0, 3)}.${cpfD.slice(3, 6)}.${cpfD.slice(6, 9)}-${cpfD.slice(9)}`;
   const entrega = b.entrega === "retirada" ? "retirada" : b.entrega === "entrega" ? "entrega" : null;
   let endereco: Record<string, string> | null = null;
   if (entrega === "entrega") {
@@ -155,17 +159,12 @@ async function criar(b: any, req: Request) {
     itens.push({ produto_id: p.id, descricao: [p.marca, p.nome].filter(Boolean).join(" "), quantidade: i.qtd, preco_unit: r2(preco) });
   }
   // frete recalculado aqui (não confia no valor vindo do navegador)
-  let frete: any = null, cpf: string | null = null;
+  let frete: any = null;
   if (entrega === "entrega") {
     const cot = await cotarFrete(endereco!.cep, pedidos);
     const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || cot.opcoes.find((o: any) => o.nome === String(b.frete_nome || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
     if (!op) return json({ erro: "Escolha uma opção de frete." }, 400);
     frete = op;
-    if (op.id !== "local" && op.id !== "combinar") {
-      cpf = String(b.cpf || "").replace(/\D/g, "");
-      if (!cpfValido(cpf)) return json({ erro: "Informe um CPF válido de quem vai receber (as transportadoras exigem na etiqueta)." }, 400);
-      cpf = `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
-    }
     if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}${op.via ? ` · ${op.via}` : ""}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));

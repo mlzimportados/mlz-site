@@ -377,6 +377,7 @@ footer{margin-top:64px;padding:0 0 22px}
     <div class="cconta p2only" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
     <input class="cin p2only" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin p2only" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
+    <input class="cin p2only" name="cpf" id="ccpf" inputmode="numeric" autocomplete="off" placeholder="CPF de quem vai receber ou retirar" maxlength="14" required>
     <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar <small class="cgr">grátis</small></button></div>
     <div class="p2only"><div class="cend" id="cend">
       <div class="cends" id="cends" hidden></div>
@@ -387,7 +388,6 @@ footer{margin-top:64px;padding:0 0 22px}
       <div class="crow r3"><input class="cin sm" name="cidade" autocomplete="address-level2" placeholder="Cidade"><input class="cin sm" name="uf" autocomplete="address-level1" placeholder="UF" maxlength="2"></div>
       <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
       <div class="cfrete" id="cfrete"></div>
-      <input class="cin sm" name="cpf" id="ccpf" inputmode="numeric" autocomplete="off" placeholder="CPF de quem vai receber (para a etiqueta)" maxlength="14">
     </div>
     <div class="cretira" id="cretira" hidden><b>Retirada grátis na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div></div>
     <div class="cerr" id="cerr"></div>
@@ -609,15 +609,14 @@ function renderSacola() {
 }
 // ---------- frete ----------
 let FRETE = { chave: '', opcoes: [], sel: null, carregando: false, erro: '' };
-// CPF: obrigatório quando o envio é por transportadora (não na entrega local de Ponta Grossa)
+// CPF: obrigatório em todo pedido (entrega e retirada)
 const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
   const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
   return dv(9) === +d[9] && dv(10) === +d[10]; };
-const precisaCpf = () => MODO === 'entrega' && !!(FRETE.sel && FRETE.sel.id !== 'local' && FRETE.sel.id !== 'combinar');
+const precisaCpf = () => true;
 const freteValor = () => MODO === 'entrega' && FRETE.sel ? +FRETE.sel.preco || 0 : 0;
 function renderFrete() {
   const el = document.getElementById('cfrete'); if (!el) return;
-  const cp = document.getElementById('ccpf'); if (cp) cp.hidden = !precisaCpf();
   if (MODO !== 'entrega') { el.innerHTML = ''; return; }
   if (FRETE.carregando) el.innerHTML = '<div class="fmsg">Calculando o frete…</div>';
   else if (FRETE.erro) el.innerHTML = `<div class="fmsg" style="color:#ff8f7a">${esc(FRETE.erro)} <button type="button" data-frefaz style="color:var(--gold-hi)">Tentar de novo</button></div>`;
@@ -732,6 +731,7 @@ fC.addEventListener('submit', async e => {
   if (!SACOLA.length) return;
   if (!nome) { er.textContent = 'Informe seu nome.'; return f.nome.focus(); }
   if (soDigitos(tel).length < 10) { er.textContent = 'Informe seu WhatsApp com DDD.'; return f.tel.focus(); }
+  if (!cpfOk(f.cpf.value)) { er.textContent = 'Informe um CPF válido de quem vai receber ou retirar o pedido.'; return f.cpf.focus(); }
   const end = {}; CAMPOS_END.forEach(k => end[k] = f[k].value.trim());
   end.uf = end.uf.toUpperCase();
   if (SEL >= 0 && ENDS[SEL] && CAMPOS_END.every(k => (ENDS[SEL][k] || '').trim().toUpperCase() === end[k].toUpperCase())) { end.id = ENDS[SEL].id || ''; end.apelido = ENDS[SEL].apelido || ''; }
@@ -739,7 +739,6 @@ fC.addEventListener('submit', async e => {
     const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !end[k] || (k === 'cep' && soDigitos(end.cep).length !== 8));
     if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }
     if (!FRETE.sel) { er.textContent = FRETE.carregando ? 'Aguarde o cálculo do frete.' : 'Escolha uma opção de frete.'; if (!FRETE.carregando) cotarFrete(true); return; }
-    if (precisaCpf() && !cpfOk(f.cpf.value)) { er.textContent = 'Informe um CPF válido de quem vai receber (as transportadoras exigem na etiqueta).'; return f.cpf.focus(); }
   }
   try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
@@ -749,7 +748,7 @@ fC.addEventListener('submit', async e => {
       try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
       if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
     }
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: MODO === 'entrega' && precisaCpf() ? soDigitos(f.cpf.value) : null }, token);
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: soDigitos(f.cpf.value) }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }
