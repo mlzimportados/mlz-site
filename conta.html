@@ -96,6 +96,9 @@ main.mini-w{max-width:440px}
 .pa .link{padding:4px 0;font-size:13.5px}
 .vazio.grande{display:grid;justify-items:center;gap:12px;padding:44px 20px;margin-top:14px;border:0}
 #tabc .box{margin-top:14px}
+.box .bt{font-family:var(--hd);font-weight:600;font-size:16px;margin-bottom:6px}.box .bsub{color:var(--muted);font-size:13.5px;margin-bottom:14px;overflow-wrap:anywhere;line-height:1.5}.box .bsub b{color:var(--txt);font-weight:500}
+#fe,#fs{display:grid;gap:10px}#fe .btn,#fs .btn{justify-self:start}
+.okbar{margin-top:14px;padding:12px 16px;border-radius:14px;border:1px solid rgba(80,200,120,.35);background:rgba(80,200,120,.08);color:#9be3b3;font-size:14px}
 .sen summary{cursor:pointer;color:var(--muted);font-size:14.5px;list-style:none}
 .sen summary::-webkit-details-marker{display:none}
 .sen[open] summary{margin-bottom:14px;color:var(--txt)}
@@ -183,12 +186,13 @@ main.dash{max-width:880px}
 <main id="app"><div class="load"><div class="spin"></div></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111g"></script>
+<script src="js/api.js?v=20261111h"></script>
 <script>
 const api = criarApi({ conta: true });
 const app = document.getElementById('app');
 const q = new URLSearchParams(location.search);
 const voltarSacola = q.get('voltar') === 'sacola';
+const TIPO_LINK = new URLSearchParams(location.hash.slice(1)).get('type') || '';
 let MODO = q.get('modo') === 'cadastro' ? 'cadastro' : 'entrar', RECUPERANDO = /type=recovery/.test(location.hash), CONTA = null;
 const traduz = (m) => {
   m = String(m || '');
@@ -306,6 +310,7 @@ async function abrirConta(acabouDeEntrar) {
       await api.salvarCpf(md.cpf, md.telefone || ''); CONTA = await api.minhaConta();
     }
   } catch (err) { console.error(err); }
+  try { const ss = await api.sessao(); CONTA.email_novo = (ss && ss.user && ss.user.new_email) || ''; if (ss && ss.user && ss.user.email) CONTA.email = ss.user.email; } catch (_) {}
   CONTA.enderecos = CONTA.enderecos || []; CONTA.compras = CONTA.compras || []; CONTA.pendentes = CONTA.pendentes || [];
   if (acabouDeEntrar && voltarSacola) return seguir();
   renderDash();
@@ -317,6 +322,7 @@ function renderDash() {
   app.innerHTML = `
     <section class="dhero"><div class="dh"><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}</h1><div class="em">${esc(CONTA.email || '')}</div></div>
       <button class="link" id="sair">Sair</button></section>
+    ${TIPO_LINK === 'signup' ? '<div class="okbar">E-mail confirmado! Sua conta está ativa.</div>' : TIPO_LINK === 'email_change' ? '<div class="okbar">E-mail confirmado! Se ainda não confirmou no outro e-mail também, clique no link que chegou lá para concluir a troca.</div>' : ''}
     ${CONTA.pendentes.map(p => `<div class="pend"><div class="gr">Pagamento pendente · <b>${brl(p.total)}</b></div><a class="btn solid sm" href="${esc(p.checkout_url)}">Pagar</a></div>`).join('')}
     <nav class="dtabs">${tabs.map(([k, l]) => `<button class="${TAB === k ? 'on' : ''}" data-tab="${k}">${l}${k === 'pedidos' && emAnd ? ` <em>${emAnd}</em>` : ''}</button>`).join('')}</nav>
     <div id="tabc"></div>`;
@@ -357,11 +363,18 @@ function renderTab() {
         <div class="msg" id="dm"></div>
         <button class="btn solid">Salvar</button>
       </form></div>
-      <details class="box sen"><summary>Trocar senha</summary>
+      <div class="box"><h3 class="bt">E-mail</h3>
+      <p class="bsub">E-mail atual: <b>${esc(CONTA.email || '')}</b>${CONTA.email_novo ? `<br>Aguardando confirmação do novo e-mail: <b>${esc(CONTA.email_novo)}</b>` : ''}</p>
+      <form id="fe" novalidate>
+        <input class="in" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Novo e-mail" aria-label="Novo e-mail">
+        <div class="msg" id="em"></div><button class="btn ghost">Trocar e-mail</button>
+      </form></div>
+      <div class="box"><h3 class="bt">Senha</h3>
       <form id="fs" novalidate>
+        <span class="fi"><input class="in" name="s0" type="password" autocomplete="current-password" placeholder="Senha atual" aria-label="Senha atual"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span>
         <span class="fi"><input class="in" name="s1" type="password" autocomplete="new-password" placeholder="Senha nova (mínimo 6)" aria-label="Senha nova"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span>
-        <div class="msg" id="sm"></div><button class="btn ghost">Salvar senha</button>
-      </form></details>
+        <div class="msg" id="sm"></div><button class="btn ghost">Trocar senha</button>
+      </form></div>
       ${SEG}`;
     const f = document.getElementById('fd');
     f.onsubmit = async (ev) => {
@@ -383,9 +396,24 @@ function renderTab() {
     const g = document.getElementById('fs');
     g.onsubmit = async (ev) => {
       ev.preventDefault(); const m = document.getElementById('sm'); m.className = 'msg er';
-      if (g.s1.value.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return g.s1.focus(); }
-      try { await api.trocarSenha(g.s1.value); g.reset(); m.className = 'msg ok'; m.textContent = 'Senha trocada!'; }
-      catch (err) { m.textContent = traduz(err.message); }
+      if (!g.s0.value) { m.textContent = 'Digite sua senha atual.'; return g.s0.focus(); }
+      if (g.s1.value.length < 6) { m.textContent = 'A senha nova precisa ter pelo menos 6 caracteres.'; return g.s1.focus(); }
+      try {
+        try { await api.entrar(CONTA.email, g.s0.value); } catch (_) { m.textContent = 'A senha atual não confere.'; return g.s0.focus(); }
+        await api.trocarSenha(g.s1.value); g.reset(); m.className = 'msg ok'; m.textContent = 'Senha trocada!';
+      }
+      catch (err) { m.textContent = /different from the old|should be different/i.test(err.message) ? 'A senha nova precisa ser diferente da atual.' : traduz(err.message); }
+    };
+    const fe = document.getElementById('fe');
+    fe.onsubmit = async (ev) => {
+      ev.preventDefault(); const m = document.getElementById('em'); m.className = 'msg er';
+      const novo = fe.email.value.trim().toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(novo)) { m.textContent = 'Confira o e-mail digitado.'; return fe.email.focus(); }
+      if (novo === String(CONTA.email || '').toLowerCase()) { m.textContent = 'Esse já é o seu e-mail atual.'; return fe.email.focus(); }
+      try {
+        await api.trocarEmail(novo); CONTA.email_novo = novo; fe.reset();
+        m.className = 'msg ok'; m.textContent = `Pronto! Enviamos um link de confirmação para ${novo} e outro para o seu e-mail atual. A troca só vale depois de clicar nos dois links.`;
+      } catch (err) { m.textContent = /already|registered|exists/i.test(err.message) ? 'Esse e-mail já está em outra conta.' : traduz(err.message); }
     };
   }
 }

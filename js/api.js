@@ -30,6 +30,7 @@ function criarApi(opts = {}) {
     sessao: async () => (await sb.auth.getSession()).data.session,
     entrar: async (email, senha) => ok(await sb.auth.signInWithPassword({ email, password: senha })),
     sair: async () => sb.auth.signOut(),
+    trocarEmail: async (email) => ok(await sb.auth.updateUser({ email }, { emailRedirectTo: location.origin + '/conta.html#dados' })),
     trocarSenha: async (senha) => ok(await sb.auth.updateUser({ password: senha })),
     souAdmin: async () => { const s = (await sb.auth.getSession()).data.session; if (!s) return false; return ok(await sb.from('admins').select('user_id').eq('user_id', s.user.id)).length > 0; },
     // conta do cliente (loja)
