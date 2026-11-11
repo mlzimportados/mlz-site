@@ -90,7 +90,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;col
   <div class="rcard"><span>01</span><b>100% originais</b><p>Nada de réplica ou contratipo. Procedência garantida em todo produto.</p></div>
   <div class="rcard"><span>02</span><b>7 dias para desistir</b><p>Comprou a distância e mudou de ideia? Você tem 7 dias após receber.</p></div>
   <div class="rcard"><span>03</span><b>Defeito é com a gente</b><p>Chegou avariado ou diferente do pedido? Trocamos ou devolvemos o valor.</p></div>
-  <div class="rcard"><span>04</span><b>Parcelado sem juros</b><p>Cartão em até <em class="pmax">4</em>x sem juros, ou até 12x com acréscimo. Pix à vista.</p></div>
+  <div class="rcard"><span>04</span><b>Parcelado sem juros</b><p>Cartão em até <em class="pmax">4</em>x sem juros, ou até 12x com acréscimo. Pix com desconto.</p></div>
   <div class="rcard"><span>05</span><b>Seus dados protegidos</b><p>Usamos só para o seu pedido. Não vendemos nem repassamos para propaganda.</p></div>
   <div class="rcard"><span>06</span><b>Atendimento humano</b><p>Tudo é combinado com uma pessoa de verdade, pelo WhatsApp ou Instagram.</p></div>
 </div>
@@ -126,7 +126,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;col
     <section id="pagamento">
       <h2>Pagamento e parcelamento</h2>
       <div class="tabela">
-        <div><b>Pix</b><span>Forma mais rápida. O pedido é liberado assim que o pagamento cai.</span></div>
+        <div><b>Pix</b><span>Forma mais rápida, com <em class="pixd">5</em>% de desconto. O pedido é liberado assim que o pagamento cai.</span></div>
         <div><b>Cartão de crédito ou débito</b><span>Pelo site, link de pagamento ou maquininha. Em até <em class="pmax">4</em>x sem juros. De 5x a 12x, a parcela tem acréscimo das taxas do cartão, mostrado antes de você confirmar.</span></div>
         <div><b>Parcelado direto com a loja</b><span>Em até <em class="pmax">3</em>x, com datas de vencimento combinadas na hora da compra e registradas pela loja.</span></div>
       </div>
@@ -282,6 +282,7 @@ document.getElementById('ano').textContent = new Date().getFullYear();
     const ig = (cfg.instagram || '').replace(/^@/, ''); if (ig) li.push(`<li>Instagram: <a target="_blank" rel="noopener" href="https://instagram.com/${esc(ig)}">@${esc(ig)}</a></li>`);
     const em = (cfg.email || '').trim(); if (em) li.push(`<li>E-mail: <a href="mailto:${esc(em)}">${esc(em)}</a></li>`);
     if (li.length) document.getElementById('contatos').innerHTML = li.join('');
+    const pd = parseFloat(String(cfg.pix_desconto || '').replace(',', '.')); document.querySelectorAll('.pixd').forEach(e => { if (pd > 0) e.textContent = String(pd).replace('.', ','); else e.closest('span').innerHTML = 'Forma mais rápida. O pedido é liberado assim que o pagamento cai.'; });
     const pm = parseInt(cfg.parcelas_max, 10); if (pm > 0) document.querySelectorAll('.pmax').forEach(e => e.textContent = pm);
   } catch (e) { console.error(e); }
 })();

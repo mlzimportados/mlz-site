@@ -123,6 +123,7 @@ section.blk{padding:76px 0 0}
 .pp{margin-top:8px;font-size:15px;color:var(--gold-hi);font-weight:500}
 .tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .prod.enc .pimg img{filter:drop-shadow(0 18px 22px rgba(0,0,0,.5)) saturate(.55) brightness(.82)}
+.ppix{margin-top:2px;font-size:12px;color:#7fd1a8}
 .prod.enc .pp{font-size:13px;color:var(--muted);font-weight:400}
 .encbox{margin:22px 0 6px;padding:16px 18px;border:1px solid rgba(217,178,76,.35);border-radius:16px;background:linear-gradient(130deg,rgba(217,178,76,.12),transparent 70%)}
 .encbox b{display:block;font-size:16px;color:var(--gold-hi);margin-bottom:4px;font-weight:500}
@@ -179,6 +180,7 @@ footer{margin-top:64px;padding:0 0 22px}
 .sprice .por{font-family:var(--hd);font-weight:600;font-size:30px;color:var(--gold-hi)}
 .sprice s{color:var(--faint)}
 .sprice .tag{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(217,178,76,.15);color:var(--gold-hi)}
+.spix{font-size:14px;color:var(--muted);margin:2px 0 4px}.spix b{color:#7fd1a8;font-weight:600}.spix span{font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(127,209,168,.14);color:#7fd1a8;margin-left:4px}
 .parc{font-size:13.5px;color:var(--muted)}
 .parc b{color:var(--txt);font-weight:600}
 .parc2{font-size:12px;color:var(--faint);margin-top:2px}
@@ -251,6 +253,7 @@ footer{margin-top:64px;padding:0 0 22px}
 .cretira[hidden]{display:none}
 .ctot{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--muted)}
 .ctot b{font-size:22px;color:var(--txt);font-weight:500}
+.cpix{text-align:right;font-size:13px;color:var(--muted);margin-top:-4px}.cpix b{color:#7fd1a8;font-weight:600}
 .cin{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font:inherit;font-size:15px;outline:0}
 .cin:focus{border-color:var(--gold)}
 .cerr{color:#ff8f7a;font-size:13px;text-align:center}
@@ -345,6 +348,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <div class="cits" id="cits"></div>
   <form class="cft" id="cft" novalidate>
     <div class="ctot"><span>Total</span><b id="ctot">R$ 0,00</b></div>
+    <div class="cpix" id="cpix" hidden></div>
     <div class="cconta" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
     <input class="cin" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
@@ -390,6 +394,8 @@ const precoFinal = p => temPromo(p) ? +p.preco_promo : (+p.preco || null);
 const pctOff = p => temPromo(p) ? Math.round((1 - p.preco_promo / p.preco) * 100) : 0;
 const imgSrc = p => p.imagem || 'img/logo_gold.png';
 const nomeCompleto = p => [p.marca, p.nome].filter(Boolean).join(' ');
+const pixDesc = () => { const d = parseFloat(String(CFG.pix_desconto || '').replace(',', '.')); return d > 0 && d < 50 ? d : 0; };
+const noPix = v => Math.round(v * (100 - pixDesc())) / 100;
 const precoHtml = p => { const f = precoFinal(p); if (!f) return 'Consulte'; return (temPromo(p) ? `<s>${brl(p.preco)}</s>` : '') + brl(f); };
 
 function linkWa(texto) { const n = soDigitos(CFG.whatsapp); if (!n) return null; return `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(texto)}`; }
@@ -457,7 +463,7 @@ function cardProd(p) {
       <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
         ${p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
-        <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div></div>
+        <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
     </button>`;
 }
 function render() {
@@ -513,7 +519,7 @@ function abrir(id) {
       ${p.familia ? `<span class="fam" style="--c:${corFam(p.familia)}">${esc(p.familia)}${FAMILIAS[p.familia] ? ' · ' + esc(FAMILIAS[p.familia].d.toLowerCase()) : ''}</span>` : (p.tipo ? `<span class="fam">${esc(p.tipo)}</span>` : '')}
       ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada e o valor.</p></div>` : `
       <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : '<span class="por" style="font-size:22px">Consulte o preço</span>'}</div>
-      ${f && max > 1 ? `<div class="parc">ou em até <b>${max}x de ${brl(f / max)} sem juros</b> no cartão</div>${max < 12 ? `<div class="parc2">ou até 12x com acréscimo</div>` : ''}` : ''}`}
+      ${f && pixDesc() ? `<div class="spix"><b>${brl(noPix(f))}</b> no Pix <span>${String(pixDesc()).replace('.', ',')}% off</span></div>` : ''}${f && max > 1 ? `<div class="parc">ou em até <b>${max}x de ${brl(f / max)} sem juros</b> no cartão</div>${max < 12 ? `<div class="parc2">ou até 12x com acréscimo</div>` : ''}` : ''}`}
       ${niveis.length ? `<div class="piramide">${niveis.map(([k, l]) => `<div class="nivel"><div class="nl">Notas de ${l}</div><div class="notas">${n[k].map(x => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}</div>` : ''}
       ${resto ? `<div class="desc">${esc(resto)}</div>` : ''}
       <div class="sacoes">
@@ -563,7 +569,9 @@ function renderSacola() {
     <div class="n"><small>${esc(i.p.marca || '')}</small>${esc(i.p.nome)}<div class="v">${brl(precoFinal(i.p) * i.qtd)}</div></div>
     <div class="cq"><button type="button" data-cq="${i.id}" data-d="-1" aria-label="Menos">−</button><span>${i.qtd}</span><button type="button" data-cq="${i.id}" data-d="1" aria-label="Mais">+</button></div></div>`).join('')
     : '<div class="cvazio">Sua sacola está vazia.</div>';
-  document.getElementById('ctot').textContent = brl(its.reduce((s, i) => s + precoFinal(i.p) * i.qtd, 0));
+  const tot = its.reduce((s, i) => s + precoFinal(i.p) * i.qtd, 0);
+  document.getElementById('ctot').textContent = brl(tot);
+  const cp = document.getElementById('cpix'); cp.hidden = !(tot && pixDesc()); if (!cp.hidden) cp.innerHTML = `ou <b>${brl(noPix(tot))}</b> pagando no Pix (${String(pixDesc()).replace('.', ',')}% off)`;
   document.getElementById('cpagar').disabled = !its.length;
 }
 function abrirSacola() { renderSacola(); document.getElementById('cart').classList.add('on'); document.body.style.overflow = 'hidden'; }

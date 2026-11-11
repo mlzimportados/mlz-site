@@ -378,9 +378,9 @@ const badge = (s) => `<span class="badge b-${s}">${ROT[s]}</span>`;
 
 function numeros() {
   const hoje = hojeISO(), mes = hoje.slice(0, 7);
-  let caixa = 0, receber = 0, atrasado = 0, vendido = 0, caixaMes = 0, vendidoMes = 0, nAtraso = 0;
+  let caixa = 0, receber = 0, atrasado = 0, vendido = 0, caixaMes = 0, vendidoMes = 0, nAtraso = 0, taxas = 0;
   for (const v of D.vendas) {
-    vendido += +v.total; if (v.data.slice(0, 7) === mes) vendidoMes += +v.total;
+    vendido += +v.total; taxas += +v.taxa || 0; if (v.data.slice(0, 7) === mes) vendidoMes += +v.total;
     for (const p of v.parcelas) {
       if (p.pago_em) { caixa += +p.valor; if (p.pago_em.slice(0, 7) === mes) caixaMes += +p.valor; }
       else { receber += +p.valor; if (p.vencimento < hoje) { atrasado += +p.valor; nAtraso++; } }
@@ -391,7 +391,7 @@ function numeros() {
     if (p.estoque > 0) { unid += p.estoque; valorEst += p.estoque * precoProd(p); custoEst += p.estoque * (+p.custo || 0); if (!precoProd(p)) semPreco++; }
     else esgot++;
   }
-  const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^Juros do parcelamento/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
+  const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^(Juros do parcelamento|Desconto)/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
   // resultado: lucro = vendas − custo dos itens; parte dos investidores sai do lucro
   let custoVend = 0, semCusto = 0, parteInv = 0, lucroMes = 0;
   const pctInv = new Map((D.investidores || []).map(i => [i.id, +i.percentual || 0]));
@@ -403,15 +403,16 @@ function numeros() {
       custoVend += i.quantidade * c; lv += l;
       if (i.investidor_id) { const pi = l * (+(i.percentual ?? pctInv.get(i.investidor_id) ?? 0)) / 100; parteInv += pi; lv -= pi; }
     }
+    lv -= +v.taxa || 0;
     if (v.data.slice(0, 7) === mes) lucroMes += lv;
   }
-  const lucroBruto = vendido - custoVend, lucroMLZ = lucroBruto - parteInv;
+  const lucroBruto = vendido - custoVend - taxas, lucroMLZ = lucroBruto - parteInv;
   // investimento da MLZ = custo do estoque próprio + custo dos produtos próprios já vendidos
   let custoVendMLZ = 0;
   for (const v of D.vendas) for (const i of v.venda_itens) if (i.produto_id && !i.investidor_id) custoVendMLZ += i.quantidade * (+i.custo_unit || 0);
   const custoEstMLZ = estoqueSplit().mlz.custo, investMLZ = custoVendMLZ + custoEstMLZ;
   const pagoInv = (D.investidores || []).reduce((s, i) => s + i.repasses.reduce((a, r) => a + +r.valor, 0), 0);
-  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv, custoVendMLZ, custoEstMLZ, investMLZ };
+  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv, taxas, custoVendMLZ, custoEstMLZ, investMLZ };
 }
 // estoque separado: unidades livres dos lotes de investidores x resto da MLZ
 function estoqueSplit() {
@@ -463,7 +464,7 @@ function vResumo() {
     </div>
     <div class="sec"><h3><svg class="i"><use href="#i-trend"/></svg>Resultado das vendas</h3>
       <div class="kpis">
-        <div class="kpi"><div class="l">Lucro bruto</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Vendas − custo dos produtos (${brl(n.custoVend)})</div></div>
+        <div class="kpi"><div class="l">Lucro bruto</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Vendas − custo (${brl(n.custoVend)}) − taxas (${brl(n.taxas)})</div></div>
         <div class="kpi"><div class="l">Parte dos investidores</div><div class="v num">${brl(n.parteInv)}</div><div class="s">Já pago a eles: ${brl(n.pagoInv)}</div></div>
         <div class="kpi caixa"><div class="l">Lucro da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Este mês: ${brl(n.lucroMes)}</div></div>
         <div class="kpi"><div class="l">Margem</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
@@ -686,7 +687,7 @@ function cardVenda(v, tel) {
     cobrar = `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${num}?text=${encodeURIComponent(msg)}"><svg class="i"><use href="#i-wa"/></svg>Lembrar cliente</a>`;
   }
   return `<div class="venda">
-    <div class="vtop"><div><b class="num">${brl(v.total)}</b> <span class="m">· ${dataBR(v.data)} · ${esc(v.forma_pagamento)}${n > 1 ? ` · ${n}x` : ''}${v.canal ? ' · ' + esc(v.canal) : ''}</span></div>${badge(st)}</div>
+    <div class="vtop"><div><b class="num">${brl(v.total)}</b> <span class="m">· ${dataBR(v.data)} · ${esc(v.forma_pagamento)}${n > 1 ? ` · ${n}x` : ''}${v.canal ? ' · ' + esc(v.canal) : ''}${+v.taxa ? ` · taxa ${brl(v.taxa)}` : ''}</span></div>${badge(st)}</div>
     <div class="itens">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)} <span style="color:var(--muted)" class="num">(${brl(i.preco_unit)})</span>`).join('<br>')}</div>
     <div class="parcs">${ps.map(p => { const s = stParc(p); return `<button class="pc ${s}" data-parc="${p.id}" title="${ROT[s]}">
       <span class="ck">${p.pago_em ? '<svg class="i"><use href="#i-check"/></svg>' : ''}</span>
@@ -764,9 +765,28 @@ function editarCliente(id) {
 let NV;
 function novaVendaVazia() {
   return { cliId: '', novoCli: { nome: '', telefone: '', instagram: '' }, data: hojeISO(), canal: 'WhatsApp', forma: 'Pix', obs: '', ent: '', endTxt: '',
-    itens: [{ prod: '', desc: '', qtd: 1, preco: '' }], modo: 'avista', recebido: true, nParc: 3, entrada: '', juros: '', jurosTipo: 'mes', primeiroVenc: addMeses(hojeISO(), 1), parcelas: [], parcelasEditadas: false };
+    itens: [{ prod: '', desc: '', qtd: 1, preco: '' }], descPix: false, nCartao: 1, acresc: '', taxa: '', modo: 'avista', recebido: true, nParc: 3, entrada: '', juros: '', jurosTipo: 'mes', primeiroVenc: addMeses(hojeISO(), 1), parcelas: [], parcelasEditadas: false };
 }
-const totalNV = () => r2(NV.itens.reduce((s, i) => s + (+i.qtd || 0) * (+String(i.preco).replace(',', '.') || 0), 0));
+const brutoNV = () => r2(NV.itens.reduce((s, i) => s + (+i.qtd || 0) * (+String(i.preco).replace(',', '.') || 0), 0));
+// taxas e descontos (tabela em Ajustes, a mesma da InfinitePay)
+const pctCfg = (k) => { const d = parseFloat(String(D.cfg[k] || '').replace(',', '.')); return d > 0 && d < 100 ? d : 0; };
+const taxasCartao = () => String(D.cfg.taxas_cartao || '').split(/[;,\s]+/).filter(Boolean).map(x => parseFloat(x.replace(',', '.')) || 0);
+const maxSemJuros = () => Math.max(1, +D.cfg.parcelas_max || 1);
+const descPixNV = () => (NV.forma === 'Pix' && NV.descPix && pctCfg('pix_desconto')) ? r2(-brutoNV() * pctCfg('pix_desconto') / 100) : 0;
+const acrescNV = () => (NV.forma === 'Cartão de crédito' && NV.nCartao > maxSemJuros()) ? r2(+String(NV.acresc).replace(/\./g, '').replace(',', '.') || 0) : 0;
+const totalNV = () => r2(brutoNV() + descPixNV() + acrescNV());
+function pctTaxaNV() {
+  if (NV.forma === 'Cartão de crédito') return taxasCartao()[Math.max(1, +NV.nCartao || 1) - 1] || 0;
+  if (NV.forma === 'Cartão de débito') return pctCfg('taxa_debito');
+  if (NV.forma === 'Pix') return pctCfg('taxa_pix');
+  return 0;
+}
+const taxaAutoNV = () => r2(totalComJuros() * pctTaxaNV() / 100);
+const taxaNV = () => String(NV.taxa).trim() === '' ? taxaAutoNV() : r2(+String(NV.taxa).replace(/\./g, '').replace(',', '.') || 0);
+function htmlTaxa() {
+  const t = taxaNV(), liq = r2(totalComJuros() - t);
+  return `<div class="tot" style="margin-top:10px"><span>Total ${brl(totalComJuros())}${t ? ` · taxa ${brl(t)}` : ''}</span><b class="num" style="color:var(--ok)">Você recebe ${brl(liq)}</b></div>`;
+}
 // juros do parcelamento: "% ao mês" = tabela Price (parcelas iguais); "% sobre o total" = acréscimo único
 function jurosNV() {
   if (NV.modo === 'avista') return 0;
@@ -837,13 +857,22 @@ function vNova() {
           <button class="xbtn" data-delit="${i}" title="Remover" ${NV.itens.length === 1 ? 'disabled style="opacity:.3"' : ''}><svg class="i"><use href="#i-x"/></svg></button>
         </div>`).join('')}
         <button class="btn sm line" style="margin-top:12px" data-addit><svg class="i"><use href="#i-plus"/></svg>Adicionar produto</button>
-        <div class="tot"><span>Total da venda</span><b class="num">${brl(totalNV())}</b></div>
+        <div class="tot"><span>Total da venda${descPixNV() ? ` (com ${brl(-descPixNV())} de desconto Pix)` : ''}${acrescNV() ? ` (com ${brl(acrescNV())} de acréscimo)` : ''}</span><b class="num">${brl(totalNV())}</b></div>
       </div>
       <div class="card"><h3>Pagamento</h3>
         <div class="grid2">
           <label class="f">Forma<select class="in" data-k="forma">${FORMAS.map(f => `<option ${NV.forma === f ? 'selected' : ''}>${f}</option>`).join('')}</select></label>
-          <label class="f">Condição<select class="in" data-k="modo"><option value="avista" ${NV.modo === 'avista' ? 'selected' : ''}>À vista</option><option value="parcelado" ${NV.modo === 'parcelado' ? 'selected' : ''}>Parcelado</option></select></label>
+          <label class="f">Condição<select class="in" data-k="modo"><option value="avista" ${NV.modo === 'avista' ? 'selected' : ''}>À vista${NV.forma === 'Cartão de crédito' ? ' (recebo de uma vez)' : ''}</option><option value="parcelado" ${NV.modo === 'parcelado' ? 'selected' : ''}>Parcelado${NV.forma === 'Cartão de crédito' ? ' (recebo por mês)' : ''}</option></select></label>
         </div>
+        ${NV.forma === 'Pix' && pctCfg('pix_desconto') ? `<label class="chk" style="margin-top:12px"><input type="checkbox" data-k="descPix" ${NV.descPix ? 'checked' : ''}>Dar ${String(pctCfg('pix_desconto')).replace('.', ',')}% de desconto no Pix (${brl(-r2(brutoNV() * pctCfg('pix_desconto') / 100))})</label>` : ''}
+        ${NV.forma === 'Cartão de crédito' ? `<div class="grid2" style="margin-top:10px">
+          <label class="f">Parcelas no cartão<select class="in" data-k="nCartao">${Array.from({ length: 12 }, (_, k) => k + 1).map(n => `<option value="${n}" ${+NV.nCartao === n ? 'selected' : ''}>${n}x${n <= maxSemJuros() ? ' sem juros' : ' com acréscimo'} · taxa ${String(taxasCartao()[n - 1] || 0).replace('.', ',')}%</option>`).join('')}</select></label>
+          ${+NV.nCartao > maxSemJuros() ? `<label class="f">Acréscimo pago pelo cliente (R$)<input class="in num" inputmode="decimal" data-k="acresc" value="${esc(NV.acresc)}" placeholder="o que a maquininha cobrou a mais"></label>` : '<div></div>'}
+        </div>` : ''}
+        <div class="grid2" style="margin-top:10px">
+          <label class="f">Taxa da InfinitePay / maquininha (R$)<input class="in num" inputmode="decimal" data-k="taxa" value="${esc(NV.taxa)}" placeholder="automático (${String(pctTaxaNV()).replace('.', ',')}% do total)"></label><div></div>
+        </div>
+        <div id="tbox">${htmlTaxa()}</div>
         ${NV.modo === 'avista' ? `<label class="chk" style="margin-top:12px"><input type="checkbox" data-k="recebido" ${NV.recebido ? 'checked' : ''}>Já recebi o valor</label>` : `
           <div class="grid3" style="margin-top:10px">
             <label class="f">Nº de parcelas<input class="in num" type="number" min="1" max="24" data-k="nParc" value="${NV.nParc}"></label>
@@ -868,7 +897,7 @@ function vNova() {
 }
 const elNova = $('#v-nova');
 function lerCampo(el) {
-  if (el.dataset.k) { NV[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (['modo', 'nParc', 'entrada', 'juros', 'jurosTipo', 'primeiroVenc', 'recebido', 'data'].includes(el.dataset.k)) NV.parcelasEditadas = false; return true; }
+  if (el.dataset.k) { NV[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (['modo', 'nParc', 'entrada', 'juros', 'jurosTipo', 'primeiroVenc', 'recebido', 'data', 'forma', 'descPix', 'nCartao', 'acresc'].includes(el.dataset.k)) NV.parcelasEditadas = false; return true; }
   if (el.dataset.nc) { NV.novoCli[el.dataset.nc] = el.value; return false; }
   if (el.dataset.it !== undefined) {
     const it = NV.itens[+el.dataset.it]; it[el.dataset.ik] = el.value;
@@ -894,6 +923,7 @@ function atualizarParciais(alvo) {
   if (!alvo || !alvo.closest('#pbox')) { const pb = $('#pbox'); if (pb) pb.innerHTML = htmlParcelas(); }
   const pw = $('#pwarn'); if (pw) pw.innerHTML = htmlAviso();
   const jb = $('#jbox'); if (jb) jb.innerHTML = htmlJuros();
+  const xb = $('#tbox'); if (xb) xb.innerHTML = htmlTaxa();
 }
 // input: só guarda (sem re-render, para não perder o foco)
 elNova.addEventListener('input', (e) => { const t = e.target; if (t.tagName === 'INPUT' && t.type !== 'checkbox' && t.type !== 'date') { const muda = lerCampo(t); if (t.dataset.nc === undefined) atualizarParciais(t); } });
@@ -916,6 +946,8 @@ async function salvarVenda(btn) {
     if (it.prod === 'outro') { if (!it.desc.trim()) return toast('Descreva o item “Outro”'); itens.push({ produto_id: '', descricao: it.desc.trim(), quantidade: qtd, preco_unit: preco }); }
     else { const p = D.produtos.find(x => String(x.id) === String(it.prod)); if (p.estoque < qtd && !confirm(`${nomeProd(p)} tem só ${p.estoque} em estoque. Registrar mesmo assim?`)) return; itens.push({ produto_id: p.id, descricao: nomeProd(p), quantidade: qtd, preco_unit: preco }); }
   }
+  if (descPixNV()) itens.push({ produto_id: '', descricao: `Desconto Pix (${String(pctCfg('pix_desconto')).replace('.', ',')}%)`, quantidade: 1, preco_unit: descPixNV() });
+  if (acrescNV()) itens.push({ produto_id: '', descricao: `Juros do parcelamento (${NV.nCartao}x no cartão, pago pelo cliente)`, quantidade: 1, preco_unit: acrescNV() });
   const juros = jurosNV();
   if (juros > 0) itens.push({ produto_id: '', descricao: `Juros do parcelamento (${String(NV.juros).replace('.', ',')}% ${NV.jurosTipo === 'total' ? 'sobre o total' : 'a.m.'})`, quantidade: 1, preco_unit: juros });
   const total = totalComJuros(), soma = r2(NV.parcelas.reduce((s, p) => s + p.valor, 0));
@@ -924,9 +956,10 @@ async function salvarVenda(btn) {
   try {
     let cid = NV.cliId;
     if (!cid) { const c = await api.salvarCliente({ nome: NV.novoCli.nome.trim(), telefone: NV.novoCli.telefone.trim() || null, instagram: NV.novoCli.instagram.trim().replace(/^@/, '') || null }); cid = c.id; }
-    const forma = NV.forma;
-    const vid = await api.registrarVenda({ p_cliente_id: +cid, p_data: NV.data, p_forma: forma, p_canal: NV.canal, p_obs: NV.obs || null, p_itens: itens,
+    const forma = NV.forma, taxa = taxaNV(), obsCartao = NV.forma === 'Cartão de crédito' && +NV.nCartao > 1 ? `Cartão ${NV.nCartao}x` : '';
+    const vid = await api.registrarVenda({ p_cliente_id: +cid, p_data: NV.data, p_forma: forma, p_canal: NV.canal, p_obs: [obsCartao, NV.obs].filter(Boolean).join(' · ') || null, p_itens: itens,
       p_parcelas: NV.parcelas.map(p => ({ numero: p.numero, valor: p.valor, vencimento: p.vencimento, pago_em: p.pago ? (p.vencimento <= hojeISO() ? p.vencimento : hojeISO()) : '' })) });
+    if (taxa > 0 && vid) { try { await api.salvarEntrega(+vid, { taxa }); } catch (e) { console.error(e); toast('Venda salva, mas a taxa não: ' + e.message); } }
     if (NV.ent && vid) {
       const end = NV.ent === 'entrega' ? (NV.endTxt || (NV.cliId ? cliObj(NV.cliId).endereco || '' : '')).trim() || null : null;
       try { await api.salvarEntrega(+vid, { entrega: NV.ent, endereco: end, entrega_status: 'pendente' }); if (end) await api.salvarCliente({ id: +cid, endereco: end }); } catch (e) { console.error(e); toast('Venda salva, mas a entrega não: ' + e.message); }
@@ -1286,7 +1319,12 @@ function vAjustes() {
         <label class="f">Instagram da loja<input class="in" name="instagram" value="${esc(c.instagram || '')}" placeholder="@mlzimportados"></label>
         <label class="f">E-mail de contato<input class="in" name="email" type="email" value="${esc(c.email || '')}" placeholder="contato@mlzcompany.com"></label></div>
         <div class="grid2"><label class="f">Parcelas sem juros no cartão<select class="in" name="parcelas_max">${[1, 2, 3, 4, 5, 6, 10, 12].map(n => `<option value="${n}" ${String(c.parcelas_max) === String(n) ? 'selected' : ''}>${n === 1 ? 'Não mostrar' : 'até ' + n + 'x sem juros'}</option>`).join('')}</select></label></div>
-        <div class="grid2"><label class="f">InfiniteTag (pagamento online no site)<input class="in" name="infinitepay_handle" value="${esc(c.infinitepay_handle || '')}" placeholder="vazio = desligado"></label></div>
+        <div class="grid2"><label class="f">InfiniteTag (pagamento online no site)<input class="in" name="infinitepay_handle" value="${esc(c.infinitepay_handle || '')}" placeholder="vazio = desligado"></label>
+        <label class="f">Desconto no Pix (%) — o mesmo configurado na InfinitePay<input class="in" name="pix_desconto" inputmode="decimal" value="${esc(c.pix_desconto || '')}" placeholder="0 = sem desconto"></label></div>
+        <label class="f">Taxas do cartão de crédito, de 1x a 12x (%), separadas por vírgula — copie de InfinitePay → Parcelamento e taxas<input class="in num" name="taxas_cartao" value="${esc(c.taxas_cartao || '')}" placeholder="4.2, 6.09, 7.01, 7.91, …"></label>
+        <div class="grid2"><label class="f">Taxa do Pix (%)<input class="in num" name="taxa_pix" inputmode="decimal" value="${esc(c.taxa_pix || '')}" placeholder="0"></label>
+        <label class="f">Taxa do débito na maquininha (%)<input class="in num" name="taxa_debito" inputmode="decimal" value="${esc(c.taxa_debito || '')}" placeholder="ex.: 1,37"></label></div>
+        <div class="hint">O painel desconta essas taxas do lucro em cada venda. Vendas do site entram com a taxa e o desconto do Pix automaticamente.</div>
         <div class="grid2"><label class="f">Endereço de retirada<input class="in" name="retirada_endereco" value="${esc(c.retirada_endereco || '')}" placeholder="Rua, número, cidade"></label>
         <label class="f">Horário de retirada<input class="in" name="retirada_horario" value="${esc(c.retirada_horario || '')}" placeholder="Ex.: no mesmo dia, das 8:00 às 18:00"></label></div>
         <label class="f">Faixa de promoção no topo (deixe vazio para esconder)<input class="in" name="faixa_promo" value="${esc(c.faixa_promo || '')}" placeholder="Ex.: Esquenta Black Friday · 12% OFF"></label>

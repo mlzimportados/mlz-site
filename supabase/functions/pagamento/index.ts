@@ -117,7 +117,14 @@ async function conferir(ip_nsu: string, transaction_nsu: string, slug: string, l
   console.log("payment_check", ped.id, JSON.stringify({ success: chk.success, paid: chk.paid, amount: chk.amount, paid_amount: chk.paid_amount, capture_method: chk.capture_method }));
   if (!chk.paid) return { status: "pendente" };
   const pago = chk.paid_amount ? chk.paid_amount / 100 : (chk.amount ? chk.amount / 100 : null);
-  if (pago !== null && pago + 0.009 < +ped.total) { console.error("valor pago menor que o pedido", ped.id, pago, ped.total); return { status: "pendente" }; }
+  // Pix com desconto configurado na InfinitePay: aceita até o % de config.pix_desconto a menos
+  let minimo = +ped.total;
+  if (String(chk.capture_method || "").toLowerCase().includes("pix")) {
+    const { data: cd } = await sb.from("config").select("valor").eq("chave", "pix_desconto").maybeSingle();
+    const d = parseFloat(String(cd?.valor || "0").replace(",", "."));
+    if (d > 0 && d < 50) minimo = r2(+ped.total * (100 - d) / 100);
+  }
+  if (pago !== null && pago + 0.019 < minimo) { console.error("valor pago menor que o pedido", ped.id, pago, ped.total); return { status: "pendente" }; }
   if (!ped.ip_order_nsu && ip_nsu !== ped.order_nsu) await sb.from("pedidos").update({ ip_order_nsu: ip_nsu }).eq("id", ped.id);
   const { error } = await sb.rpc("confirmar_pedido", { p_order_nsu: ped.order_nsu, p_transaction_nsu: transaction_nsu, p_slug: slug,
     p_capture: chk.capture_method || null, p_installments: chk.installments || 1, p_paid: pago, p_receipt: chk.receipt_url || null });
