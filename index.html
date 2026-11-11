@@ -232,6 +232,8 @@ footer{margin-top:64px;padding:0 0 22px}
 .cit .n{font-size:14.5px;line-height:1.3}
 .cit .n small{display:block;color:var(--faint);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .cit .v{color:var(--gold-hi);font-size:14px;margin-top:3px}
+.ceco{display:flex;align-items:center;justify-content:center;gap:7px;margin:0 0 10px;padding:8px 12px;border-radius:12px;background:rgba(127,209,168,.1);border:1px solid rgba(127,209,168,.3);color:#7fd1a8;font-size:13.5px}
+.ceco[hidden]{display:none}.ceco b{color:#a6e8c6}.ceco svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
 .cit .v s{color:var(--faint);font-size:12px;margin-right:6px}
 .cit .n .tp{display:block;color:var(--muted,#9aa7b8);font-size:12px;margin-top:1px}
 .cq{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px}
@@ -372,6 +374,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <div class="chd"><h3 id="ctit">Sua sacola</h3><button data-cfechar aria-label="Fechar"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="cits" id="cits"></div>
   <form class="cft" id="cft" novalidate>
+    <div class="ceco" id="ceco" hidden></div>
     <div class="ctot"><span id="ctotl">Total</span><b id="ctot">R$ 0,00</b></div>
     <div class="cpix" id="cpix" hidden></div>
     <button class="btn solid buy p1only" id="ccont" type="button">Confirmar produtos e continuar</button>
@@ -601,6 +604,8 @@ function renderSacola() {
   const fr = document.querySelector('#cart .cbox').classList.contains('p2') ? freteValor() : 0;
   const tot = its.reduce((s, i) => s + precoFinal(i.p) * i.qtd, 0) + fr;
   document.getElementById('ctot').textContent = brl(tot);
+  const eco = its.reduce((s, i) => s + (temPromo(i.p) ? (+i.p.preco - precoFinal(i.p)) * i.qtd : 0), 0);
+  const ec = document.getElementById('ceco'); ec.hidden = !(eco > 0.004); if (!ec.hidden) ec.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-8-8V4h8z"/><circle cx="8" cy="8" r="1.5"/></svg>Você economizou <b>${brl(eco)}</b>`;
   document.getElementById('ctotl').textContent = fr ? `Total com frete (${brl(fr)})` : 'Total';
   const cp = document.getElementById('cpix'); cp.hidden = !(tot && pixDesc()); if (!cp.hidden) cp.innerHTML = `ou <b>${brl(noPix(tot))}</b> pagando no Pix (${String(pixDesc()).replace('.', ',')}% off)`;
   document.getElementById('cpagar').disabled = !its.length;
