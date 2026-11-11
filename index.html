@@ -122,11 +122,12 @@ section.blk{padding:76px 0 0}
 .pf{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
 .pf::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,#888)}
 .pp{margin-top:8px;font-size:15px;color:var(--gold-hi);font-weight:500}
-.tagdesc{position:absolute;left:10px;top:10px;z-index:2;width:74px;height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-14deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));pointer-events:none}
+.tagdesc{position:absolute;left:10px;top:10px;z-index:2;width:62px;height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-14deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));pointer-events:none}
 .tagdesc:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 40% 35%,#ef3b3b,#c81414 70%);clip-path:polygon(50.0% 0.0%,56.0% 8.4%,64.1% 2.0%,67.4% 11.8%,77.0% 7.9%,77.5% 18.3%,87.8% 17.3%,85.3% 27.3%,95.5% 29.2%,90.3% 38.2%,99.5% 42.9%,92.0% 50.0%,99.5% 57.1%,90.3% 61.8%,95.5% 70.8%,85.3% 72.7%,87.8% 82.7%,77.5% 81.7%,77.0% 92.1%,67.4% 88.2%,64.1% 98.0%,56.0% 91.6%,50.0% 100.0%,44.0% 91.6%,35.9% 98.0%,32.6% 88.2%,23.0% 92.1%,22.5% 81.7%,12.2% 82.7%,14.7% 72.7%,4.5% 70.8%,9.7% 61.8%,0.5% 57.1%,8.0% 50.0%,0.5% 42.9%,9.7% 38.2%,4.5% 29.2%,14.7% 27.3%,12.2% 17.3%,22.5% 18.3%,23.0% 7.9%,32.6% 11.8%,35.9% 2.0%,44.0% 8.4%)}
-.tagdesc b{position:relative;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:21px;line-height:.9;letter-spacing:-.5px}
-.tagdesc i{position:relative;font-style:normal;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:15px;line-height:1;letter-spacing:.5px}
-@media(max-width:560px){.tagdesc{width:60px;height:60px;left:6px;top:6px}.tagdesc b{font-size:17px}.tagdesc i{font-size:12px}}
+.tagdesc b{position:relative;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:17.5px;line-height:.9;letter-spacing:-.5px}
+.tagdesc i{position:relative;font-style:normal;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:12.5px;line-height:1;letter-spacing:.5px}
+@media(max-width:560px){.tagdesc{width:52px;height:52px;left:6px;top:6px}.tagdesc b{font-size:14.5px}.tagdesc i{font-size:10.5px}}
+#ccpf[hidden]{display:none}
 .tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .prod.enc .pimg img{filter:drop-shadow(0 18px 22px rgba(0,0,0,.5)) saturate(.55) brightness(.82)}
 .ppix{margin-top:2px;font-size:12px;color:#7fd1a8}
@@ -386,6 +387,7 @@ footer{margin-top:64px;padding:0 0 22px}
       <div class="crow r3"><input class="cin sm" name="cidade" autocomplete="address-level2" placeholder="Cidade"><input class="cin sm" name="uf" autocomplete="address-level1" placeholder="UF" maxlength="2"></div>
       <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
       <div class="cfrete" id="cfrete"></div>
+      <input class="cin sm" name="cpf" id="ccpf" inputmode="numeric" autocomplete="off" placeholder="CPF de quem vai receber (para a etiqueta)" maxlength="14">
     </div>
     <div class="cretira" id="cretira" hidden><b>Retirada grátis na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div></div>
     <div class="cerr" id="cerr"></div>
@@ -607,9 +609,15 @@ function renderSacola() {
 }
 // ---------- frete ----------
 let FRETE = { chave: '', opcoes: [], sel: null, carregando: false, erro: '' };
+// CPF: obrigatório quando o envio é por transportadora (não na entrega local de Ponta Grossa)
+const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10]; };
+const precisaCpf = () => MODO === 'entrega' && !!(FRETE.sel && FRETE.sel.id !== 'local' && FRETE.sel.id !== 'combinar');
 const freteValor = () => MODO === 'entrega' && FRETE.sel ? +FRETE.sel.preco || 0 : 0;
 function renderFrete() {
   const el = document.getElementById('cfrete'); if (!el) return;
+  const cp = document.getElementById('ccpf'); if (cp) cp.hidden = !precisaCpf();
   if (MODO !== 'entrega') { el.innerHTML = ''; return; }
   if (FRETE.carregando) el.innerHTML = '<div class="fmsg">Calculando o frete…</div>';
   else if (FRETE.erro) el.innerHTML = `<div class="fmsg" style="color:#ff8f7a">${esc(FRETE.erro)} <button type="button" data-frefaz style="color:var(--gold-hi)">Tentar de novo</button></div>`;
@@ -731,6 +739,7 @@ fC.addEventListener('submit', async e => {
     const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !end[k] || (k === 'cep' && soDigitos(end.cep).length !== 8));
     if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }
     if (!FRETE.sel) { er.textContent = FRETE.carregando ? 'Aguarde o cálculo do frete.' : 'Escolha uma opção de frete.'; if (!FRETE.carregando) cotarFrete(true); return; }
+    if (precisaCpf() && !cpfOk(f.cpf.value)) { er.textContent = 'Informe um CPF válido de quem vai receber (as transportadoras exigem na etiqueta).'; return f.cpf.focus(); }
   }
   try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
@@ -740,7 +749,7 @@ fC.addEventListener('submit', async e => {
       try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
       if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
     }
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null }, token);
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: MODO === 'entrega' && precisaCpf() ? soDigitos(f.cpf.value) : null }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }

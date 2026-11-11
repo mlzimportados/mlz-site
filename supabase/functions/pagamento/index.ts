@@ -115,6 +115,11 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
   return { cidade, uf, subtotal, opcoes };
 }
 class ErroCliente extends Error {}
+const cpfValido = (d: string) => {
+  if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = (n: number) => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+};
 const lerItens = (arr: unknown) => (Array.isArray(arr) ? arr : []).map((i: any) => ({ id: +i.id, qtd: Math.max(1, Math.min(20, parseInt(i.qtd, 10) || 1)) })).filter((i: any) => i.id > 0);
 
 async function criar(b: any, req: Request) {
@@ -150,16 +155,21 @@ async function criar(b: any, req: Request) {
     itens.push({ produto_id: p.id, descricao: [p.marca, p.nome].filter(Boolean).join(" "), quantidade: i.qtd, preco_unit: r2(preco) });
   }
   // frete recalculado aqui (não confia no valor vindo do navegador)
-  let frete: any = null;
+  let frete: any = null, cpf: string | null = null;
   if (entrega === "entrega") {
     const cot = await cotarFrete(endereco!.cep, pedidos);
     const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || cot.opcoes.find((o: any) => o.nome === String(b.frete_nome || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
     if (!op) return json({ erro: "Escolha uma opção de frete." }, 400);
     frete = op;
+    if (op.id !== "local" && op.id !== "combinar") {
+      cpf = String(b.cpf || "").replace(/\D/g, "");
+      if (!cpfValido(cpf)) return json({ erro: "Informe um CPF válido de quem vai receber (as transportadoras exigem na etiqueta)." }, 400);
+      cpf = `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
+    }
     if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}${op.via ? ` · ${op.via}` : ""}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete, cpf }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev|workers\.dev)$|^https:\/\/(www\.)?mlzcompany\.com$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
