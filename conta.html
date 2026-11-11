@@ -138,6 +138,8 @@ main.dash{max-width:880px}
 .seg li{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.4}
 .seg li svg.i{width:15px;height:15px;color:rgba(79,209,139,.8);margin-top:1px}
 @media(max-width:860px){.ag{grid-template-columns:1fr;gap:26px;min-height:0}.big{font-size:30px}.bens{grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.ben{flex-direction:column;gap:8px}.ben small{display:none}.ben b{font-size:13px}.ben>span{width:38px;height:38px;border-radius:12px}}
+.alogo{display:none}
+@media(max-width:560px){body:has(main.mini-w) .top > a:first-of-type{display:none}body:has(main.mini-w) .top{justify-content:space-between}.alogo{display:flex;justify-content:center;margin:26px 0 8px}.alogo img{height:26px;opacity:.95}}
 @media(max-width:420px){.acard{padding:22px 18px 18px;border-radius:22px}.acard::before{border-radius:22px}.big{font-size:27px}}
 .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 .end{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-radius:16px;padding:13px 15px}
@@ -218,7 +220,8 @@ function telaAuth(msg = '', tipo = 'er') {
         ${MODO === 'esqueci' ? '<button type="button" class="link" data-modo="entrar">Voltar</button>' : ''}
       </form>
       ${SEG}
-    </section>`;
+    </section>
+    <a class="alogo" href="index.html"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a>`;
   app.querySelector('#fa').onsubmit = enviarAuth;
   const sn = app.querySelector('#fa [name=senha]'), fz = document.getElementById('forca');
   if (sn && fz) sn.addEventListener('input', () => {
