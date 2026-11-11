@@ -89,22 +89,25 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
   const pref = (c.frete_empresas || "").split(/[;,]/).map(semAcento).filter(Boolean);
   const validas = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0);
   const daPref = pref.length ? validas.filter((o: any) => pref.some((x) => semAcento(`${o.company?.name || ""} ${o.name || ""}`).includes(x))) : [];
-  const melhor = new Map<string, any>();
+  // por transportadora: o envio padrão (mais barato) e o expresso (mais rápido), cada um pela plataforma mais barata
+  const porEmp = new Map<string, any[]>();
   for (const o of (daPref.length ? daPref : validas)) {
     const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
     const emp = String(o.company?.name || ""), srv = String(o.name || "");
     const cap = (t: string) => t === t.toUpperCase() && t.length > 3 ? t.charAt(0) + t.slice(1).toLowerCase() : t;
-    // "Loggi Ponto" (Melhor Envio) = "Loggi" (SuperFrete); ".Package Centralizado" = ".Package": mesmo serviço, fica o mais barato
     const nome = (semAcento(srv).includes(semAcento(emp)) ? cap(srv) : `${cap(emp)} ${cap(srv)}`).replace(/\s+(ponto|centralizado)\b/gi, "").trim();
     const op = { id: `${o._src}-${o.id}`, nome, via: o._src === "sf" ? "SuperFrete" : "Melhor Envio", dias, preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
-    const k = semAcento(nome).replace(/[^a-z0-9]/g, ""), atual = melhor.get(k);
-    if (!atual || op.preco < atual.preco) melhor.set(k, op);
+    const ke = semAcento(emp).replace(/\bexpress\b/g, "").replace(/[^a-z0-9]/g, "") || semAcento(nome);
+    porEmp.set(ke, [...(porEmp.get(ke) || []), op]);
   }
-  // as mais baratas + sempre as mais rápidas (até 2 dias úteis, ou a mais rápida que houver)
-  const todas = [...melhor.values()].sort((a: any, b: any) => a.preco - b.preco);
-  const minDias = Math.min(...todas.map((o: any) => o.dias || 99));
-  const rapidas = todas.filter((o: any) => o.dias && (o.dias <= 2 || o.dias === minDias)).slice(0, 2);
-  const opcoes = [...new Set([...todas.slice(0, 6), ...rapidas])].sort((a: any, b: any) => a.preco - b.preco);
+  const opcoes: any[] = [];
+  for (const lista of porEmp.values()) {
+    const barata = [...lista].sort((a, b) => a.preco - b.preco || (a.dias || 99) - (b.dias || 99))[0];
+    const rapida = [...lista].sort((a, b) => (a.dias || 99) - (b.dias || 99) || a.preco - b.preco)[0];
+    opcoes.push(barata);
+    if (rapida !== barata && (rapida.dias || 99) < (barata.dias || 99)) opcoes.push(rapida);
+  }
+  opcoes.sort((a: any, b: any) => a.preco - b.preco);
   if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
   return { cidade, uf, subtotal, opcoes };
 }
