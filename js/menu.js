@@ -12,6 +12,7 @@
     ['Minha conta', 'conta.html', 'conta', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'],
     ['Seja revendedor(a)', 'revenda.html', 'revenda', '<path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/><path d="M3 12h18"/>'],
     ['Pagamento, entrega e trocas', 'politicas.html', 'politicas', '<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7"/>'],
+    ['Fale com a gente no WhatsApp', 'https://wa.me/5542999636541', 'wa', '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c.3 1.8 2.6 4.2 4.6 4.6l1.1-1.1 1.8.9-.4 1.4c-3.5.3-7.5-3.7-7.2-7.2l1.4-.4.9 1.8z"/>'],
   ];
   const css = `
 .mzb{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin-left:-8px;border:0;background:none;color:inherit;cursor:pointer;border-radius:10px;flex:none}
@@ -31,6 +32,7 @@
 .mzm .x:hover{background:rgba(255,255,255,.06)}
 .mzm a.it{display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:12px;color:#e8ecf1;text-decoration:none;font-size:15px}
 .mzm a.it:hover{background:rgba(255,255,255,.05)}
+.mzm a.it.wa{margin-top:8px;border:1px solid rgba(201,162,39,.4);color:#e6c35c}
 .mzm a.it.on{background:rgba(201,162,39,.12);color:#e6c35c}
 .mzm a.it svg{width:20px;height:20px;fill:none;stroke:#c9a227;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 @media(min-width:761px){.mzb{display:none}}
@@ -47,10 +49,11 @@
     m.className = 'mzm'; m.setAttribute('aria-hidden', 'true');
     m.innerHTML = `<div class="bg"></div><nav class="pn" aria-label="Menu">
       <div class="tp"><a href="${naHome ? '#' : 'index.html'}"><img src="img/logo_mlz_company.png" alt="MLZ Company"></a><button class="x" type="button" aria-label="Fechar menu">×</button></div>
-      ${links.map(([t, u, k, ic]) => `<a class="it${k && k === pag ? ' on' : ''}" href="${u}"><svg viewBox="0 0 24 24">${ic}</svg>${t}</a>`).join('')}
+      ${links.map(([t, u, k, ic]) => `<a class="it${k && k === pag ? ' on' : ''}${k === 'wa' ? ' wa' : ''}" href="${u}"${k === 'wa' ? ' target="_blank" rel="noopener"' : ''}><svg viewBox="0 0 24 24">${ic}</svg>${t}</a>`).join('')}
       <div class="rd">MLZ Company · importados originais</div></nav>`;
     document.body.appendChild(m);
-    const abrir = () => { m.classList.add('on'); m.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; };
+    const syncWa = () => { const w = document.querySelector('#hWa[href*="wa.me"], a[href*="wa.me"]:not(.mzm a)'); const it = m.querySelector('a.it.wa'); if (w && it) it.href = w.href; };
+    const abrir = () => { syncWa(); m.classList.add('on'); m.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; };
     const fechar = () => { m.classList.remove('on'); m.setAttribute('aria-hidden', 'true'); document.documentElement.style.overflow = ''; };
     b.onclick = abrir;
     m.querySelector('.bg').onclick = fechar;
