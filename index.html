@@ -122,7 +122,11 @@ section.blk{padding:76px 0 0}
 .pf{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
 .pf::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,#888)}
 .pp{margin-top:8px;font-size:15px;color:var(--gold-hi);font-weight:500}
-.tagdesc{position:absolute;left:10px;top:26px;transform:rotate(-14deg);transform-origin:left center;z-index:2;font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:999px;background:linear-gradient(135deg,#e6c35c,#c9a227);color:#0b1d33;box-shadow:0 4px 14px rgba(201,162,39,.35)}
+.tagdesc{position:absolute;left:10px;top:10px;z-index:2;width:74px;height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-14deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));pointer-events:none}
+.tagdesc:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 40% 35%,#ef3b3b,#c81414 70%);clip-path:polygon(50.0% 0.0%,56.0% 8.4%,64.1% 2.0%,67.4% 11.8%,77.0% 7.9%,77.5% 18.3%,87.8% 17.3%,85.3% 27.3%,95.5% 29.2%,90.3% 38.2%,99.5% 42.9%,92.0% 50.0%,99.5% 57.1%,90.3% 61.8%,95.5% 70.8%,85.3% 72.7%,87.8% 82.7%,77.5% 81.7%,77.0% 92.1%,67.4% 88.2%,64.1% 98.0%,56.0% 91.6%,50.0% 100.0%,44.0% 91.6%,35.9% 98.0%,32.6% 88.2%,23.0% 92.1%,22.5% 81.7%,12.2% 82.7%,14.7% 72.7%,4.5% 70.8%,9.7% 61.8%,0.5% 57.1%,8.0% 50.0%,0.5% 42.9%,9.7% 38.2%,4.5% 29.2%,14.7% 27.3%,12.2% 17.3%,22.5% 18.3%,23.0% 7.9%,32.6% 11.8%,35.9% 2.0%,44.0% 8.4%)}
+.tagdesc b{position:relative;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:21px;line-height:.9;letter-spacing:-.5px}
+.tagdesc i{position:relative;font-style:normal;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:15px;line-height:1;letter-spacing:.5px}
+@media(max-width:560px){.tagdesc{width:60px;height:60px;left:6px;top:6px}.tagdesc b{font-size:17px}.tagdesc i{font-size:12px}}
 .tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .prod.enc .pimg img{filter:drop-shadow(0 18px 22px rgba(0,0,0,.5)) saturate(.55) brightness(.82)}
 .ppix{margin-top:2px;font-size:12px;color:#7fd1a8}
@@ -481,7 +485,7 @@ const marcaBase = (m) => (m || 'Outras').replace(/\s+Pride$/i, '');
 function cardProd(p) {
   const enc = esgotado(p);
   return `<button class="prod${enc ? ' enc' : ''}" data-id="${p.id}">
-      <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc">-12% OFF</span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
+      <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc"><b>-12%</b><i>OFF</i></span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
         ${p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
         <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
