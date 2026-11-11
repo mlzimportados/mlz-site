@@ -181,7 +181,7 @@ main.dash{max-width:880px}
 <main id="app"><div class="load"><div class="spin"></div></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261110b"></script>
+<script src="js/api.js?v=20261111c"></script>
 <script>
 const api = criarApi({ conta: true });
 const app = document.getElementById('app');
@@ -209,7 +209,7 @@ function telaAuth(msg = '', tipo = 'er') {
       <h2 class="at">${tit}</h2><p class="as">${sub}</p>
       ${MODO !== 'esqueci' ? `<div class="tabs"><button class="${MODO === 'entrar' ? 'on' : ''}" data-modo="entrar">Entrar</button><button class="${MODO === 'cadastro' ? 'on' : ''}" data-modo="cadastro">Criar conta</button></div>` : ''}
       <form id="fa" novalidate>
-        ${MODO === 'cadastro' ? '<input class="in" name="nome" autocomplete="name" placeholder="Seu nome" aria-label="Seu nome" required>' : ''}
+        ${MODO === 'cadastro' ? '<input class="in" name="nome" autocomplete="name" placeholder="Seu nome" aria-label="Seu nome" required><input class="in" name="tel" inputmode="tel" autocomplete="tel" placeholder="WhatsApp com DDD" aria-label="WhatsApp com DDD" required><input class="in" name="cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="CPF" aria-label="CPF" required>' : ''}
         <input class="in" name="email" type="email" autocomplete="email" inputmode="email" placeholder="E-mail" aria-label="E-mail" required>
         ${MODO !== 'esqueci' ? `<span class="fi"><input class="in" name="senha" type="password" autocomplete="${MODO === 'cadastro' ? 'new-password' : 'current-password'}" required minlength="6" placeholder="${MODO === 'cadastro' ? 'Senha (mínimo 6 caracteres)' : 'Senha'}" aria-label="Senha"><button type="button" class="olho" data-olho aria-label="Mostrar senha"><svg class="i"><use href="#i-olho"/></svg></button></span>` : ''}
         ${MODO === 'entrar' ? '<button type="button" class="link r" data-modo="esqueci">Esqueci minha senha</button>' : ''}
@@ -234,6 +234,9 @@ async function enviarAuth(e) {
   const email = f.email.value.trim(), senha = f.senha ? f.senha.value : '', nome = f.nome ? f.nome.value.trim() : '';
   m.className = 'msg er'; m.textContent = '';
   if (MODO === 'cadastro' && !nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
+  const tel = f.tel ? f.tel.value.trim() : '', cpf = f.cpf ? soDigitos(f.cpf.value) : '';
+  if (MODO === 'cadastro' && soDigitos(tel).length < 10) { m.textContent = 'Informe seu WhatsApp com DDD.'; return f.tel.focus(); }
+  if (MODO === 'cadastro' && !cpfOk(cpf)) { m.textContent = 'Confira o CPF digitado.'; return f.cpf.focus(); }
   if (!/^\S+@\S+\.\S+$/.test(email)) { m.textContent = 'Confira o e-mail digitado.'; return f.email.focus(); }
   if (MODO !== 'esqueci' && senha.length < 6) { m.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return f.senha.focus(); }
   b.disabled = true;
@@ -243,9 +246,10 @@ async function enviarAuth(e) {
       MODO = 'entrar'; return telaAuth('Se esse e-mail tiver conta, o link para criar a senha nova já está na sua caixa de entrada (confira o spam também).', 'ok');
     }
     if (MODO === 'cadastro') {
-      const r = await api.cadastrar(email, senha, nome);
+      const r = await api.cadastrar(email, senha, nome, { telefone: tel, cpf });
       if (!r.session) { MODO = 'entrar'; return telaAuth('Conta criada! Enviamos um link de confirmação para o seu e-mail. Clique nele e depois entre aqui.', 'ok'); }
-      try { await api.salvarConta(nome, '', null); } catch (_) {}
+      try { await api.salvarConta(nome, tel, null); } catch (_) {}
+      try { await api.salvarCpf(cpf, tel); } catch (err) { console.error(err); }
     } else await api.entrar(email, senha);
     await abrirConta(true);
   } catch (err) { m.textContent = traduz(err.message); b.disabled = false; }
@@ -279,10 +283,21 @@ const mesAno = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { month: 'long
 const linkWa = (t) => { const n = soDigitos(CFG.whatsapp); return n ? `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(t)}` : ''; };
 const andamento = (p) => p.entrega ? p.entrega_status !== 'entregue' : !p.pago;
 
+const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10]; };
 async function abrirConta(acabouDeEntrar) {
   app.className = 'dash';
   app.innerHTML = '<div class="load"><div class="spin"></div></div>';
   try { [CONTA, CFG] = await Promise.all([api.minhaConta(), api.config().catch(() => ({}))]); } catch (err) { console.error(err); CONTA = { compras: [], enderecos: [] }; }
+  // conta criada com confirmação de e-mail: o CPF e o WhatsApp do cadastro ficam guardados e entram no 1º acesso (puxa o histórico pelo CPF)
+  if (!CONTA.cpf) try {
+    const ss = await api.sessao(), md = (ss && ss.user && ss.user.user_metadata) || {};
+    if (md.cpf && cpfOk(md.cpf)) {
+      if (md.telefone && !CONTA.telefone) try { await api.salvarConta(CONTA.nome || md.nome || 'Cliente', md.telefone, null); } catch (_) {}
+      await api.salvarCpf(md.cpf, md.telefone || ''); CONTA = await api.minhaConta();
+    }
+  } catch (err) { console.error(err); }
   CONTA.enderecos = CONTA.enderecos || []; CONTA.compras = CONTA.compras || []; CONTA.pendentes = CONTA.pendentes || [];
   if (acabouDeEntrar && voltarSacola) return seguir();
   renderDash();
@@ -330,6 +345,7 @@ function renderTab() {
       <form id="fd" novalidate>
         <label>Nome<input class="in" name="nome" autocomplete="name" value="${esc(CONTA.nome || '')}"></label>
         <label>WhatsApp<input class="in" name="tel" inputmode="tel" autocomplete="tel" value="${esc(CONTA.telefone || '')}" placeholder="Com DDD"></label>
+        <label>CPF<input class="in" name="cpf" inputmode="numeric" autocomplete="off" maxlength="14" value="${esc(CONTA.cpf || '')}" placeholder="Só números"></label>
         <div class="msg" id="dm"></div>
         <button class="btn solid">Salvar</button>
       </form></div>
@@ -345,7 +361,15 @@ function renderTab() {
       const nome = f.nome.value.trim(), tel = f.tel.value.trim();
       if (!nome) { m.textContent = 'Informe seu nome.'; return f.nome.focus(); }
       if (tel && soDigitos(tel).length < 10) { m.textContent = 'Informe o WhatsApp com DDD.'; return f.tel.focus(); }
-      try { await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel; m.className = 'msg ok'; m.textContent = 'Salvo!'; }
+      const cpf = soDigitos(f.cpf.value);
+      if (cpf && !cpfOk(cpf)) { m.textContent = 'Confira o CPF digitado.'; return f.cpf.focus(); }
+      try {
+        await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel;
+        let ligadas = 0;
+        if (cpf && cpf !== soDigitos(CONTA.cpf || '')) { const r = await api.salvarCpf(cpf, tel); CONTA.cpf = r.cpf; ligadas = r.ligadas || 0; }
+        m.className = 'msg ok'; m.textContent = ligadas ? `Salvo! Encontramos ${ligadas} compra${ligadas > 1 ? 's' : ''} sua${ligadas > 1 ? 's' : ''} com esse CPF.` : 'Salvo!';
+        if (ligadas) setTimeout(() => abrirConta(), 1200);
+      }
       catch (err) { m.textContent = traduz(err.message); }
     };
     const g = document.getElementById('fs');

@@ -398,7 +398,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261110b"></script>
+<script src="js/api.js?v=20261111c"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
@@ -637,7 +637,7 @@ async function cotarFrete(forcar) {
   try {
     const r = await mlzPagamento({ acao: 'frete', cep, itens: SACOLA });
     if (FRETE.chave !== chave) return;
-    FRETE.opcoes = r.opcoes || []; FRETE.sel = FRETE.opcoes.find(o => o.id === antes) || FRETE.opcoes[0] || null;
+    FRETE.opcoes = r.opcoes || []; FRETE.sel = FRETE.opcoes.find(o => o.id === antes) || (FRETE.opcoes.length === 1 ? FRETE.opcoes[0] : null); // cliente precisa escolher o frete
   } catch (err) { if (FRETE.chave !== chave) return; FRETE.erro = err.message || 'Não foi possível calcular o frete.'; }
   FRETE.carregando = false; renderFrete(); renderSacola();
 }
@@ -671,7 +671,7 @@ async function carregarConta() {
   document.getElementById('hConta').classList.add('on');
   try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); return; }
   const f = document.getElementById('cft');
-  if (CONTA.nome) f.nome.value = CONTA.nome; if (CONTA.telefone) f.tel.value = CONTA.telefone;
+  if (CONTA.nome) f.nome.value = CONTA.nome; if (CONTA.telefone) f.tel.value = CONTA.telefone; if (CONTA.cpf && !f.cpf.value) f.cpf.value = CONTA.cpf;
   ENDS = CONTA.enderecos || (CONTA.endereco ? [CONTA.endereco] : []);
   if (ENDS.length) { usarEndereco(0); renderEnds(); }
   document.getElementById('cconta').innerHTML = `<a href="conta.html"><svg class="i"><use href="#i-user"/></svg>Comprando como <b>${esc(CONTA.nome ? CONTA.nome.split(' ')[0] : CONTA.email || 'você')}</b>${CONTA.endereco ? ' · endereço salvo' : ''}</a>`;
@@ -721,7 +721,7 @@ fC.cep.addEventListener('input', async () => {
 });
 try {
   const d = JSON.parse(localStorage.getItem('mlz_cliente') || '{}');
-  if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel;
+  if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel; if (d.cpf) fC.cpf.value = d.cpf;
   if (d.end) CAMPOS_END.forEach(k => { if (d.end[k]) fC[k].value = d.end[k]; });
   if (d.modo) setModo(d.modo);
 } catch (_) {}
@@ -738,9 +738,9 @@ fC.addEventListener('submit', async e => {
   if (MODO === 'entrega') {
     const falta = [['cep', 'o CEP'], ['rua', 'a rua'], ['numero', 'o número'], ['bairro', 'o bairro'], ['cidade', 'a cidade'], ['uf', 'o estado (UF)']].find(([k]) => !end[k] || (k === 'cep' && soDigitos(end.cep).length !== 8));
     if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }
-    if (!FRETE.sel) { er.textContent = FRETE.carregando ? 'Aguarde o cálculo do frete.' : 'Escolha uma opção de frete.'; if (!FRETE.carregando) cotarFrete(true); return; }
+    if (!FRETE.sel) { er.textContent = FRETE.carregando ? 'Aguarde o cálculo do frete.' : 'Escolha uma opção de frete para continuar.'; if (!FRETE.carregando && !FRETE.opcoes.length) cotarFrete(true); else { const el = document.getElementById('cfrete'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } return; }
   }
-  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, modo: MODO, end })); } catch (_) {}
+  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, cpf: f.cpf.value.trim(), modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
   try {
     let token = '';

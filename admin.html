@@ -349,7 +349,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261110b"></script>
+<script src="js/api.js?v=20261111c"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [] };
@@ -635,7 +635,7 @@ function htmlContas() {
   if (!cs.length) return '';
   return `<details class="card" style="margin-bottom:16px"><summary style="cursor:pointer"><h3 style="display:inline">Clientes com conta no site (${cs.length})</h3></summary><div style="margin-top:12px">
     ${cs.map(c => { const t = soDigitos(c.telefone); const n = (D.vendas || []).filter(v => v.cliente_id === c.id).length;
-      return `<div class="linha"><div class="gr"><div class="n">${esc(c.nome)}</div><div class="m">${esc(c.email || '')}${c.telefone ? ' · ' + esc(c.telefone) : ''} · ${n} compra${n === 1 ? '' : 's'}${c.endereco ? ' · ' + esc(c.endereco) : ''}</div></div>
+      return `<div class="linha"><div class="gr"><div class="n">${esc(c.nome)}</div><div class="m">${esc(c.email || '')}${c.telefone ? ' · ' + esc(c.telefone) : ''}${c.cpf ? ' · CPF ' + esc(c.cpf) : ''} · ${n} compra${n === 1 ? '' : 's'}${c.endereco ? ' · ' + esc(c.endereco) : ''}</div></div>
         <button class="btn sm line" data-editcli="${c.id}" title="Editar"><svg class="i"><use href="#i-edit"/></svg></button>
         ${t ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${t.length <= 11 ? '55' + t : t}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>`; }).join('')}
     <div class="hint">Cliente que já comprava com você antes de criar a conta: abra “Editar cliente” no cadastro antigo e coloque o e-mail da conta para juntar o histórico.</div></div></details>`;
