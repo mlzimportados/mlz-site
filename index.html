@@ -180,6 +180,8 @@ footer{margin-top:64px;padding:0 0 22px}
 .sprice s{color:var(--faint)}
 .sprice .tag{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(217,178,76,.15);color:var(--gold-hi)}
 .parc{font-size:13.5px;color:var(--muted)}
+.parc b{color:var(--txt);font-weight:600}
+.parc2{font-size:12px;color:var(--faint);margin-top:2px}
 .piramide{margin-top:26px;margin-left:4px;border-left:1px solid rgba(217,178,76,.3);padding-left:20px;display:grid;gap:16px}
 .nivel{position:relative}
 .nivel::before{content:"";position:absolute;left:-25px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--bg2);border:1.5px solid var(--gold)}
@@ -511,7 +513,7 @@ function abrir(id) {
       ${p.familia ? `<span class="fam" style="--c:${corFam(p.familia)}">${esc(p.familia)}${FAMILIAS[p.familia] ? ' · ' + esc(FAMILIAS[p.familia].d.toLowerCase()) : ''}</span>` : (p.tipo ? `<span class="fam">${esc(p.tipo)}</span>` : '')}
       ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada e o valor.</p></div>` : `
       <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : '<span class="por" style="font-size:22px">Consulte o preço</span>'}</div>
-      ${f && max > 1 ? `<div class="parc">ou em até ${max}x de ${brl(f / max)}</div>` : ''}`}
+      ${f && max > 1 ? `<div class="parc">ou em até <b>${max}x de ${brl(f / max)} sem juros</b> no cartão</div>${max < 12 ? `<div class="parc2">ou até 12x com acréscimo</div>` : ''}` : ''}`}
       ${niveis.length ? `<div class="piramide">${niveis.map(([k, l]) => `<div class="nivel"><div class="nl">Notas de ${l}</div><div class="notas">${n[k].map(x => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}</div>` : ''}
       ${resto ? `<div class="desc">${esc(resto)}</div>` : ''}
       <div class="sacoes">

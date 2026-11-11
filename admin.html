@@ -1285,7 +1285,7 @@ function vAjustes() {
         <label class="f">2º WhatsApp (aparece no rodapé)<input class="in" name="whatsapp2" inputmode="tel" value="${esc(c.whatsapp2 || '')}" placeholder="opcional"></label>
         <label class="f">Instagram da loja<input class="in" name="instagram" value="${esc(c.instagram || '')}" placeholder="@mlzimportados"></label>
         <label class="f">E-mail de contato<input class="in" name="email" type="email" value="${esc(c.email || '')}" placeholder="contato@mlzcompany.com"></label></div>
-        <div class="grid2"><label class="f">Parcelamento mostrado no site<select class="in" name="parcelas_max">${[1, 2, 3, 4, 5, 6, 10, 12].map(n => `<option value="${n}" ${String(c.parcelas_max) === String(n) ? 'selected' : ''}>${n === 1 ? 'Não mostrar' : 'em até ' + n + 'x'}</option>`).join('')}</select></label></div>
+        <div class="grid2"><label class="f">Parcelas sem juros no cartão<select class="in" name="parcelas_max">${[1, 2, 3, 4, 5, 6, 10, 12].map(n => `<option value="${n}" ${String(c.parcelas_max) === String(n) ? 'selected' : ''}>${n === 1 ? 'Não mostrar' : 'até ' + n + 'x sem juros'}</option>`).join('')}</select></label></div>
         <div class="grid2"><label class="f">InfiniteTag (pagamento online no site)<input class="in" name="infinitepay_handle" value="${esc(c.infinitepay_handle || '')}" placeholder="vazio = desligado"></label></div>
         <div class="grid2"><label class="f">Endereço de retirada<input class="in" name="retirada_endereco" value="${esc(c.retirada_endereco || '')}" placeholder="Rua, número, cidade"></label>
         <label class="f">Horário de retirada<input class="in" name="retirada_horario" value="${esc(c.retirada_horario || '')}" placeholder="Ex.: no mesmo dia, das 8:00 às 18:00"></label></div>
