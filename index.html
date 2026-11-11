@@ -481,7 +481,7 @@ const marcaBase = (m) => (m || 'Outras').replace(/\s+Pride$/i, '');
 function cardProd(p) {
   const enc = esgotado(p);
   return `<button class="prod${enc ? ' enc' : ''}" data-id="${p.id}">
-      <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc">Desconto</span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
+      <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc">-12% OFF</span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
         ${p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
         <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
