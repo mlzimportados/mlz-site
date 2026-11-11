@@ -232,6 +232,8 @@ footer{margin-top:64px;padding:0 0 22px}
 .cit .n{font-size:14.5px;line-height:1.3}
 .cit .n small{display:block;color:var(--faint);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .cit .v{color:var(--gold-hi);font-size:14px;margin-top:3px}
+.cit .v s{color:var(--faint);font-size:12px;margin-right:6px}
+.cit .n .tp{display:block;color:var(--muted,#9aa7b8);font-size:12px;margin-top:1px}
 .cq{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px}
 .cq button{width:32px;height:32px;font-size:17px;color:var(--muted)}
 .cq span{min-width:18px;text-align:center;font-size:14px}
@@ -593,7 +595,7 @@ function atualizarBag() {
 function renderSacola() {
   const its = SACOLA.map(i => ({ ...i, p: PRODS.find(x => x.id === i.id) })).filter(i => i.p);
   document.getElementById('cits').innerHTML = its.length ? its.map(i => `<div class="cit"><img src="${esc(imgSrc(i.p))}" alt="">
-    <div class="n"><small>${esc(i.p.marca || '')}</small>${esc(i.p.nome)}<div class="v">${brl(precoFinal(i.p) * i.qtd)}</div></div>
+    <div class="n">${esc(nomeCompleto(i.p))}${i.p.tipo ? `<span class="tp">${esc(i.p.tipo)}</span>` : ''}<div class="v">${temPromo(i.p) ? `<s>${brl(+i.p.preco * i.qtd)}</s>` : ''}${brl(precoFinal(i.p) * i.qtd)}</div></div>
     <div class="cq"><button type="button" data-cq="${i.id}" data-d="-1" aria-label="Menos">−</button><span>${i.qtd}</span><button type="button" data-cq="${i.id}" data-d="1" aria-label="Mais">+</button></div></div>`).join('')
     : '<div class="cvazio">Sua sacola está vazia.</div>';
   const fr = document.querySelector('#cart .cbox').classList.contains('p2') ? freteValor() : 0;
