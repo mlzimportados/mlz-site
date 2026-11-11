@@ -183,7 +183,7 @@ main.dash{max-width:880px}
 <main id="app"><div class="load"><div class="spin"></div></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111d"></script>
+<script src="js/api.js?v=20261111e"></script>
 <script>
 const api = criarApi({ conta: true });
 const app = document.getElementById('app');
@@ -292,6 +292,8 @@ const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length 
 async function abrirConta(acabouDeEntrar) {
   app.className = 'dash';
   app.innerHTML = '<div class="load"><div class="spin"></div></div>';
+  // puxa para a conta as compras feitas sem conta com o mesmo CPF ou e-mail
+  try { await api.ligarHistorico(); } catch (err) { console.error(err); }
   try { [CONTA, CFG] = await Promise.all([api.minhaConta(), api.config().catch(() => ({}))]); } catch (err) { console.error(err); CONTA = { compras: [], enderecos: [] }; }
   // conta criada com confirmação de e-mail: o CPF e o WhatsApp do cadastro ficam guardados e entram no 1º acesso (puxa o histórico pelo CPF)
   if (!CONTA.cpf) try {
@@ -370,7 +372,7 @@ function renderTab() {
         await api.salvarConta(nome, tel, null); CONTA.nome = nome; CONTA.telefone = tel;
         let ligadas = 0;
         if (cpf && cpf !== soDigitos(CONTA.cpf || '')) { const r = await api.salvarCpf(cpf, tel); CONTA.cpf = r.cpf; ligadas = r.ligadas || 0; }
-        m.className = 'msg ok'; m.textContent = ligadas ? `Salvo! Encontramos ${ligadas} compra${ligadas > 1 ? 's' : ''} sua${ligadas > 1 ? 's' : ''} com esse CPF.` : 'Salvo!';
+        m.className = 'msg ok'; m.textContent = ligadas ? `Salvo! Encontramos ${ligadas} compra${ligadas > 1 ? 's' : ''} sua${ligadas > 1 ? 's' : ''} feita${ligadas > 1 ? 's' : ''} sem conta.` : 'Salvo!';
         if (ligadas) setTimeout(() => abrirConta(), 1200);
       }
       catch (err) { m.textContent = traduz(err.message); }
