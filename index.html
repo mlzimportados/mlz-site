@@ -257,6 +257,11 @@ footer{margin-top:64px;padding:0 0 22px}
 .cpix{text-align:right;font-size:13px;color:var(--muted);margin-top:-4px}.cpix b{color:#7fd1a8;font-weight:600}
 .cin{width:100%;min-width:0;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font:inherit;font-size:15px;outline:0}
 .cin:focus{border-color:var(--gold)}
+.cbox:not(.p2) .p2only,.cbox.p2 .p1only{display:none!important}
+.cbox.p2 .cits{display:none}
+.cbox.p2 .cft{flex:1;max-height:none;border-top:0;align-content:start}
+.cres{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted);padding:2px 0 4px}
+.cres button{color:var(--gold-hi);font-size:13.5px}
 .cerr{color:#ff8f7a;font-size:13px;text-align:center}
 .cerr:empty{display:none}
 .cvazio{padding:40px 10px;text-align:center;color:var(--muted)}
@@ -345,16 +350,18 @@ footer{margin-top:64px;padding:0 0 22px}
 <div class="sheet" id="sheet"><div class="sbox" id="sbox"></div></div>
 <button class="bag" id="bagBtn" aria-label="Abrir sacola"><svg class="i"><use href="#i-sacola"/></svg>Sacola <b id="bagN">0</b></button>
 <div class="cart" id="cart"><div class="cbox">
-  <div class="chd"><h3>Sua sacola</h3><button data-cfechar aria-label="Fechar"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="chd"><h3 id="ctit">Sua sacola</h3><button data-cfechar aria-label="Fechar"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="cits" id="cits"></div>
   <form class="cft" id="cft" novalidate>
     <div class="ctot"><span>Total</span><b id="ctot">R$ 0,00</b></div>
     <div class="cpix" id="cpix" hidden></div>
-    <div class="cconta" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
-    <input class="cin" name="nome" autocomplete="name" placeholder="Seu nome" required>
-    <input class="cin" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
-    <div class="cmodo" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
-    <div class="cend" id="cend">
+    <button class="btn solid buy p1only" id="ccont" type="button">Confirmar produtos e continuar</button>
+    <div class="cres p2only"><span id="cresN"></span><button type="button" data-cvoltar>← Alterar produtos</button></div>
+    <div class="cconta p2only" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
+    <input class="cin p2only" name="nome" autocomplete="name" placeholder="Seu nome" required>
+    <input class="cin p2only" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
+    <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
+    <div class="p2only"><div class="cend" id="cend">
       <div class="cends" id="cends" hidden></div>
       <div class="crow"><input class="cin sm" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" maxlength="9"><input class="cin sm" name="numero" inputmode="numeric" placeholder="Número"></div>
       <input class="cin sm" name="rua" autocomplete="address-line1" placeholder="Rua">
@@ -363,10 +370,10 @@ footer{margin-top:64px;padding:0 0 22px}
       <div class="crow r3"><input class="cin sm" name="cidade" autocomplete="address-level2" placeholder="Cidade"><input class="cin sm" name="uf" autocomplete="address-level1" placeholder="UF" maxlength="2"></div>
       <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
     </div>
-    <div class="cretira" id="cretira" hidden><b>Retirada na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div>
+    <div class="cretira" id="cretira" hidden><b>Retirada na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div></div>
     <div class="cerr" id="cerr"></div>
-    <button class="btn solid buy" id="cpagar" type="submit"><svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento</button>
-    <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span><span>Débito</span></div>
+    <button class="btn solid buy p2only" id="cpagar" type="submit"><svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento</button>
+    <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span></div>
     <div class="cnote">Pagamento seguro pela InfinitePay. Depois do pagamento, confirmamos o envio ou a retirada pelo WhatsApp.</div>
   </form>
 </div></div>
@@ -527,7 +534,7 @@ function abrir(id) {
         ${podeComprar(p) ? `<button class="btn solid buy" data-comprar="${p.id}"><svg class="i"><use href="#i-cadeado"/></svg>Comprar agora</button>
         <div class="duo"><button class="btn ghost" data-addsacola="${p.id}"><svg class="i"><use href="#i-sacola"/></svg>Adicionar à sacola</button>
         ${wa ? `<a class="btn ghost" target="_blank" rel="noopener" href="${wa}"><svg class="i"><use href="#i-wa"/></svg>Tirar dúvida</a>` : ''}</div>
-        <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span><span>Débito</span></div>` : `
+        <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span></div>` : `
         ${wa ? `<a class="btn solid" target="_blank" rel="noopener" href="${wa}"><svg class="i"><use href="#i-wa"/></svg>${enc ? 'Encomendar pelo WhatsApp' : 'Pedir pelo WhatsApp'}</a>` : ''}
         ${ig ? `<a class="btn ghost" target="_blank" rel="noopener" href="${ig}" data-copiar="${esc(msg)}"><svg class="i"><use href="#i-ig"/></svg>${enc ? 'Encomendar pelo Instagram' : 'Pedir pelo Instagram'}</a>` : ''}
         ${!wa && !ig ? `<div class="btn ghost">Chame a gente no direct</div>` : ''}`}
@@ -574,12 +581,25 @@ function renderSacola() {
   document.getElementById('ctot').textContent = brl(tot);
   const cp = document.getElementById('cpix'); cp.hidden = !(tot && pixDesc()); if (!cp.hidden) cp.innerHTML = `ou <b>${brl(noPix(tot))}</b> pagando no Pix (${String(pixDesc()).replace('.', ',')}% off)`;
   document.getElementById('cpagar').disabled = !its.length;
+  document.getElementById('ccont').disabled = !its.length;
+  const nIt = its.reduce((s, i) => s + i.qtd, 0);
+  document.getElementById('cresN').textContent = `${nIt} produto${nIt === 1 ? '' : 's'} na sacola`;
+  if (!its.length) passoSacola(1);
 }
-function abrirSacola() { renderSacola(); document.getElementById('cart').classList.add('on'); document.body.style.overflow = 'hidden'; }
+function passoSacola(n) {
+  const bx = document.querySelector('#cart .cbox'); bx.classList.toggle('p2', n === 2);
+  document.getElementById('ctit').textContent = n === 2 ? 'Seus dados e entrega' : 'Sua sacola';
+  document.getElementById('cerr').textContent = '';
+  const ft = document.getElementById('cft'); ft.scrollTop = 0;
+  if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
+}
+function abrirSacola() { passoSacola(1); renderSacola(); document.getElementById('cart').classList.add('on'); document.body.style.overflow = 'hidden'; }
 function fecharSacola() { document.getElementById('cart').classList.remove('on'); document.body.style.overflow = ''; }
 document.getElementById('bagBtn').onclick = abrirSacola;
 document.getElementById('cart').addEventListener('click', e => {
   if (e.target.id === 'cart' || e.target.closest('[data-cfechar]')) return fecharSacola();
+  if (e.target.closest('#ccont')) return passoSacola(2);
+  if (e.target.closest('[data-cvoltar]')) return passoSacola(1);
   const b = e.target.closest('[data-cq]'); if (!b) return;
   const it = SACOLA.find(i => i.id === +b.dataset.cq), p = PRODS.find(x => x.id === +b.dataset.cq); if (!it || !p) return;
   it.qtd = Math.min(p.estoque, it.qtd + +b.dataset.d); if (+b.dataset.d > 0 && it.qtd === p.estoque && it.qtd > 0) document.getElementById('cerr').textContent = p.estoque === 1 ? 'Só temos 1 unidade desse.' : `Só temos ${p.estoque} unidades desse.`;
