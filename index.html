@@ -383,6 +383,7 @@ footer{margin-top:64px;padding:0 0 22px}
     <input class="cin p2only" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin p2only" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
     <input class="cin p2only" name="cpf" id="ccpf" inputmode="numeric" autocomplete="off" placeholder="CPF de quem vai receber ou retirar" maxlength="14" required>
+    <input class="cin p2only" name="email" id="cemail" type="email" inputmode="email" autocomplete="email" placeholder="Seu e-mail (enviamos a confirmação da compra)" maxlength="120" required>
     <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar <small class="cgr">grátis</small></button></div>
     <div class="p2only"><div class="cend" id="cend">
       <div class="cends" id="cends" hidden></div>
@@ -621,6 +622,7 @@ const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length 
   const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
   return dv(9) === +d[9] && dv(10) === +d[10]; };
 const precisaCpf = () => true;
+const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || ''));
 const freteValor = () => MODO === 'entrega' && FRETE.sel ? +FRETE.sel.preco || 0 : 0;
 function renderFrete() {
   const el = document.getElementById('cfrete'); if (!el) return;
@@ -679,6 +681,7 @@ async function carregarConta() {
   try { CONTA = await api.minhaConta(); } catch (err) { console.error(err); return; }
   const f = document.getElementById('cft');
   if (CONTA.nome) f.nome.value = CONTA.nome; if (CONTA.telefone) f.tel.value = CONTA.telefone; if (CONTA.cpf && !f.cpf.value) f.cpf.value = CONTA.cpf;
+  { const em = CONTA.email || (SESSAO && SESSAO.user && SESSAO.user.email) || ''; if (em && !f.email.value) f.email.value = em; }
   ENDS = CONTA.enderecos || (CONTA.endereco ? [CONTA.endereco] : []);
   if (ENDS.length) { usarEndereco(0); renderEnds(); }
   document.getElementById('cconta').innerHTML = `<a href="conta.html"><svg class="i"><use href="#i-user"/></svg>Comprando como <b>${esc(CONTA.nome ? CONTA.nome.split(' ')[0] : CONTA.email || 'você')}</b>${CONTA.endereco ? ' · endereço salvo' : ''}</a>`;
@@ -728,7 +731,7 @@ fC.cep.addEventListener('input', async () => {
 });
 try {
   const d = JSON.parse(localStorage.getItem('mlz_cliente') || '{}');
-  if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel; if (d.cpf) fC.cpf.value = d.cpf;
+  if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel; if (d.cpf) fC.cpf.value = d.cpf; if (d.email) fC.email.value = d.email;
   if (d.end) CAMPOS_END.forEach(k => { if (d.end[k]) fC[k].value = d.end[k]; });
   if (d.modo) setModo(d.modo);
 } catch (_) {}
@@ -739,6 +742,8 @@ fC.addEventListener('submit', async e => {
   if (!nome) { er.textContent = 'Informe seu nome.'; return f.nome.focus(); }
   if (soDigitos(tel).length < 10) { er.textContent = 'Informe seu WhatsApp com DDD.'; return f.tel.focus(); }
   if (!cpfOk(f.cpf.value)) { er.textContent = 'Informe um CPF válido de quem vai receber ou retirar o pedido.'; return f.cpf.focus(); }
+  const email = f.email.value.trim().toLowerCase();
+  if (!emailOk(email)) { er.textContent = 'Informe um e-mail válido para receber a confirmação da compra.'; return f.email.focus(); }
   const end = {}; CAMPOS_END.forEach(k => end[k] = f[k].value.trim());
   end.uf = end.uf.toUpperCase();
   if (SEL >= 0 && ENDS[SEL] && CAMPOS_END.every(k => (ENDS[SEL][k] || '').trim().toUpperCase() === end[k].toUpperCase())) { end.id = ENDS[SEL].id || ''; end.apelido = ENDS[SEL].apelido || ''; }
@@ -747,7 +752,7 @@ fC.addEventListener('submit', async e => {
     if (falta) { er.textContent = `Informe ${falta[1]} para a entrega.`; return f[falta[0]].focus(); }
     if (!FRETE.sel) { er.textContent = FRETE.carregando ? 'Aguarde o cálculo do frete.' : 'Escolha uma opção de frete para continuar.'; if (!FRETE.carregando && !FRETE.opcoes.length) cotarFrete(true); else { const el = document.getElementById('cfrete'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } return; }
   }
-  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, cpf: f.cpf.value.trim(), modo: MODO, end })); } catch (_) {}
+  try { localStorage.setItem('mlz_cliente', JSON.stringify({ nome, tel, cpf: f.cpf.value.trim(), email, modo: MODO, end })); } catch (_) {}
   const bt = document.getElementById('cpagar'); bt.disabled = true; bt.textContent = 'Abrindo o pagamento…';
   try {
     let token = '';
@@ -755,7 +760,7 @@ fC.addEventListener('submit', async e => {
       try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
       if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
     }
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: soDigitos(f.cpf.value) }, token);
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: soDigitos(f.cpf.value), email }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }

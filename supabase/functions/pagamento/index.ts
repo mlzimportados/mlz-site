@@ -1,6 +1,6 @@
 // Pagamento online MLZ Company via Checkout InfinitePay.
 // Ações (POST JSON, campo "acao"):
-//   criar     { nome, telefone, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
+//   criar     { nome, telefone, cpf, email?, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
 //   confirmar { order_nsu, transaction_nsu, slug }   -> { status }   (página de retorno)
 //   frete     { cep, itens:[{id, qtd}] }              -> { cidade, uf, opcoes:[{id, nome, preco, prazo, combinar?}] }
 //   webhook   corpo enviado pela InfinitePay (sem "acao", via ?webhook=1)
@@ -28,6 +28,63 @@ async function ip(path: string, body: unknown) {
   const t = await r.text(); let d: any = {}; try { d = JSON.parse(t); } catch { d = { raw: t }; }
   if (!r.ok) throw new Error(`InfinitePay ${r.status}: ${t.slice(0, 300)}`);
   return d;
+}
+
+// ---------- e-mail de compra confirmada (Resend, secret RESEND_API_KEY) ----------
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RESEND_KEY = (Deno.env.get("RESEND_API_KEY") || "").trim();
+const EMAIL_DE = (Deno.env.get("EMAIL_REMETENTE") || "MLZ Company <contato@mlzcompany.com>").trim();
+const brl = (n: number) => "R$ " + (+n || 0).toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const h = (t: unknown) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[c]);
+async function enviarEmail(para: string[], assunto: string, html: string, responder?: string) {
+  const r = await fetch("https://api.resend.com/emails", { method: "POST",
+    headers: { "Authorization": `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: EMAIL_DE, to: para, subject: assunto, html, ...(responder ? { reply_to: responder } : {}) }) });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`Resend ${r.status}: ${t.slice(0, 300)}`);
+}
+function htmlCompra(p: any, cfg: Record<string, string>, paraLoja: boolean) {
+  const itens = (Array.isArray(p.itens) ? p.itens : []).map((i: any) => `<tr><td style="padding:8px 0;border-bottom:1px solid #e8e3d6">${h(i.quantidade)}× ${h(i.descricao)}</td><td style="padding:8px 0;border-bottom:1px solid #e8e3d6;text-align:right;white-space:nowrap">${brl(i.quantidade * i.preco_unit)}</td></tr>`).join("");
+  const e = p.endereco || {};
+  const entrega = p.entrega === "retirada"
+    ? `<b>Retirada na loja</b><br>${h(cfg.retirada_endereco || "")}${cfg.retirada_horario ? `<br>${h(cfg.retirada_horario)}` : ""}`
+    : `<b>Entrega${p.frete?.nome ? ` · ${h(p.frete.nome)}` : ""}</b>${p.frete?.prazo ? ` (${h(p.frete.prazo)})` : ""}<br>${h([e.rua, e.numero].filter(Boolean).join(", "))}${e.complemento ? ` · ${h(e.complemento)}` : ""}<br>${h([e.bairro, e.cidade, e.uf].filter(Boolean).join(" · "))}${e.cep ? ` · CEP ${h(e.cep)}` : ""}`;
+  const forma = String(p.capture_method || "").toLowerCase().includes("pix") ? "Pix" : (p.capture_method ? `Cartão${p.installments > 1 ? ` em ${p.installments}x` : ""}` : "");
+  const wa = String(cfg.whatsapp || "").replace(/\D/g, "");
+  const topo = paraLoja
+    ? `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Nova venda no site · Pedido #${h(p.id)}</p><p style="margin:0 0 18px;color:#555">${h(p.nome)} · ${h(p.telefone)} · CPF ${h(p.cpf || "")}${p.email ? ` · ${h(p.email)}` : ""}</p>`
+    : `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Compra confirmada!</p><p style="margin:0 0 18px;color:#555">Olá, ${h(String(p.nome || "").split(" ")[0])}! Recebemos o pagamento do seu pedido <b>#${h(p.id)}</b>. Obrigado por comprar com a MLZ Company.</p>`;
+  const rodape = paraLoja ? "" : `<p style="margin:22px 0 0;color:#555">${p.entrega === "retirada" ? "Seu pedido já pode ser retirado no endereço acima." : "Vamos separar e enviar seu pedido. Mandamos o código de rastreio pelo WhatsApp assim que for postado."}</p>${wa ? `<p style="margin:12px 0 0"><a href="https://wa.me/${wa.length <= 11 ? "55" + wa : wa}" style="color:#0b1d33;font-weight:700">Falar com a gente no WhatsApp ${h(cfg.whatsapp)}</a></p>` : ""}`;
+  return `<div style="background:#f4f1ea;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#1d1d1d"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+<div style="background:#0b1d33;padding:18px 24px;color:#c9a227;font-weight:700;letter-spacing:.12em;font-size:18px">MLZ COMPANY</div>
+<div style="padding:24px">${topo}
+<table style="width:100%;border-collapse:collapse;font-size:14px">${itens}<tr><td style="padding:10px 0;font-weight:700">Total pago</td><td style="padding:10px 0;font-weight:700;text-align:right">${brl(p.paid_amount || p.total)}</td></tr></table>
+${forma ? `<p style="margin:4px 0 0;color:#555;font-size:14px">Pagamento: ${h(forma)}${p.receipt_url ? ` · <a href="${h(p.receipt_url)}" style="color:#0b1d33">ver comprovante</a>` : ""}</p>` : ""}
+<div style="margin-top:18px;padding:14px;background:#f8f6f0;border-radius:8px;font-size:14px;line-height:1.5">${entrega}</div>${rodape}
+</div><div style="padding:14px 24px;background:#f8f6f0;color:#888;font-size:12px">MLZ Company · mlzcompany.com</div></div></div>`;
+}
+// manda uma vez só por pedido (marca email_enviado_em antes de enviar; erro fica em email_erro)
+async function emailCompra(id: number) {
+  if (!RESEND_KEY) return;
+  try {
+    const { data: p } = await sb.from("pedidos").update({ email_enviado_em: new Date().toISOString(), email_erro: null })
+      .eq("id", id).eq("status", "pago").is("email_enviado_em", null).select("*").maybeSingle();
+    if (!p) return;
+    const { data: cs } = await sb.from("config").select("chave, valor").in("chave", ["email", "email_avisos", "whatsapp", "retirada_endereco", "retirada_horario"]);
+    const cfg: Record<string, string> = Object.fromEntries((cs || []).map((c: any) => [c.chave, String(c.valor || "").trim()]));
+    const loja = (cfg.email_avisos || cfg.email || "").split(/[,;\s]+/).filter((x) => EMAIL_OK.test(x));
+    const erros: string[] = [];
+    if (p.email && EMAIL_OK.test(p.email)) {
+      try { await enviarEmail([p.email], `Compra confirmada · Pedido #${p.id} · MLZ Company`, htmlCompra(p, cfg, false), cfg.email || undefined); }
+      catch (e) { erros.push("cliente: " + String(e)); }
+    }
+    if (loja.length) {
+      try { await enviarEmail(loja, `Nova venda #${p.id} · ${p.nome} · ${brl(p.paid_amount || p.total)}`, htmlCompra(p, cfg, true), p.email || undefined); }
+      catch (e) { erros.push("loja: " + String(e)); }
+    }
+    if (erros.length) { console.error("email compra", id, erros.join(" | ")); await sb.from("pedidos").update({ email_erro: erros.join(" | ").slice(0, 500) }).eq("id", id); }
+    else console.log("email compra enviado", id);
+  } catch (e) { console.error("email compra falhou", id, String(e)); }
 }
 
 // ---------- frete ----------
@@ -131,6 +188,9 @@ async function criar(b: any, req: Request) {
   const cpfD = String(b.cpf || "").replace(/\D/g, "");
   if (!cpfValido(cpfD)) return json({ erro: "Informe um CPF válido de quem vai receber ou retirar o pedido." }, 400);
   const cpf = `${cpfD.slice(0, 3)}.${cpfD.slice(3, 6)}.${cpfD.slice(6, 9)}-${cpfD.slice(9)}`;
+  // e-mail para a confirmação da compra (a InfinitePay não devolve o e-mail de quem pagou)
+  const email = String(b.email || "").trim().toLowerCase().slice(0, 120);
+  if (email && !EMAIL_OK.test(email)) return json({ erro: "Informe um e-mail válido para receber a confirmação da compra." }, 400);
   const entrega = b.entrega === "retirada" ? "retirada" : b.entrega === "entrega" ? "entrega" : null;
   let endereco: Record<string, string> | null = null;
   if (entrega === "entrega") {
@@ -168,7 +228,7 @@ async function criar(b: any, req: Request) {
     if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}${op.via ? ` · ${op.via}` : ""}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete, cpf }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete, cpf, email: email || null }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev|workers\.dev)$|^https:\/\/(www\.)?mlzcompany\.com$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;
@@ -180,7 +240,7 @@ async function criar(b: any, req: Request) {
     items: itens.map((i, k) => ({ quantity: i.quantidade, price: Math.round(i.preco_unit * 100), description: (k ? "" : `Pedido #${ped.id} · `) + i.descricao })),
     redirect_url: `${site}/obrigado.html`,
     webhook_url: `${SB_URL}/functions/v1/pagamento?webhook=1`,
-    customer: { name: nome, phone_number: "+" + (tel.length <= 11 ? "55" + tel : tel) },
+    customer: { name: nome, phone_number: "+" + (tel.length <= 11 ? "55" + tel : tel), ...(email ? { email } : {}) },
   }); } catch (e) {
     await sb.from("pedidos").update({ status: "cancelado", obs: String(e).slice(0, 300) }).eq("id", ped.id);
     throw e;
@@ -217,7 +277,7 @@ async function acharPedido(ip_nsu: string, local: string, itens: any[]) {
 async function conferir(ip_nsu: string, transaction_nsu: string, slug: string, local = "", itens: any[] = []) {
   const ped: any = await acharPedido(ip_nsu, local, itens);
   if (!ped) return { status: "invalido" };
-  if (ped.status === "pago") return { status: "pago" };
+  if (ped.status === "pago") { await emailCompra(ped.id); return { status: "pago" }; }
   if (!transaction_nsu || !slug || !ip_nsu) return { status: ped.status };
   const chk = await ip("/payment_check", { handle: await handle(), order_nsu: ip_nsu, transaction_nsu, slug });
   console.log("payment_check", ped.id, JSON.stringify({ success: chk.success, paid: chk.paid, amount: chk.amount, paid_amount: chk.paid_amount, capture_method: chk.capture_method }));
@@ -235,6 +295,7 @@ async function conferir(ip_nsu: string, transaction_nsu: string, slug: string, l
   const { error } = await sb.rpc("confirmar_pedido", { p_order_nsu: ped.order_nsu, p_transaction_nsu: transaction_nsu, p_slug: slug,
     p_capture: chk.capture_method || null, p_installments: chk.installments || 1, p_paid: pago, p_receipt: chk.receipt_url || null });
   if (error) throw error;
+  await emailCompra(ped.id);
   return { status: "pago" };
 }
 
