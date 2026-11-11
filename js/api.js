@@ -58,6 +58,7 @@ function criarApi(opts = {}) {
     excluirCliente: async (id) => ok(await sb.from('clientes').delete().eq('id', id)),
     vendas: async () => ok(await sb.from('vendas').select('*, venda_itens(*), parcelas(*)').order('data', { ascending: false }).order('id', { ascending: false })),
     registrarVenda: async (v) => ok(await sb.rpc('registrar_venda', v)),
+    excluirPedido: async (id) => ok(await sb.from('pedidos').delete().eq('id', id)),
     excluirVenda: async (id) => ok(await sb.from('vendas').delete().eq('id', id)),
     marcarParcela: async (id, pagoEm) => ok(await sb.from('parcelas').update({ pago_em: pagoEm }).eq('id', id)),
     salvarEntrega: async (id, d) => ok(await sb.from('vendas').update(d).eq('id', id)),

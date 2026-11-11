@@ -349,7 +349,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111f"></script>
+<script src="js/api.js?v=20261111g"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [] };
@@ -655,7 +655,8 @@ function htmlPedidosSite() {
       return `<div class="linha"><div class="gr"><div class="n">${esc(p.nome)} · <span class="num">${brl(p.total)}</span></div>
         <div class="m">${quando} · ${itens}${p.entrega ? ' · ' + (p.entrega === 'retirada' ? 'Retirada' : 'Entrega') : ''}${p.status === 'pago' ? ` · ${rotulo[p.capture_method] || 'InfinitePay'}${p.installments > 1 ? ' ' + p.installments + 'x' : ''}` : ''}</div></div>
         ${p.status === 'pago' ? badge('pago') : '<span class="badge b-aberto">Não pagou</span>'}
-        ${tel ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}</div>`; }).join('')}
+        ${tel ? `<a class="btn sm line" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" title="WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}
+        <button class="btn sm line" data-delpedido="${p.id}" data-venda="${p.venda_id || ''}" title="Excluir pedido" aria-label="Excluir pedido">✕</button></div>`; }).join('')}
     <div class="hint">Pedidos pagos entram sozinhos nas vendas abaixo, já como pagos. “Não pagou” é quem abriu o pagamento e não concluiu: vale chamar no WhatsApp.</div></div>`;
 }
 
@@ -708,6 +709,12 @@ $('#v-vendas').addEventListener('click', async (e) => {
   if ((b = e.target.closest('[data-ir]'))) return irPara(b.dataset.ir);
   if ((b = e.target.closest('[data-editcli]'))) return editarCliente(+b.dataset.editcli);
   if ((b = e.target.closest('[data-editparc]'))) return editarParcelas(+b.dataset.editparc);
+  if ((b = e.target.closest('[data-delpedido]'))) {
+    const vid = +b.dataset.venda || 0;
+    if (!confirm(vid ? 'Excluir este pedido pago? A venda ligada a ele também será excluída: os produtos voltam para o estoque e o valor sai do caixa. (Isso não estorna o pagamento na InfinitePay.)' : 'Excluir este pedido da lista?')) return;
+    await tentar(async () => { if (vid) await api.excluirVenda(vid); await api.excluirPedido(+b.dataset.delpedido); }, 'Pedido excluído');
+    await carregar(); return;
+  }
   if ((b = e.target.closest('[data-delvenda]'))) {
     if (!confirm('Excluir esta venda? Os produtos voltam para o estoque e as parcelas somem do caixa.')) return;
     await tentar(() => api.excluirVenda(+b.dataset.delvenda), 'Venda excluída');
