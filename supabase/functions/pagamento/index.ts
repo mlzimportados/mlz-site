@@ -44,7 +44,7 @@ async function enviarEmail(para: string[], assunto: string, html: string, respon
   if (!r.ok) throw new Error(`Resend ${r.status}: ${t.slice(0, 300)}`);
 }
 function htmlCompra(p: any, cfg: Record<string, string>, paraLoja: boolean) {
-  const itens = (Array.isArray(p.itens) ? p.itens : []).map((i: any) => `<tr><td style="padding:8px 0;border-bottom:1px solid #e8e3d6">${h(i.quantidade)}× ${h(i.descricao)}</td><td style="padding:8px 0;border-bottom:1px solid #e8e3d6;text-align:right;white-space:nowrap">${brl(i.quantidade * i.preco_unit)}</td></tr>`).join("");
+  const itens = (Array.isArray(p.itens) ? p.itens : []).map((i: any) => `<tr><td style="padding:8px 0;border-bottom:1px solid #1f2d44;color:#f2f4f8">${h(i.quantidade)}× ${h(i.descricao)}</td><td style="padding:8px 0;border-bottom:1px solid #1f2d44;text-align:right;white-space:nowrap;color:#f2f4f8">${brl(i.quantidade * i.preco_unit)}</td></tr>`).join("");
   const e = p.endereco || {};
   const entrega = p.entrega === "retirada"
     ? `<b>Retirada na loja</b><br>${h(cfg.retirada_endereco || "")}${cfg.retirada_horario ? `<br>${h(cfg.retirada_horario)}` : ""}`
@@ -52,16 +52,16 @@ function htmlCompra(p: any, cfg: Record<string, string>, paraLoja: boolean) {
   const forma = String(p.capture_method || "").toLowerCase().includes("pix") ? "Pix" : (p.capture_method ? `Cartão${p.installments > 1 ? ` em ${p.installments}x` : ""}` : "");
   const wa = String(cfg.whatsapp || "").replace(/\D/g, "");
   const topo = paraLoja
-    ? `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Nova venda no site · Pedido #${h(p.id)}</p><p style="margin:0 0 18px;color:#555">${h(p.nome)} · ${h(p.telefone)} · CPF ${h(p.cpf || "")}${p.email ? ` · ${h(p.email)}` : ""}</p>`
-    : `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Compra confirmada!</p><p style="margin:0 0 18px;color:#555">Olá, ${h(String(p.nome || "").split(" ")[0])}! Recebemos o pagamento do seu pedido <b>#${h(p.id)}</b>. Obrigado por comprar com a MLZ Company.</p>`;
-  const rodape = paraLoja ? "" : `<p style="margin:22px 0 0;color:#555">${p.entrega === "retirada" ? "Seu pedido já pode ser retirado no endereço acima." : "Vamos separar e enviar seu pedido. Mandamos o código de rastreio pelo WhatsApp assim que for postado."}</p>${wa ? `<p style="margin:12px 0 0"><a href="https://wa.me/${wa.length <= 11 ? "55" + wa : wa}" style="color:#0b1d33;font-weight:700">Falar com a gente no WhatsApp ${h(cfg.whatsapp)}</a></p>` : ""}`;
-  return `<div style="background:#f4f1ea;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#1d1d1d"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
-<div style="background:#0b1d33;padding:18px 24px;color:#c9a227;font-weight:700;letter-spacing:.12em;font-size:18px">MLZ COMPANY</div>
+    ? `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Nova venda no site · Pedido #${h(p.id)}</p><p style="margin:0 0 18px;color:#a9b3c4">${h(p.nome)} · ${h(p.telefone)} · CPF ${h(p.cpf || "")}${p.email ? ` · ${h(p.email)}` : ""}</p>`
+    : `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Compra confirmada!</p><p style="margin:0 0 18px;color:#a9b3c4">Olá, ${h(String(p.nome || "").split(" ")[0])}! Recebemos o pagamento do seu pedido <b>#${h(p.id)}</b>. Obrigado por comprar com a MLZ Company.</p>`;
+  const rodape = paraLoja ? "" : `<p style="margin:22px 0 0;color:#a9b3c4">${p.entrega === "retirada" ? "Seu pedido já pode ser retirado no endereço acima." : "Vamos separar e enviar seu pedido. Mandamos o código de rastreio pelo WhatsApp assim que for postado."}</p>${wa ? `<p style="margin:12px 0 0"><a href="https://wa.me/${wa.length <= 11 ? "55" + wa : wa}" style="color:#d9b24c;font-weight:700">Falar com a gente no WhatsApp ${h(cfg.whatsapp)}</a></p>` : ""}`;
+  return `<div style="background:#07111f;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#f2f4f8"><div style="max-width:560px;margin:0 auto;background:#0b1a2e;border-radius:12px;overflow:hidden">
+<div style="background:#050c17;border-bottom:1px solid #2a3a52;padding:18px 24px;color:#d9b24c;font-weight:700;letter-spacing:.12em;font-size:18px">MLZ COMPANY</div>
 <div style="padding:24px">${topo}
-<table style="width:100%;border-collapse:collapse;font-size:14px">${itens}<tr><td style="padding:10px 0;font-weight:700">Total pago</td><td style="padding:10px 0;font-weight:700;text-align:right">${brl(p.paid_amount || p.total)}</td></tr></table>
-${forma ? `<p style="margin:4px 0 0;color:#555;font-size:14px">Pagamento: ${h(forma)}${p.receipt_url ? ` · <a href="${h(p.receipt_url)}" style="color:#0b1d33">ver comprovante</a>` : ""}</p>` : ""}
-<div style="margin-top:18px;padding:14px;background:#f8f6f0;border-radius:8px;font-size:14px;line-height:1.5">${entrega}</div>${rodape}
-</div><div style="padding:14px 24px;background:#f8f6f0;color:#888;font-size:12px">MLZ Company · mlzcompany.com</div></div></div>`;
+<table style="width:100%;border-collapse:collapse;font-size:14px;color:#f2f4f8">${itens}<tr><td style="padding:10px 0;font-weight:700;color:#d9b24c">Total pago</td><td style="padding:10px 0;font-weight:700;text-align:right;color:#d9b24c">${brl(p.paid_amount || p.total)}</td></tr></table>
+${forma ? `<p style="margin:4px 0 0;color:#a9b3c4;font-size:14px">Pagamento: ${h(forma)}${p.receipt_url ? ` · <a href="${h(p.receipt_url)}" style="color:#d9b24c">ver comprovante</a>` : ""}</p>` : ""}
+<div style="margin-top:18px;padding:14px;background:#10223a;border-radius:8px;font-size:14px;line-height:1.5">${entrega}</div>${rodape}
+</div><div style="padding:14px 24px;background:#10223a;color:#7d889b;font-size:12px">MLZ Company · mlzcompany.com</div></div></div>`;
 }
 // manda uma vez só por pedido (marca email_enviado_em antes de enviar; erro fica em email_erro)
 async function emailCompra(id: number) {

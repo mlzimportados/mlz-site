@@ -34,6 +34,7 @@ function criarApi(opts = {}) {
     souAdmin: async () => { const s = (await sb.auth.getSession()).data.session; if (!s) return false; return ok(await sb.from('admins').select('user_id').eq('user_id', s.user.id)).length > 0; },
     // conta do cliente (loja)
     cadastrar: async (email, senha, nome, extra) => ok(await sb.auth.signUp({ email, password: senha, options: { data: { nome, ...(extra || {}) }, emailRedirectTo: location.origin + '/conta.html' } })),
+    cpfLivre: async (cpf) => ok(await sb.rpc('cpf_livre', { p_cpf: cpf })),
     ligarHistorico: async () => ok(await sb.rpc('ligar_meu_historico')),
     salvarCpf: async (cpf, telefone) => ok(await sb.rpc('salvar_meu_cpf', { p_cpf: cpf, p_telefone: telefone || null })),
     recuperarSenha: async (email) => ok(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/conta.html' })),

@@ -404,7 +404,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111e"></script>
+<script src="js/api.js?v=20261111f"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
@@ -661,7 +661,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261111e';
+const VERSAO_SITE = '20261111f';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;

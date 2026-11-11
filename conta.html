@@ -183,7 +183,7 @@ main.dash{max-width:880px}
 <main id="app"><div class="load"><div class="spin"></div></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111e"></script>
+<script src="js/api.js?v=20261111f"></script>
 <script>
 const api = criarApi({ conta: true });
 const app = document.getElementById('app');
@@ -196,6 +196,7 @@ const traduz = (m) => {
   if (/Email not confirmed/i.test(m)) return 'Confirme seu e-mail primeiro: enviamos um link para a sua caixa de entrada.';
   if (/already registered|already been registered/i.test(m)) return 'Esse e-mail já tem conta. Use "Entrar" ou "Esqueci minha senha".';
   if (/at least 6|Password should/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/CPF já tem uma conta|Database error saving new user/i.test(m)) return 'Esse CPF já tem uma conta na MLZ Company. Use "Entrar" com o e-mail dessa conta ou "Esqueci minha senha".';
   if (/rate limit|too many/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
   if (/invalid.*email|Unable to validate email/i.test(m)) return 'Confira o e-mail digitado.';
   return m || 'Algo deu errado. Tente de novo.';
@@ -249,6 +250,8 @@ async function enviarAuth(e) {
       MODO = 'entrar'; return telaAuth('Se esse e-mail tiver conta, o link para criar a senha nova já está na sua caixa de entrada (confira o spam também).', 'ok');
     }
     if (MODO === 'cadastro') {
+      let livre = true; try { livre = await api.cpfLivre(cpf); } catch (err) { console.error(err); }
+      if (livre === false) { m.textContent = 'Esse CPF já tem uma conta na MLZ Company. Use "Entrar" com o e-mail dessa conta ou "Esqueci minha senha".'; b.disabled = false; return f.cpf.focus(); }
       const r = await api.cadastrar(email, senha, nome, { telefone: tel, cpf });
       if (!r.session) { MODO = 'entrar'; return telaAuth('Conta criada! Enviamos um link de confirmação para o seu e-mail. Clique nele e depois entre aqui.', 'ok'); }
       try { await api.salvarConta(nome, tel, null); } catch (_) {}
