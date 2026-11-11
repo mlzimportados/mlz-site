@@ -212,7 +212,7 @@ document.getElementById('frev').addEventListener('submit', (e) => {
   linhas.push(`• Interesse: ${f.interesse.value}`, `• Quantidade por mês: ${f.qtd.value}`);
   if (f.msg.value.trim()) linhas.push('', f.msg.value.trim());
   const texto = encodeURIComponent(linhas.join('\n'));
-  const n = waNum(CFG.whatsapp);
+  const n = waNum(CFG.whatsapp_revenda || CFG.whatsapp);
   if (n) return window.open(`https://wa.me/${n}?text=${texto}`, '_blank', 'noopener');
   const ig = (CFG.instagram || '').replace(/^@/, '');
   if (ig) { navigator.clipboard?.writeText(linhas.join('\n')).catch(() => {}); return window.open(`https://ig.me/m/${ig}`, '_blank', 'noopener'); }
