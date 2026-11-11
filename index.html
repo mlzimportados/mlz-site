@@ -232,6 +232,7 @@ footer{margin-top:64px;padding:0 0 22px}
 .cft{padding:16px 22px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:grid;gap:10px;max-height:72vh;overflow:auto}
 .cmodo{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border:1px solid var(--line);border-radius:14px}
 .cmodo button{height:40px;border-radius:10px;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:7px}
+.cmodo .cgr{font-size:11px;color:#7fd1a8;font-weight:500}
 .cmodo button.on{background:rgba(217,178,76,.14);color:var(--gold-hi)}
 .cmodo svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cend{display:grid;gap:8px}
@@ -370,7 +371,7 @@ footer{margin-top:64px;padding:0 0 22px}
     <div class="cconta p2only" id="cconta"><a href="conta.html?voltar=sacola"><svg class="i"><use href="#i-user"/></svg>Tem conta? <b>Entre</b> para usar seu endereço salvo</a></div>
     <input class="cin p2only" name="nome" autocomplete="name" placeholder="Seu nome" required>
     <input class="cin p2only" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
-    <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar</button></div>
+    <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar <small class="cgr">grátis</small></button></div>
     <div class="p2only"><div class="cend" id="cend">
       <div class="cends" id="cends" hidden></div>
       <div class="crow"><input class="cin sm" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" maxlength="9"><input class="cin sm" name="numero" inputmode="numeric" placeholder="Número"></div>
@@ -381,7 +382,7 @@ footer{margin-top:64px;padding:0 0 22px}
       <input class="cin sm" name="referencia" placeholder="Ponto de referência (opcional)">
       <div class="cfrete" id="cfrete"></div>
     </div>
-    <div class="cretira" id="cretira" hidden><b>Retirada na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div></div>
+    <div class="cretira" id="cretira" hidden><b>Retirada grátis na loja</b><span id="retEnd">Mister - Moda Social · Rua Quinze de Novembro, 512 - Loja Térreo - Ponta Grossa/PR</span><span id="retHor">No mesmo dia, das 8:00 às 18:00</span></div></div>
     <div class="cerr" id="cerr"></div>
     <button class="btn solid buy p2only" id="cpagar" type="submit"><svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento</button>
     <div class="pgtos"><span>Pix</span><span>Cartão de crédito</span><span>Parcelado</span></div>

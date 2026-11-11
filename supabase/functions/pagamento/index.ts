@@ -93,12 +93,17 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
   for (const o of (daPref.length ? daPref : validas)) {
     const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
     const emp = String(o.company?.name || ""), srv = String(o.name || "");
-    const nome = (semAcento(srv).includes(semAcento(emp)) ? srv : `${emp} ${srv}`).trim();
-    const op = { id: `${o._src}-${o.id}`, nome, via: o._src === "sf" ? "SuperFrete" : "Melhor Envio", preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
+    const cap = (t: string) => t === t.toUpperCase() && t.length > 3 ? t.charAt(0) + t.slice(1).toLowerCase() : t;
+    const nome = (semAcento(srv).includes(semAcento(emp)) ? cap(srv) : `${cap(emp)} ${cap(srv)}`).trim();
+    const op = { id: `${o._src}-${o.id}`, nome, via: o._src === "sf" ? "SuperFrete" : "Melhor Envio", dias, preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
     const k = semAcento(nome).replace(/[^a-z0-9]/g, ""), atual = melhor.get(k);
     if (!atual || op.preco < atual.preco) melhor.set(k, op);
   }
-  const opcoes = [...melhor.values()].sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
+  // as mais baratas + sempre as mais rápidas (até 2 dias úteis, ou a mais rápida que houver)
+  const todas = [...melhor.values()].sort((a: any, b: any) => a.preco - b.preco);
+  const minDias = Math.min(...todas.map((o: any) => o.dias || 99));
+  const rapidas = todas.filter((o: any) => o.dias && (o.dias <= 2 || o.dias === minDias)).slice(0, 2);
+  const opcoes = [...new Set([...todas.slice(0, 6), ...rapidas])].sort((a: any, b: any) => a.preco - b.preco);
   if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
   return { cidade, uf, subtotal, opcoes };
 }
