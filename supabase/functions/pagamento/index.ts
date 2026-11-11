@@ -94,7 +94,8 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
     const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
     const emp = String(o.company?.name || ""), srv = String(o.name || "");
     const cap = (t: string) => t === t.toUpperCase() && t.length > 3 ? t.charAt(0) + t.slice(1).toLowerCase() : t;
-    const nome = (semAcento(srv).includes(semAcento(emp)) ? cap(srv) : `${cap(emp)} ${cap(srv)}`).trim();
+    // "Loggi Ponto" (Melhor Envio) = "Loggi" (SuperFrete); ".Package Centralizado" = ".Package": mesmo serviço, fica o mais barato
+    const nome = (semAcento(srv).includes(semAcento(emp)) ? cap(srv) : `${cap(emp)} ${cap(srv)}`).replace(/\s+(ponto|centralizado)\b/gi, "").trim();
     const op = { id: `${o._src}-${o.id}`, nome, via: o._src === "sf" ? "SuperFrete" : "Melhor Envio", dias, preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
     const k = semAcento(nome).replace(/[^a-z0-9]/g, ""), atual = melhor.get(k);
     if (!atual || op.preco < atual.preco) melhor.set(k, op);
