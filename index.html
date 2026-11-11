@@ -404,7 +404,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111c"></script>
+<script src="js/api.js?v=20261111d"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
@@ -660,7 +660,23 @@ function passoSacola(n) {
   const ft = document.getElementById('cft'); ft.scrollTop = 0;
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
-function abrirSacola() { passoSacola(1); renderSacola(); document.getElementById('cart').classList.add('on'); document.body.style.overflow = 'hidden'; }
+// ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
+const VERSAO_SITE = '20261111d';
+async function checarVersao(reabrir) {
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
+    const v = (await r.json()).v;
+    if (v && v !== VERSAO_SITE && sessionStorage.getItem('mlz_recarregou') !== v) {
+      sessionStorage.setItem('mlz_recarregou', v); if (reabrir) sessionStorage.setItem('mlz_abrir_sacola', '1');
+      location.reload(); return true;
+    }
+  } catch (_) {}
+  return false;
+}
+checarVersao(false);
+addEventListener('pageshow', e => { if (e.persisted) checarVersao(false); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checarVersao(document.getElementById('cart').classList.contains('on')); });
+function abrirSacola() { checarVersao(true); passoSacola(1); renderSacola(); document.getElementById('cart').classList.add('on'); document.body.style.overflow = 'hidden'; }
 function fecharSacola() { document.getElementById('cart').classList.remove('on'); document.body.style.overflow = ''; }
 document.getElementById('bagBtn').onclick = abrirSacola;
 document.getElementById('cart').addEventListener('click', e => {
@@ -799,7 +815,9 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
     contatos(); montarSpot(); montarAromas(); render();
     const m = location.hash.match(/^#p(\d+)$/); if (m) abrir(+m[1]);
     await carregarConta();
-    if (location.hash === '#sacola' && SACOLA.length) { history.replaceState(null, '', location.pathname); abrirSacola(); }
+    let reabrir = false; try { reabrir = !!sessionStorage.getItem('mlz_abrir_sacola'); sessionStorage.removeItem('mlz_abrir_sacola'); } catch (_) {}
+    if (reabrir && SACOLA.length) abrirSacola();
+    else if (location.hash === '#sacola' && SACOLA.length) { history.replaceState(null, '', location.pathname); abrirSacola(); }
   } catch (err) {
     console.error(err);
     document.getElementById('grade').innerHTML = '<div class="vazio">Não foi possível carregar a coleção agora. Tente de novo em instantes.</div>';
