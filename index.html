@@ -166,7 +166,7 @@ footer{margin-top:64px;padding:0 0 22px}
 .sheet.on{opacity:1;pointer-events:auto}
 .sbox{position:relative;width:min(960px,100%);max-height:100%;overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:26px;display:grid;grid-template-columns:1fr 1fr;transform:translateY(16px);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .sheet.on .sbox{transform:none}
-@media(max-width:760px){.sheet{align-items:flex-end;padding:0}.sbox{grid-template-columns:1fr;border-radius:24px 24px 0 0;max-height:94vh}}
+@media(max-width:760px){.sheet{align-items:center;padding:14px}.sbox{grid-template-columns:1fr;border-radius:22px;max-height:94vh}}
 .sfoto{position:relative;min-height:420px;display:grid;place-items:center;background:radial-gradient(70% 60% at 50% 55%,rgba(52,96,150,.45),transparent 75%)}
 .sfoto img{max-width:76%;max-height:420px;object-fit:contain;filter:drop-shadow(0 26px 30px rgba(0,0,0,.55))}
 @media(max-width:760px){.sfoto{min-height:290px}.sfoto img{max-height:260px}}
@@ -197,7 +197,7 @@ footer{margin-top:64px;padding:0 0 22px}
 .pgtos{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:2px}
 .pgtos span{font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 @media(max-width:760px){
-  .sbox{max-height:86vh}
+  .sbox{max-height:calc(100dvh - 28px)}
   .sfoto{min-height:0;height:210px;padding-top:10px}.sfoto img{max-height:185px;max-width:70%}
   .sdet{padding:4px 20px 20px}.sdet .pn{font-size:21px;margin:4px 0 8px}
   .fam{font-size:12px;padding:5px 10px}
