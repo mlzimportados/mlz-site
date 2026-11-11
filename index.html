@@ -595,7 +595,7 @@ function atualizarBag() {
 function renderSacola() {
   const its = SACOLA.map(i => ({ ...i, p: PRODS.find(x => x.id === i.id) })).filter(i => i.p);
   document.getElementById('cits').innerHTML = its.length ? its.map(i => `<div class="cit"><img src="${esc(imgSrc(i.p))}" alt="">
-    <div class="n">${esc(nomeCompleto(i.p))}${i.p.tipo ? `<span class="tp">${esc(i.p.tipo)}</span>` : ''}<div class="v">${temPromo(i.p) ? `<s>${brl(+i.p.preco * i.qtd)}</s>` : ''}${brl(precoFinal(i.p) * i.qtd)}</div></div>
+    <div class="n"><small>${esc(i.p.marca || '')}</small>${esc(i.p.nome)}<div class="v">${temPromo(i.p) ? `<s>${brl(+i.p.preco * i.qtd)}</s>` : ''}${brl(precoFinal(i.p) * i.qtd)}</div></div>
     <div class="cq"><button type="button" data-cq="${i.id}" data-d="-1" aria-label="Menos">−</button><span>${i.qtd}</span><button type="button" data-cq="${i.id}" data-d="1" aria-label="Mais">+</button></div></div>`).join('')
     : '<div class="cvazio">Sua sacola está vazia.</div>';
   const fr = document.querySelector('#cart .cbox').classList.contains('p2') ? freteValor() : 0;
