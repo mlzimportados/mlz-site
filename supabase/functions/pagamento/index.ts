@@ -32,7 +32,7 @@ async function ip(path: string, body: unknown) {
 
 // ---------- frete ----------
 // Ponta Grossa (config frete_local_*) = taxa fixa; outras cidades = cotação da SuperFrete (secret SUPERFRETE_TOKEN)
-// ou, sem ela, do Melhor Envio (secret MELHORENVIO_TOKEN)
+// e do Melhor Envio (secret MELHORENVIO_TOKEN) juntas, ficando o menor preço de cada serviço
 const SF_TOKEN = (Deno.env.get("SUPERFRETE_TOKEN") || "").trim();
 const SF_API = (Deno.env.get("SUPERFRETE_URL") || "https://api.superfrete.com").replace(/\/$/, "");
 const ME_TOKEN = (Deno.env.get("MELHORENVIO_TOKEN") || "").trim();
@@ -67,27 +67,38 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
   const origem = (c.frete_cep_origem || "84010020").replace(/\D/g, "");
   const W = w > 0 ? w : 12, H = h > 0 ? h : 20, L = l > 0 ? l : 10;
   const hdr = (tk: string) => ({ "Accept": "application/json", "Content-Type": "application/json", "Authorization": `Bearer ${tk}`, "User-Agent": "MLZ Company (contato@mlzcompany.com)" });
+  const pedir = async (nomeApi: string, url: string, tk: string, body: unknown) => {
+    const r = await fetch(url, { method: "POST", headers: hdr(tk), body: JSON.stringify(body), signal: AbortSignal.timeout(12000) });
+    const t = await r.text(); let d: any; try { d = JSON.parse(t); } catch { d = null; }
+    if (!r.ok || !Array.isArray(d)) { console.error(nomeApi, r.status, t.slice(0, 300)); throw new Error(nomeApi); }
+    return d;
+  };
+  // as duas plataformas são consultadas juntas; para cada serviço fica o preço mais barato
+  const consultas: Promise<any[]>[] = [];
   // SuperFrete: 1 PAC, 2 SEDEX, 17 Mini Envios, 3 Jadlog, 31 Loggi, 33 J&T (caixas empilhadas pela altura)
-  const r = SF_TOKEN
-    ? await fetch(`${SF_API}/api/v0/calculator`, { method: "POST", headers: hdr(SF_TOKEN),
-        body: JSON.stringify({ from: { postal_code: origem }, to: { postal_code: cep }, services: "1,2,17,3,31,33",
-          options: { own_hand: false, receipt: false, insurance_value: subtotal, use_insurance_value: false },
-          package: { height: Math.min(100, H * qtd), width: W, length: L, weight: r2(peso * qtd) } }) })
-    : await fetch(`${ME_API}/api/v2/me/shipment/calculate`, { method: "POST", headers: hdr(ME_TOKEN),
-        body: JSON.stringify({ from: { postal_code: origem }, to: { postal_code: cep },
-          products: [{ id: "mlz", width: W, height: H, length: L, weight: peso, insurance_value: r2(subtotal / Math.max(1, qtd)), quantity: qtd }],
-          options: { receipt: false, own_hand: false } }) });
-  const t = await r.text(); let d: any; try { d = JSON.parse(t); } catch { d = null; }
-  if (!r.ok || !Array.isArray(d)) { console.error(SF_TOKEN ? "superfrete" : "melhor envio", r.status, t.slice(0, 300)); throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes."); }
+  if (SF_TOKEN) consultas.push(pedir("superfrete", `${SF_API}/api/v0/calculator`, SF_TOKEN, { from: { postal_code: origem }, to: { postal_code: cep }, services: "1,2,17,3,31,33",
+    options: { own_hand: false, receipt: false, insurance_value: subtotal, use_insurance_value: false },
+    package: { height: Math.min(100, H * qtd), width: W, length: L, weight: r2(peso * qtd) } }).then((d) => d.map((o: any) => ({ ...o, _src: "sf" }))));
+  if (ME_TOKEN) consultas.push(pedir("melhor envio", `${ME_API}/api/v2/me/shipment/calculate`, ME_TOKEN, { from: { postal_code: origem }, to: { postal_code: cep },
+    products: [{ id: "mlz", width: W, height: H, length: L, weight: peso, insurance_value: r2(subtotal / Math.max(1, qtd)), quantity: qtd }],
+    options: { receipt: false, own_hand: false } }).then((d) => d.map((o: any) => ({ ...o, _src: "me" }))));
+  const res = await Promise.allSettled(consultas);
+  const d = res.flatMap((x) => x.status === "fulfilled" ? x.value : []);
+  if (!res.some((x) => x.status === "fulfilled")) throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes.");
   // transportadoras preferidas (config frete_empresas, ex.: "J&T"); se nenhuma atende o CEP, mostra as outras
   const pref = (c.frete_empresas || "").split(/[;,]/).map(semAcento).filter(Boolean);
   const validas = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0);
   const daPref = pref.length ? validas.filter((o: any) => pref.some((x) => semAcento(`${o.company?.name || ""} ${o.name || ""}`).includes(x))) : [];
-  const opcoes = (daPref.length ? daPref : validas)
-    .map((o: any) => { const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
-      const emp = String(o.company?.name || ""), srv = String(o.name || "");
-      return { id: String(o.id), nome: (semAcento(srv).includes(semAcento(emp)) ? srv : `${emp} ${srv}`).trim(), preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" }; })
-    .sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
+  const melhor = new Map<string, any>();
+  for (const o of (daPref.length ? daPref : validas)) {
+    const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
+    const emp = String(o.company?.name || ""), srv = String(o.name || "");
+    const nome = (semAcento(srv).includes(semAcento(emp)) ? srv : `${emp} ${srv}`).trim();
+    const op = { id: `${o._src}-${o.id}`, nome, preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" };
+    const k = semAcento(nome).replace(/[^a-z0-9]/g, ""), atual = melhor.get(k);
+    if (!atual || op.preco < atual.preco) melhor.set(k, op);
+  }
+  const opcoes = [...melhor.values()].sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
   if (!opcoes.length) throw new ErroCliente("Não encontramos frete para esse CEP. Chame a gente no WhatsApp.");
   return { cidade, uf, subtotal, opcoes };
 }
@@ -130,7 +141,7 @@ async function criar(b: any, req: Request) {
   let frete: any = null;
   if (entrega === "entrega") {
     const cot = await cotarFrete(endereco!.cep, pedidos);
-    const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
+    const op = cot.opcoes.find((o: any) => o.id === String(b.frete || "")) || cot.opcoes.find((o: any) => o.nome === String(b.frete_nome || "")) || (cot.opcoes.length === 1 ? cot.opcoes[0] : null);
     if (!op) return json({ erro: "Escolha uma opção de frete." }, 400);
     frete = op;
     if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}`, quantidade: 1, preco_unit: r2(op.preco) } as any);

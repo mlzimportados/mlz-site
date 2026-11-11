@@ -734,7 +734,7 @@ fC.addEventListener('submit', async e => {
       try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
       if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
     }
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null }, token);
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }
