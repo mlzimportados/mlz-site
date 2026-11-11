@@ -1333,7 +1333,8 @@ function vAjustes() {
         <label class="f">Prazo da entrega na cidade<input class="in" name="frete_local_prazo" value="${esc(c.frete_local_prazo || '')}" placeholder="ex.: no mesmo dia ou no dia seguinte"></label>
         <label class="f">CEP de onde sai o envio<input class="in num" name="frete_cep_origem" value="${esc(c.frete_cep_origem || '')}" placeholder="84010-020"></label>
         <label class="f">Peso de 1 produto embalado (kg)<input class="in num" name="frete_peso_kg" inputmode="decimal" value="${esc(c.frete_peso_kg || '')}" placeholder="0,5"></label>
-        <label class="f">Caixa de 1 produto: largura x altura x comprimento (cm)<input class="in num" name="frete_dimensoes" value="${esc(c.frete_dimensoes || '')}" placeholder="12x20x10"></label><div></div></div>
+        <label class="f">Caixa de 1 produto: largura x altura x comprimento (cm)<input class="in num" name="frete_dimensoes" value="${esc(c.frete_dimensoes || '')}" placeholder="12x20x10"></label>
+        <label class="f">Transportadoras preferidas (separe por vírgula; vazio = todas)<input class="in" name="frete_empresas" value="${esc(c.frete_empresas || '')}" placeholder="ex.: J&T, Correios"></label></div>
         <div class="hint">Outras cidades: cotação automática do Melhor Envio (Correios, Jadlog…), quando o token estiver configurado no servidor.</div>
         <div class="grid2"><label class="f">Endereço de retirada<input class="in" name="retirada_endereco" value="${esc(c.retirada_endereco || '')}" placeholder="Rua, número, cidade"></label>
         <label class="f">Horário de retirada<input class="in" name="retirada_horario" value="${esc(c.retirada_horario || '')}" placeholder="Ex.: no mesmo dia, das 8:00 às 18:00"></label></div>

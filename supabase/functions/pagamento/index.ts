@@ -46,7 +46,7 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
   const { data: prods } = await sb.from("produtos").select("id,preco,preco_promo").in("id", pedidos.map((i) => i.id));
   const subtotal = r2(pedidos.reduce((s, i) => { const p: any = (prods || []).find((x: any) => x.id === i.id); if (!p) return s;
     const pr = (p.preco_promo && +p.preco_promo > 0 && +p.preco_promo < +p.preco) ? +p.preco_promo : +p.preco; return s + pr * i.qtd; }, 0));
-  const c = await cfgs(["frete_local_cidade", "frete_local_valor", "frete_local_gratis_acima", "frete_local_prazo", "frete_cep_origem", "frete_peso_kg", "frete_dimensoes"]);
+  const c = await cfgs(["frete_local_cidade", "frete_local_valor", "frete_local_gratis_acima", "frete_local_prazo", "frete_cep_origem", "frete_peso_kg", "frete_dimensoes", "frete_empresas"]);
   let cidade = "", uf = "";
   try { const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`); const d = await r.json(); if (!d.erro) { cidade = d.localidade || ""; uf = d.uf || ""; } else throw new ErroCliente("CEP não encontrado."); }
   catch (e) { if (e instanceof ErroCliente) throw e; }
@@ -68,7 +68,11 @@ async function cotarFrete(cepIn: string, pedidos: { id: number; qtd: number }[])
       options: { receipt: false, own_hand: false } }) });
   const t = await r.text(); let d: any; try { d = JSON.parse(t); } catch { d = null; }
   if (!r.ok || !Array.isArray(d)) { console.error("melhor envio", r.status, t.slice(0, 300)); throw new ErroCliente("Não foi possível calcular o frete agora. Tente de novo em instantes."); }
-  const opcoes = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0)
+  // transportadoras preferidas (config frete_empresas, ex.: "J&T"); se nenhuma atende o CEP, mostra as outras
+  const pref = (c.frete_empresas || "").split(/[;,]/).map(semAcento).filter(Boolean);
+  const validas = d.filter((o: any) => !o.error && +(o.custom_price ?? o.price) > 0);
+  const daPref = pref.length ? validas.filter((o: any) => pref.some((x) => semAcento(`${o.company?.name || ""} ${o.name || ""}`).includes(x))) : [];
+  const opcoes = (daPref.length ? daPref : validas)
     .map((o: any) => { const dias = +(o.custom_delivery_time ?? o.delivery_time) || 0;
       return { id: String(o.id), nome: `${o.company?.name || ""} ${o.name || ""}`.trim(), preco: r2(+(o.custom_price ?? o.price)), prazo: dias ? `${dias} dia${dias === 1 ? "" : "s"} úte${dias === 1 ? "il" : "is"} após o envio` : "" }; })
     .sort((a: any, b: any) => a.preco - b.preco).slice(0, 4);
