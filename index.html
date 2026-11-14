@@ -407,7 +407,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261114b"></script>
+<script src="js/api.js?v=20261114c"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
@@ -478,7 +478,7 @@ function montarSpot() {
 
 // ---------- aromas ----------
 function montarAromas() {
-  const cont = {}; PRODS.forEach(p => { if (p.familia) cont[p.familia] = (cont[p.familia] || 0) + 1; });
+  const cont = {}; PRODS.forEach(p => { if (p.familia && !esgotado(p)) cont[p.familia] = (cont[p.familia] || 0) + 1; });
   const fams = Object.keys(cont).sort((a, b) => cont[b] - cont[a] || a.localeCompare(b));
   if (fams.length < 2) { document.getElementById('aromas').style.display = 'none'; return; }
   document.getElementById('aromaGrid').innerHTML = fams.map(f => `<button class="aroma ${famSel === f ? 'on' : ''}" style="--c:${corFam(f)}" data-f="${esc(f)}">
@@ -498,13 +498,13 @@ function cardProd(p) {
   return `<button class="prod${enc ? ' enc' : ''}" data-id="${p.id}">
       <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc"><b>-12%</b><i>OFF</i></span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
-        ${p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
+        ${enc ? '' : p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
         <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
     </button>`;
 }
 function render() {
   const q = document.getElementById('q').value.trim().toLowerCase();
-  const base = PRODS.filter(p => (!famSel || p.familia === famSel) && (!q || (nomeCompleto(p) + ' ' + (p.familia || '') + ' ' + (p.descricao || '')).toLowerCase().includes(q)));
+  const base = PRODS.filter(p => (!famSel || (p.familia === famSel && !esgotado(p))) && (!q || (nomeCompleto(p) + ' ' + (p.familia || '') + ' ' + (p.descricao || '')).toLowerCase().includes(q)));
   // abas de marca (contagem respeita aroma/busca)
   const cont = {}; base.forEach(p => { const m = marcaBase(p.marca); cont[m] = (cont[m] || 0) + 1; });
   const todasMarcas = [...new Set(PRODS.map(p => marcaBase(p.marca)))].sort((a, b) => PRODS.filter(p => marcaBase(p.marca) === b).length - PRODS.filter(p => marcaBase(p.marca) === a).length || a.localeCompare(b));
@@ -679,7 +679,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261114b';
+const VERSAO_SITE = '20261114c';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
