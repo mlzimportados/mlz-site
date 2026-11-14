@@ -35,6 +35,7 @@ function criarApi(opts = {}) {
     souAdmin: async () => { const s = (await sb.auth.getSession()).data.session; if (!s) return false; return ok(await sb.from('admins').select('user_id').eq('user_id', s.user.id)).length > 0; },
     // conta do cliente (loja)
     cadastrar: async (email, senha, nome, extra) => ok(await sb.auth.signUp({ email, password: senha, options: { data: { nome, ...(extra || {}) }, emailRedirectTo: location.origin + '/conta.html' } })),
+    indicacaoValida: async (cod) => ok(await sb.rpc('indicacao_valida', { p_codigo: cod })),
     cpfLivre: async (cpf) => ok(await sb.rpc('cpf_livre', { p_cpf: cpf })),
     ligarHistorico: async () => ok(await sb.rpc('ligar_meu_historico')),
     salvarCpf: async (cpf, telefone) => ok(await sb.rpc('salvar_meu_cpf', { p_cpf: cpf, p_telefone: telefone || null })),
@@ -68,6 +69,10 @@ function criarApi(opts = {}) {
     salvarConfig: async (obj) => ok(await sb.from('config').upsert(Object.entries(obj).map(([chave, valor]) => ({ chave, valor })))),
     investidores: async () => ok(await sb.from('investidores').select('*, aportes(*), repasses(*), lotes(*)').order('nome')),
     salvarInvestidor: async (x) => { const { id, ...d } = x; return id ? ok(await sb.from('investidores').update(d).eq('id', id).select().single()) : ok(await sb.from('investidores').insert(d).select().single()); },
+    indicadores: async () => ok(await sb.from('indicadores').select('*').order('nome')),
+    indicacoes: async () => ok(await sb.from('pedidos').select('id, nome, itens, total, pago_em, criado_em, ref_id, ref_codigo, comissao_paga_em').eq('status', 'pago').not('ref_id', 'is', null).order('pago_em', { ascending: false })),
+    salvarIndicador: async (x) => { const { id, ...d } = x; return id ? ok(await sb.from('indicadores').update(d).eq('id', id).select().single()) : ok(await sb.from('indicadores').insert(d).select().single()); },
+    pagarComissao: async (ids) => ok(await sb.from('pedidos').update({ comissao_paga_em: new Date().toISOString() }).in('id', ids)),
     excluirInvestidor: async (id) => ok(await sb.from('investidores').delete().eq('id', id)),
     salvarAporte: async (x) => ok(await sb.from('aportes').insert(x)),
     excluirAporte: async (id) => ok(await sb.from('aportes').delete().eq('id', id)),

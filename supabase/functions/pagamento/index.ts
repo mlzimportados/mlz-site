@@ -1,6 +1,6 @@
 // Pagamento online MLZ Company via Checkout InfinitePay.
 // Ações (POST JSON, campo "acao"):
-//   criar     { nome, telefone, cpf, email?, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
+//   criar     { nome, telefone, cpf, email?, ref?, itens:[{id, qtd}], entrega:"entrega"|"retirada", endereco? }  -> { url, order_nsu }
 //   confirmar { order_nsu, transaction_nsu, slug }   -> { status }   (página de retorno)
 //   frete     { cep, itens:[{id, qtd}] }              -> { cidade, uf, opcoes:[{id, nome, preco, prazo, combinar?}] }
 //   webhook   corpo enviado pela InfinitePay (sem "acao", via ?webhook=1)
@@ -52,7 +52,7 @@ function htmlCompra(p: any, cfg: Record<string, string>, paraLoja: boolean) {
   const forma = String(p.capture_method || "").toLowerCase().includes("pix") ? "Pix" : (p.capture_method ? `Cartão${p.installments > 1 ? ` em ${p.installments}x` : ""}` : "");
   const wa = String(cfg.whatsapp || "").replace(/\D/g, "");
   const topo = paraLoja
-    ? `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Nova venda no site · Pedido #${h(p.id)}</p><p style="margin:0 0 18px;color:#a9b3c4">${h(p.nome)} · ${h(p.telefone)} · CPF ${h(p.cpf || "")}${p.email ? ` · ${h(p.email)}` : ""}</p>`
+    ? `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Nova venda no site · Pedido #${h(p.id)}</p><p style="margin:0 0 18px;color:#a9b3c4">${h(p.nome)} · ${h(p.telefone)} · CPF ${h(p.cpf || "")}${p.email ? ` · ${h(p.email)}` : ""}${p.ref_codigo ? ` · Indicação: <b style="color:#d9b24c">${h(p.ref_codigo)}</b>` : ""}</p>`
     : `<p style="margin:0 0 6px;font-size:20px;font-weight:700">Compra confirmada!</p><p style="margin:0 0 18px;color:#a9b3c4">Olá, ${h(String(p.nome || "").split(" ")[0])}! Recebemos o pagamento do seu pedido <b>#${h(p.id)}</b>. Obrigado por comprar com a MLZ Company.</p>`;
   const rodape = paraLoja ? "" : `<p style="margin:22px 0 0;color:#a9b3c4">${p.entrega === "retirada" ? "Seu pedido já pode ser retirado no endereço acima." : "Vamos separar e enviar seu pedido. Mandamos o código de rastreio pelo WhatsApp assim que for postado."}</p>${wa ? `<p style="margin:12px 0 0"><a href="https://wa.me/${wa.length <= 11 ? "55" + wa : wa}" style="color:#d9b24c;font-weight:700">Falar com a gente no WhatsApp ${h(cfg.whatsapp)}</a></p>` : ""}`;
   return `<div style="background:#07111f;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#f2f4f8"><div style="max-width:560px;margin:0 auto;background:#0b1a2e;border-radius:12px;overflow:hidden">
@@ -191,6 +191,14 @@ async function criar(b: any, req: Request) {
   // e-mail para a confirmação da compra (a InfinitePay não devolve o e-mail de quem pagou)
   const email = String(b.email || "").trim().toLowerCase().slice(0, 120);
   if (email && !EMAIL_OK.test(email)) return json({ erro: "Informe um e-mail válido para receber a confirmação da compra." }, 400);
+  // código de indicação do revendedor (opcional)
+  const refCod = String(b.ref || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 40);
+  let ref_id: number | null = null, ref_codigo: string | null = null;
+  if (refCod) {
+    const { data: ri } = await sb.from("indicadores").select("id, codigo").eq("ativo", true).ilike("codigo", refCod).maybeSingle();
+    if (!ri) return json({ erro: "Código de indicação não encontrado. Confira ou deixe em branco." }, 400);
+    ref_id = ri.id; ref_codigo = ri.codigo;
+  }
   const entrega = b.entrega === "retirada" ? "retirada" : b.entrega === "entrega" ? "entrega" : null;
   let endereco: Record<string, string> | null = null;
   if (entrega === "entrega") {
@@ -228,7 +236,7 @@ async function criar(b: any, req: Request) {
     if (op.preco > 0) itens.push({ produto_id: null, descricao: `Frete · ${op.nome}${op.via ? ` · ${op.via}` : ""}`, quantidade: 1, preco_unit: r2(op.preco) } as any);
   }
   const total = r2(itens.reduce((s, i) => s + i.quantidade * i.preco_unit, 0));
-  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete, cpf, email: email || null }).select("id, order_nsu").single();
+  const { data: ped, error: e2 } = await sb.from("pedidos").insert({ nome, telefone, itens, total, entrega, endereco, user_id, frete, cpf, email: email || null, ref_id, ref_codigo }).select("id, order_nsu").single();
   if (e2) throw e2;
   const origem = req.headers.get("origin") || "";
   const site = /^https:\/\/([a-z0-9-]+\.)*(netlify\.app|pages\.dev|workers\.dev)$|^https:\/\/(www\.)?mlzcompany\.com$|^https?:\/\/localhost(:\d+)?$/.test(origem) ? origem : SITE_PADRAO;

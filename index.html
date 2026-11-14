@@ -129,6 +129,7 @@ section.blk{padding:76px 0 0}
 .tagdesc i{position:relative;font-style:normal;font-family:Montserrat,Arial Black,sans-serif;font-weight:900;color:#fff;font-size:12.5px;line-height:1;letter-spacing:.5px}
 @media(max-width:560px){.tagdesc{width:52px;height:52px;left:6px;top:6px}.tagdesc b{font-size:14.5px}.tagdesc i{font-size:10.5px}}
 #ccpf[hidden]{display:none}
+#cref{text-transform:uppercase}#cref::placeholder{text-transform:none}.crefm{font-size:12.5px;margin:-4px 2px 8px}.crefm.ok{color:#7fd9a0}.crefm.er{color:#ff8f7a}.crefm[hidden]{display:none}
 .tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .prod.enc .pimg img{filter:drop-shadow(0 18px 22px rgba(0,0,0,.5)) saturate(.55) brightness(.82)}
 .ppix{margin-top:2px;font-size:12px;color:#7fd1a8}
@@ -384,6 +385,8 @@ footer{margin-top:64px;padding:0 0 22px}
     <input class="cin p2only" name="tel" inputmode="tel" autocomplete="tel" placeholder="Seu WhatsApp com DDD" required>
     <input class="cin p2only" name="cpf" id="ccpf" inputmode="numeric" autocomplete="off" placeholder="CPF de quem vai receber ou retirar" maxlength="14" required>
     <input class="cin p2only" name="email" id="cemail" type="email" inputmode="email" autocomplete="email" placeholder="Seu e-mail (enviamos a confirmação da compra)" maxlength="120" required>
+    <input class="cin p2only" name="ref" id="cref" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código de indicação (opcional)" maxlength="40">
+    <div class="crefm p2only" id="crefm" hidden></div>
     <div class="cmodo p2only" id="cmodo"><button type="button" data-modo="entrega" class="on"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Entrega</button><button type="button" data-modo="retirada"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg>Retirar <small class="cgr">grátis</small></button></div>
     <div class="p2only"><div class="cend" id="cend">
       <div class="cends" id="cends" hidden></div>
@@ -404,7 +407,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261111h"></script>
+<script src="js/api.js?v=20261114a"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
@@ -622,6 +625,22 @@ const cpfOk = v => { const d = String(v || '').replace(/\D/g, ''); if (d.length 
   const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
   return dv(9) === +d[9] && dv(10) === +d[10]; };
 const precisaCpf = () => true;
+// ---------- código de indicação (revendedores) ----------
+const limpaRef = v => String(v || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 40);
+let REF_OK = { cod: '', nome: null };
+async function checarRef() {
+  const el = document.getElementById('cref'), m = document.getElementById('crefm'); if (!el) return true;
+  const cod = limpaRef(el.value);
+  if (!cod) { m.hidden = true; REF_OK = { cod: '', nome: null }; try { localStorage.removeItem('mlz_ref'); } catch (_) {} return true; }
+  if (REF_OK.cod !== cod) { let nome = null; try { nome = await api.indicacaoValida(cod); } catch (_) { nome = undefined; } REF_OK = { cod, nome }; }
+  m.hidden = false;
+  if (REF_OK.nome) { m.className = 'crefm ok'; m.textContent = `✓ Indicação de ${REF_OK.nome}`; try { localStorage.setItem('mlz_ref', cod); } catch (_) {} return true; }
+  if (REF_OK.nome === undefined) { m.hidden = true; return true; }
+  m.className = 'crefm er'; m.textContent = 'Código não encontrado. Confira ou deixe em branco.'; return false;
+}
+try { const u = new URLSearchParams(location.search).get('ref'); if (u) localStorage.setItem('mlz_ref', limpaRef(u)); } catch (_) {}
+document.getElementById('cref').addEventListener('change', checarRef);
+document.getElementById('cref').addEventListener('blur', checarRef);
 const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || ''));
 const freteValor = () => MODO === 'entrega' && FRETE.sel ? +FRETE.sel.preco || 0 : 0;
 function renderFrete() {
@@ -661,7 +680,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261111h';
+const VERSAO_SITE = '20261114a';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
@@ -748,6 +767,7 @@ fC.cep.addEventListener('input', async () => {
 try {
   const d = JSON.parse(localStorage.getItem('mlz_cliente') || '{}');
   if (d.nome) fC.nome.value = d.nome; if (d.tel) fC.tel.value = d.tel; if (d.cpf) fC.cpf.value = d.cpf; if (d.email) fC.email.value = d.email;
+  { const rf = localStorage.getItem('mlz_ref'); if (rf) { fC.ref.value = rf; setTimeout(checarRef, 800); } }
   if (d.end) CAMPOS_END.forEach(k => { if (d.end[k]) fC[k].value = d.end[k]; });
   if (d.modo) setModo(d.modo);
 } catch (_) {}
@@ -760,6 +780,8 @@ fC.addEventListener('submit', async e => {
   if (!cpfOk(f.cpf.value)) { er.textContent = 'Informe um CPF válido de quem vai receber ou retirar o pedido.'; return f.cpf.focus(); }
   const email = f.email.value.trim().toLowerCase();
   if (!emailOk(email)) { er.textContent = 'Informe um e-mail válido para receber a confirmação da compra.'; return f.email.focus(); }
+  const ref = limpaRef(f.ref.value);
+  if (ref && !(await checarRef())) { er.textContent = 'Código de indicação não encontrado. Confira ou deixe em branco.'; return f.ref.focus(); }
   const end = {}; CAMPOS_END.forEach(k => end[k] = f[k].value.trim());
   end.uf = end.uf.toUpperCase();
   if (SEL >= 0 && ENDS[SEL] && CAMPOS_END.every(k => (ENDS[SEL][k] || '').trim().toUpperCase() === end[k].toUpperCase())) { end.id = ENDS[SEL].id || ''; end.apelido = ENDS[SEL].apelido || ''; }
@@ -776,7 +798,7 @@ fC.addEventListener('submit', async e => {
       try { SESSAO = await api.sessao(); token = SESSAO ? SESSAO.access_token : ''; } catch (_) {}
       if (token) try { await api.salvarConta(nome, tel, MODO === 'entrega' ? end : null); } catch (err) { console.error(err); }
     }
-    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: soDigitos(f.cpf.value), email }, token);
+    const r = await mlzPagamento({ acao: 'criar', nome, telefone: tel, itens: SACOLA, entrega: MODO, endereco: MODO === 'entrega' ? end : null, frete: MODO === 'entrega' && FRETE.sel ? FRETE.sel.id : null, frete_nome: MODO === 'entrega' && FRETE.sel ? FRETE.sel.nome : null, cpf: soDigitos(f.cpf.value), email, ref }, token);
     try { localStorage.setItem('mlz_ultimo_pedido', r.order_nsu); } catch (_) {}
     location.href = r.url;
   } catch (err) { er.textContent = err.message; bt.disabled = false; bt.innerHTML = '<svg class="i"><use href="#i-cadeado"/></svg>Ir para o pagamento'; }
