@@ -351,7 +351,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261114c"></script>
+<script src="js/api.js?v=20261114d"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1276,7 +1276,7 @@ function cardRevend({ ind, c }) {
   return `<div class="cli">
     <div class="chead" data-togref="${ind.id}">
       <div class="av">${esc(iniciais(ind.nome))}</div>
-      <div class="gr"><div class="n">${esc(ind.nome)} · <span style="color:var(--gold-hi);letter-spacing:.06em">${esc(ind.codigo)}</span></div><div class="m">${(+ind.comissao_pct).toLocaleString('pt-BR')}% de comissão${ind.telefone ? ' · ' + esc(ind.telefone) : ''}${ind.ativo ? '' : ' · inativo'}</div></div>
+      <div class="gr"><div class="n">${esc(ind.nome)} · <span style="color:var(--gold-hi);letter-spacing:.06em">${esc(ind.codigo)}</span></div><div class="m">${(+ind.comissao_pct).toLocaleString('pt-BR')}% de comissão${ind.telefone ? ' · ' + esc(ind.telefone) : ''}${ind.email ? ' · ' + esc(ind.email) : ' · sem acesso ao painel'}${ind.ativo ? '' : ' · inativo'}</div></div>
       ${c.aPagar > 0.004 ? `<span class="badge b-atrasado">A pagar ${brl(c.aPagar)}</span>` : `<span class="badge b-pago">Em dia</span>`}
     </div>
     <div class="ctot"><div>Vendeu<b class="num">${brl(c.vendido)}</b></div><div>Comissão<b class="num">${brl(c.comissao)}</b></div><div>A pagar<b class="num" style="color:var(--gold-hi)">${brl(c.aPagar)}</b></div></div>
@@ -1297,15 +1297,16 @@ function formRevend(id) {
     <label class="f">Nome do revendedor<input class="in" name="nome" required value="${esc(x.nome)}"></label>
     <div class="grid2"><label class="f">Código (o que o cliente digita)<input class="in" name="codigo" required maxlength="40" style="text-transform:uppercase" placeholder="Ex.: MARIA" value="${esc(x.codigo)}"></label>
     <label class="f">WhatsApp<input class="in" name="telefone" inputmode="tel" value="${esc(x.telefone || '')}"></label></div>
+    <label class="f">E-mail da conta do revendedor no site<input class="in" name="email" type="email" autocomplete="off" placeholder="o mesmo e-mail que ele usa para entrar em Minha conta" value="${esc(x.email || '')}"></label>
     <div class="grid2"><label class="f">Comissão (%)<input class="in num" name="pct" inputmode="decimal" value="${String(x.comissao_pct).replace('.', ',')}"></label>
     <label class="chk" style="align-self:end;height:44px"><input type="checkbox" name="ativo" ${x.ativo ? 'checked' : ''}>Ativo</label></div>
-    <div class="hint">Use só letras, números e hífen, sem espaço. Ex.: MARIA, JOAO10, LOJA-PG.</div>
+    <div class="hint">Use só letras, números e hífen, sem espaço. Ex.: MARIA, JOAO10, LOJA-PG.<br>Com o e-mail preenchido, o revendedor vê as vendas e a comissão dele em <b>Minha conta → Indicações</b> no site (a conta precisa estar com o e-mail confirmado).</div>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar</button></div></form>`);
   $('#fref').onsubmit = async (e) => {
     e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
     const codigo = String(f.codigo || '').trim().toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9-]/g, '');
     if (!codigo) return toast('Informe o código.');
-    const d = { nome: f.nome.trim(), codigo, telefone: f.telefone.trim() || null, comissao_pct: +String(f.pct).replace(',', '.') || 0, ativo: f.ativo === 'on' };
+    const d = { nome: f.nome.trim(), codigo, telefone: f.telefone.trim() || null, email: String(f.email || '').trim().toLowerCase() || null, comissao_pct: +String(f.pct).replace(',', '.') || 0, ativo: f.ativo === 'on' };
     try { const s = await api.salvarIndicador(id ? { id, ...d } : d); UI.refAbertos.add(s.id || id); toast('Código salvo'); fecharModal(); await carregar(); }
     catch (err) { toast(/duplicate|unique/i.test(err.message) ? 'Esse código já existe. Escolha outro.' : 'Erro: ' + err.message); }
   };

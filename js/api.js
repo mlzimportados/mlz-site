@@ -38,6 +38,7 @@ function criarApi(opts = {}) {
     indicacaoValida: async (cod) => ok(await sb.rpc('indicacao_valida', { p_codigo: cod })),
     cpfLivre: async (cpf) => ok(await sb.rpc('cpf_livre', { p_cpf: cpf })),
     ligarHistorico: async () => ok(await sb.rpc('ligar_meu_historico')),
+    meuPainelIndicacao: async () => ok(await sb.rpc('meu_painel_indicacao')),
     salvarCpf: async (cpf, telefone) => ok(await sb.rpc('salvar_meu_cpf', { p_cpf: cpf, p_telefone: telefone || null })),
     recuperarSenha: async (email) => ok(await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/conta.html' })),
     aoMudarLogin: (cb) => sb.auth.onAuthStateChange((ev, s) => cb(ev, s)),

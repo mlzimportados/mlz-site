@@ -78,6 +78,21 @@ main.mini-w{max-width:440px}
 .dtabs{display:flex;gap:22px;margin:22px 0 8px;border-bottom:1px solid var(--line)}
 .dtabs button{padding:0 0 11px;color:var(--faint);font-size:15px;border-bottom:2px solid transparent;margin-bottom:-1px}
 .dtabs button.on{color:var(--txt);border-bottom-color:var(--gold)}
+.rv+.rv{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+.rvh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:14px 0}
+.rvh .m{color:var(--muted);font-size:13px}
+.rvc{font-family:var(--hd);font-size:24px;font-weight:700;color:var(--gold-hi);letter-spacing:1px;margin-top:4px}
+.rvk{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rvk>div{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:3px;background:var(--bg2)}
+.rvk>div.g{border-color:rgba(217,178,76,.45)}
+.rvk span{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px}
+.rvk b{font-size:20px;font-weight:600}.rvk .g b{color:var(--gold-hi)}
+.rvk i{font-style:normal;font-size:12px;color:var(--muted)}
+.rvt{font-size:14px;font-weight:600;color:var(--muted);margin:22px 0 10px}
+.rvr{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rvr div{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;font-size:14.5px}.rvr div+div{border-top:1px solid var(--line)}
+.rvr b{color:var(--gold-hi)}
+@media(max-width:560px){.rvk{grid-template-columns:1fr 1fr}.rvk>div.g{grid-column:1/-1}}
 .dtabs em{font-style:normal;font-size:11px;color:var(--gold-hi)}
 #tabc .ped{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 2px;background:none}
 #tabc .ped+.ped{margin-top:0}
@@ -186,7 +201,7 @@ main.dash{max-width:880px}
 <main id="app"><div class="load"><div class="spin"></div></div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261114c"></script>
+<script src="js/api.js?v=20261114d"></script>
 <script>
 const api = criarApi({ conta: true });
 const app = document.getElementById('app');
@@ -311,6 +326,7 @@ async function abrirConta(acabouDeEntrar) {
     }
   } catch (err) { console.error(err); }
   try { const ss = await api.sessao(); CONTA.email_novo = (ss && ss.user && ss.user.new_email) || ''; if (ss && ss.user && ss.user.email) CONTA.email = ss.user.email; } catch (_) {}
+  try { CONTA.revenda = await api.meuPainelIndicacao(); } catch (err) { console.error(err); CONTA.revenda = null; }
   CONTA.enderecos = CONTA.enderecos || []; CONTA.compras = CONTA.compras || []; CONTA.pendentes = CONTA.pendentes || [];
   if (acabouDeEntrar && voltarSacola) return seguir();
   renderDash();
@@ -318,7 +334,8 @@ async function abrirConta(acabouDeEntrar) {
 
 function renderDash() {
   const emAnd = CONTA.compras.filter(andamento).length;
-  const tabs = [['pedidos', 'Pedidos'], ['enderecos', 'Endereços'], ['dados', 'Conta']];
+  const tabs = [['pedidos', 'Pedidos'], ...(CONTA.revenda ? [['revenda', 'Indicações']] : []), ['enderecos', 'Endereços'], ['dados', 'Conta']];
+  if (TAB === 'revenda' && !CONTA.revenda) TAB = 'pedidos';
   app.innerHTML = `
     <section class="dhero"><div class="dh"><h1>Olá${CONTA.nome ? ', ' + esc(CONTA.nome.split(' ')[0]) : ''}</h1><div class="em">${esc(CONTA.email || '')}</div></div>
       <button class="link" id="sair">Sair</button></section>
@@ -345,6 +362,31 @@ function htmlPedido(p) {
   </article>`;
 }
 
+const r2 = v => Math.round((+v || 0) * 100) / 100;
+function htmlRevenda(ind) {
+  const pct = +ind.comissao_pct || 0;
+  const ls = (ind.pedidos || []).map(p => { const base = r2((p.itens || []).reduce((s, i) => s + i.quantidade * i.preco_unit, 0)); return { p, base, com: r2(base * pct / 100) }; });
+  const soma = f => r2(ls.filter(f).reduce((s, x) => s + x.com, 0));
+  const qtd = ls.reduce((s, x) => s + (x.p.itens || []).reduce((a, i) => a + +i.quantidade, 0), 0);
+  const vendido = r2(ls.reduce((s, x) => s + x.base, 0)), aPagar = soma(x => !x.p.comissao_paga_em), pago = soma(x => !!x.p.comissao_paga_em);
+  const porPerf = {}; ls.forEach(x => (x.p.itens || []).forEach(i => { porPerf[i.descricao] = (porPerf[i.descricao] || 0) + +i.quantidade; }));
+  const rank = Object.entries(porPerf).sort((a, b) => b[1] - a[1]);
+  return `<div class="rv">
+    <div class="rvh"><div><div class="eyebrow">Seu código</div><div class="rvc">${esc(ind.codigo)}</div></div><div class="m">${pct}% de comissão sobre os perfumes</div></div>
+    <div class="rvk">
+      <div><span>Perfumes vendidos</span><b>${qtd}</b><i>${ls.length} pedido(s)</i></div>
+      <div><span>Total vendido</span><b>${brl(vendido)}</b><i>sem o frete</i></div>
+      <div class="g"><span>Comissão a receber</span><b>${brl(aPagar)}</b><i>já recebida: ${brl(pago)}</i></div>
+    </div>
+    ${rank.length ? `<h3 class="rvt">Perfumes que você vendeu</h3><div class="rvr">${rank.map(([n, q]) => `<div><span>${esc(n)}</span><b>${q}×</b></div>`).join('')}</div>` : ''}
+    <h3 class="rvt">Vendas com o seu código</h3>
+    ${ls.length ? ls.map(x => `<article class="ped"><div class="pt"><div class="gr"><b>${(x.p.itens || []).map(i => `${i.quantidade > 1 ? i.quantidade + '× ' : ''}${esc(i.descricao)}`).join(', ')}</b>
+        <div class="m">${dataBR(x.p.pago_em)} · ${brl(x.base)} · comissão ${brl(x.com)}</div></div>
+      <span class="badge ${x.p.comissao_paga_em ? 'b-ok' : 'b-wait'}">${x.p.comissao_paga_em ? 'Comissão paga' : 'A receber'}</span></div></article>`).join('')
+      : '<div class="vazio">Nenhuma venda com o seu código ainda. Peça para o cliente digitar <b>' + esc(ind.codigo) + '</b> no campo "Código de indicação" da sacola.</div>'}
+  </div>`;
+}
+
 function renderTab() {
   const c = document.getElementById('tabc'); if (!c) return;
   document.querySelectorAll('.dtabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === TAB));
@@ -352,6 +394,8 @@ function renderTab() {
     const cs = CONTA.compras, and = cs.filter(andamento), fim = cs.filter(p => !andamento(p));
     c.innerHTML = cs.length ? [...and, ...fim].map(htmlPedido).join('')
       : `<div class="vazio grande">Nenhum pedido ainda.<a class="btn solid sm" href="index.html#colecao">Ver a coleção</a></div>`;
+  } else if (TAB === 'revenda') {
+    c.innerHTML = CONTA.revenda.map(htmlRevenda).join('');
   } else if (TAB === 'enderecos') {
     c.innerHTML = '<div class="box" id="bEnd"></div>'; EDIT = null; renderEnderecos();
   } else {
