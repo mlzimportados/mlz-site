@@ -351,7 +351,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261114a"></script>
+<script src="js/api.js?v=20261114b"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1257,7 +1257,6 @@ function contaRevend(ind) {
   return { linhas, pedidos: ps.length, perfumes: ps.reduce((s, p) => s + (p.itens || []).filter(i => i.produto_id).reduce((a, i) => a + i.quantidade, 0), 0),
     vendido: r2(linhas.reduce((s, x) => s + x.base, 0)), comissao: sum(() => true), aPagar: sum(x => !x.p.comissao_paga_em), pago: sum(x => !!x.p.comissao_paga_em) };
 }
-const linkRef = (cod) => `https://mlzcompany.com/?ref=${encodeURIComponent(cod)}`;
 function vRevend() {
   const cs = (D.indicadores || []).map(ind => ({ ind, c: contaRevend(ind) }));
   const T = (k) => r2(cs.reduce((s, x) => s + x.c[k], 0));
@@ -1269,7 +1268,7 @@ function vRevend() {
       <div class="kpi receber"><div class="l"><svg class="i"><use href="#i-trend"/></svg>Comissão total</div><div class="v num">${brl(T('comissao'))}</div><div class="s">${cs.length} revendedor${cs.length === 1 ? '' : 'es'}</div></div>
       <div class="kpi atraso"><div class="l"><svg class="i"><use href="#i-clock"/></svg>Comissão a pagar</div><div class="v num">${brl(T('aPagar'))}</div><div class="s">Já paga: ${brl(T('pago'))}</div></div>
     </div>
-    <div class="hint" style="margin:12px 2px 22px">Como funciona: crie um código para cada revendedor (ex.: MARIA). Ele divulga o código ou o link pronto; no site, o cliente digita o código na sacola (campo “Código de indicação”) ou já chega com ele preenchido pelo link. Só entram aqui os pedidos <b>pagos</b>.</div>
+    <div class="hint" style="margin:12px 2px 22px">Como funciona: crie um código para cada revendedor (ex.: MARIA). Ele divulga o código e o cliente digita na sacola do site, no campo “Código de indicação”. Só entram aqui os pedidos <b>pagos</b>.</div>
     ${cs.length ? cs.map(cardRevend).join('') : '<div class="vazio">Nenhum código criado ainda. Toque em “Novo código” para começar.</div>'}`;
 }
 function cardRevend({ ind, c }) {
@@ -1282,9 +1281,7 @@ function cardRevend({ ind, c }) {
     </div>
     <div class="ctot"><div>Vendeu<b class="num">${brl(c.vendido)}</b></div><div>Comissão<b class="num">${brl(c.comissao)}</b></div><div>A pagar<b class="num" style="color:var(--gold-hi)">${brl(c.aPagar)}</b></div></div>
     ${aberto ? `<div class="cbody" style="padding-top:14px">
-      <div class="m" style="margin-bottom:10px">Link para divulgar: <b style="overflow-wrap:anywhere">${esc(linkRef(ind.codigo))}</b></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <button class="btn sm line" data-copiaref="${esc(ind.codigo)}">Copiar link</button>
         ${c.aPagar > 0.004 ? `<button class="btn sm gold" data-pagaref="${ind.id}">Marcar ${brl(c.aPagar)} como pago</button>` : ''}
         <button class="btn sm line" data-editref="${ind.id}"><svg class="i"><use href="#i-edit"/></svg>Editar</button>
       </div>
@@ -1317,7 +1314,6 @@ $('#v-revend').addEventListener('click', async (e) => {
   let b;
   if (e.target.closest('[data-novoref]')) return formRevend(null);
   if ((b = e.target.closest('[data-editref]'))) return formRevend(+b.dataset.editref);
-  if ((b = e.target.closest('[data-copiaref]'))) { try { await navigator.clipboard.writeText(linkRef(b.dataset.copiaref)); toast('Link copiado'); } catch (_) { prompt('Copie o link:', linkRef(b.dataset.copiaref)); } return; }
   if ((b = e.target.closest('[data-pagaref]'))) {
     const ind = D.indicadores.find(i => i.id === +b.dataset.pagaref); const c = contaRevend(ind);
     if (!confirm(`Marcar ${brl(c.aPagar)} de comissão como pago para ${ind.nome}?`)) return;
