@@ -351,11 +351,11 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261114d"></script>
+<script src="js/api.js?v=20261115a"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
-const UI = { tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', invAbertos: new Set(), refAbertos: new Set(), cadModo: 'novo' };
+const UI = { tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', dono: 'todos', invAbertos: new Set(), refAbertos: new Set(), cadModo: 'novo' };
 const $ = (s) => document.querySelector(s);
 const FORMAS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Crediário (parcelado direto)', 'Transferência'];
 const CANAIS = ['WhatsApp', 'Instagram', 'Presencial', 'Outro'];
@@ -408,13 +408,30 @@ function numeros() {
     lv -= +v.taxa || 0;
     if (v.data.slice(0, 7) === mes) lucroMes += lv;
   }
+  // resultado separado: vendas de produtos da MLZ x vendas de produtos de investidores (taxa da venda dividida pelo valor de cada item)
+  const RM = { vendido: 0, custo: 0, taxas: 0, unid: 0, mes: 0 }, RI = { vendido: 0, custo: 0, taxas: 0, unid: 0, parte: 0, mes: 0, porInv: new Map() };
+  for (const v of D.vendas) {
+    const tot = v.venda_itens.reduce((s, i) => s + Math.max(0, i.quantidade * +i.preco_unit), 0), tx = +v.taxa || 0, doMes = v.data.slice(0, 7) === mes;
+    for (const i of v.venda_itens) {
+      const val = i.quantidade * +i.preco_unit, c = i.quantidade * (+i.custo_unit || 0), t = tot > 0 ? tx * Math.max(0, val) / tot : 0;
+      if (i.investidor_id) {
+        const lucro = val - c - t, pi = (val - c) * (+(i.percentual ?? pctInv.get(i.investidor_id) ?? 0)) / 100;
+        RI.vendido += val; RI.custo += c; RI.taxas += t; RI.unid += i.quantidade; RI.parte += pi; if (doMes) RI.mes += lucro - pi;
+        const o = RI.porInv.get(i.investidor_id) || { nome: ((D.investidores || []).find(x => x.id === i.investidor_id) || {}).nome || 'Investidor', unid: 0, parte: 0 };
+        o.unid += i.quantidade; o.parte += pi; RI.porInv.set(i.investidor_id, o);
+      } else {
+        RM.vendido += val; RM.custo += c; RM.taxas += t; if (i.produto_id) RM.unid += i.quantidade; if (doMes) RM.mes += val - c - t;
+      }
+    }
+  }
+  RM.lucro = RM.vendido - RM.custo - RM.taxas; RI.lucro = RI.vendido - RI.custo - RI.taxas; RI.mlz = RI.lucro - RI.parte;
   const lucroBruto = vendido - custoVend - taxas, lucroMLZ = lucroBruto - parteInv;
   // investimento da MLZ = custo do estoque próprio + custo dos produtos próprios já vendidos
   let custoVendMLZ = 0;
   for (const v of D.vendas) for (const i of v.venda_itens) if (i.produto_id && !i.investidor_id) custoVendMLZ += i.quantidade * (+i.custo_unit || 0);
   const custoEstMLZ = estoqueSplit().mlz.custo, investMLZ = custoVendMLZ + custoEstMLZ;
   const pagoInv = (D.investidores || []).reduce((s, i) => s + i.repasses.reduce((a, r) => a + +r.valor, 0), 0);
-  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv, taxas, custoVendMLZ, custoEstMLZ, investMLZ };
+  return { caixa, receber, atrasado, vendido, caixaMes, vendidoMes, nAtraso, unid, valorEst, custoEst, esgot, semPreco, itensVend, custoVend, semCusto, parteInv, lucroBruto, lucroMLZ, lucroMes, pagoInv, taxas, custoVendMLZ, custoEstMLZ, investMLZ, RM, RI };
 }
 // estoque separado: unidades livres dos lotes de investidores x resto da MLZ
 function estoqueSplit() {
@@ -425,7 +442,7 @@ function estoqueSplit() {
     const livre = Math.max(0, l.quantidade - (vendLote.get(l.id) || 0)); if (!livre) continue;
     const arr = livreProd.get(l.produto_id) || []; arr.push({ inv, livre, custo: +l.custo_unit || 0 }); livreProd.set(l.produto_id, arr);
   }
-  const mlz = { unid: 0, venda: 0, custo: 0, prods: 0 }, inv = { unid: 0, venda: 0, custo: 0, prods: 0 };
+  const mlz = { unid: 0, venda: 0, custo: 0, prods: 0 }, inv = { unid: 0, venda: 0, custo: 0, prods: 0 }, porProd = new Map();
   for (const p of D.produtos) {
     if (p.estoque <= 0) continue;
     let resta = p.estoque, usouInv = 0;
@@ -433,11 +450,12 @@ function estoqueSplit() {
       const u = Math.min(resta, x.livre); if (!u) break;
       resta -= u; usouInv += u; inv.unid += u; inv.venda += u * precoProd(p); inv.custo += u * x.custo;
       const o = porInv.get(x.inv.id) || { nome: x.inv.nome, unid: 0 }; o.unid += u; porInv.set(x.inv.id, o);
+      const pp = porProd.get(p.id) || { mlz: 0, inv: 0, nomes: [] }; pp.inv += u; pp.nomes.push(`${x.inv.nome}: ${u}`); porProd.set(p.id, pp);
     }
     if (usouInv) inv.prods++;
-    if (resta > 0) { mlz.prods++; mlz.unid += resta; mlz.venda += resta * precoProd(p); mlz.custo += resta * (+p.custo || 0); }
+    if (resta > 0) { const pp = porProd.get(p.id) || { mlz: 0, inv: 0, nomes: [] }; pp.mlz = resta; porProd.set(p.id, pp); mlz.prods++; mlz.unid += resta; mlz.venda += resta * precoProd(p); mlz.custo += resta * (+p.custo || 0); }
   }
-  return { mlz, inv, porInv: [...porInv.values()] };
+  return { mlz, inv, porInv: [...porInv.values()], porProd };
 }
 const cliNome = (id) => (D.clientes.find(c => c.id === id) || {}).nome || 'Cliente';
 const cliObj = (id) => D.clientes.find(c => c.id === id) || {};
@@ -465,11 +483,21 @@ function vResumo() {
       <div class="leg"><span style="--c:var(--ok)">Recebido</span><span style="--c:var(--gold)">A receber em dia</span><span style="--c:var(--bad)">Atrasado</span></div>
     </div>
     <div class="sec"><h3><svg class="i"><use href="#i-trend"/></svg>Resultado das vendas</h3>
-      <div class="kpis">
-        <div class="kpi"><div class="l">Lucro bruto</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Vendas − custo (${brl(n.custoVend)}) − taxas (${brl(n.taxas)})</div></div>
-        <div class="kpi"><div class="l">Parte dos investidores</div><div class="v num">${brl(n.parteInv)}</div><div class="s">Já pago a eles: ${brl(n.pagoInv)}</div></div>
-        <div class="kpi caixa"><div class="l">Lucro da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Este mês: ${brl(n.lucroMes)}</div></div>
-        <div class="kpi"><div class="l">Margem</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
+      <div class="esplit" style="margin-top:0">
+        <div class="ebox"><div class="eh"><span class="dot" style="background:var(--gold)"></span>Vendas da MLZ <span class="m" style="font-weight:400;margin-left:auto">produtos da própria loja</span></div>
+          <div class="erow"><div><small>Vendido</small><b class="num">${brl(n.RM.vendido)}</b></div><div><small>Custo</small><b class="num">${brl(n.RM.custo)}</b></div><div><small>Taxas</small><b class="num">${brl(n.RM.taxas)}</b></div></div>
+          <div class="erow" style="margin-top:12px"><div><small>Lucro</small><b class="num" style="color:var(--ok)">${brl(n.RM.lucro)}</b></div><div><small>Margem</small><b class="num">${n.RM.vendido ? Math.round(n.RM.lucro / n.RM.vendido * 100) : 0}%</b></div><div><small>Lucro no mês</small><b class="num">${brl(n.RM.mes)}</b></div></div>
+          <div class="s">${n.RM.unid} unidade${n.RM.unid === 1 ? '' : 's'} vendida${n.RM.unid === 1 ? '' : 's'} · inclui frete e juros cobrados</div></div>
+        <div class="ebox"><div class="eh"><span class="dot" style="background:#6aa8ff"></span>Vendas dos investidores <span class="m" style="font-weight:400;margin-left:auto">produtos de lotes</span></div>
+          <div class="erow"><div><small>Vendido</small><b class="num">${brl(n.RI.vendido)}</b></div><div><small>Custo</small><b class="num">${brl(n.RI.custo)}</b></div><div><small>Lucro</small><b class="num">${brl(n.RI.lucro)}</b></div></div>
+          <div class="erow" style="margin-top:12px"><div><small>Parte dos investidores</small><b class="num" style="color:#6aa8ff">${brl(n.RI.parte)}</b></div><div><small>Parte da MLZ</small><b class="num" style="color:var(--ok)">${brl(n.RI.mlz)}</b></div><div><small>Já pago a eles</small><b class="num">${brl(n.pagoInv)}</b></div></div>
+          <div class="s">${n.RI.porInv.size ? [...n.RI.porInv.values()].map(o => `${esc(o.nome)}: ${o.unid} un. · ${brl(o.parte)}`).join(' · ') : 'Nenhuma venda de produto de investidor ainda'}</div></div>
+      </div>
+      <div class="kpis" style="margin-top:10px">
+        <div class="kpi caixa"><div class="l">Lucro total da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Vendas da MLZ + parte da MLZ nos investidores · mês: ${brl(n.lucroMes)}</div></div>
+        <div class="kpi"><div class="l">Lucro bruto geral</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Tudo junto, antes da parte dos investidores</div></div>
+        <div class="kpi"><div class="l">Margem geral</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
+        <div class="kpi"><div class="l">A pagar aos investidores</div><div class="v num">${brl(Math.max(0, n.RI.parte - n.pagoInv))}</div><div class="s">Parte deles − já pago</div></div>
       </div>
       <div class="kpis" style="margin-top:10px">
         <div class="kpi"><div class="l"><svg class="i"><use href="#i-wallet"/></svg>Investido pela MLZ</div><div class="v num">${brl(n.investMLZ)}</div><div class="s">Custo pago nos produtos da loja</div></div>
@@ -1047,25 +1075,32 @@ $('#v-cad').addEventListener('click', (e) => { const b = e.target.closest('[data
 
 // ---------- ESTOQUE ----------
 function vEstoque() {
-  const n = numeros(), q = UI.qEst.toLowerCase();
+  const n = numeros(), q = UI.qEst.toLowerCase(), es = estoqueSplit(), dn = UI.dono;
+  const pp = (p) => es.porProd.get(p.id) || { mlz: 0, inv: 0, nomes: [] };
+  const temInv = (p) => pp(p).inv > 0 || (D.investidores || []).some(i => i.lotes.some(l => l.produto_id === p.id));
   let lista = D.produtos.filter(p => (!q || nomeProd(p).toLowerCase().includes(q)) &&
-    (UI.fEst === 'todos' || (UI.fEst === 'disp' && p.estoque > 0) || (UI.fEst === 'esg' && p.estoque <= 0) || (UI.fEst === 'semp' && !precoProd(p)) || (UI.fEst === 'oculto' && !p.ativo)));
+    (dn === 'todos' || (dn === 'mlz' && (pp(p).mlz > 0 || !pp(p).inv)) || (dn === 'inv' && temInv(p))) &&
+    (UI.fEst === 'todos' || (UI.fEst === 'disp' && (dn === 'mlz' ? pp(p).mlz : dn === 'inv' ? pp(p).inv : p.estoque) > 0) || (UI.fEst === 'esg' && p.estoque <= 0) || (UI.fEst === 'semp' && !precoProd(p)) || (UI.fEst === 'oculto' && !p.ativo)));
   const catNome = (id) => (D.cats.find(c => c.id === id) || {}).nome || 'Sem categoria';
+  const K = dn === 'mlz' ? { unid: es.mlz.unid, venda: es.mlz.venda, custo: es.mlz.custo } : dn === 'inv' ? { unid: es.inv.unid, venda: es.inv.venda, custo: es.inv.custo } : { unid: n.unid, venda: n.valorEst, custo: es.mlz.custo + es.inv.custo };
+  const dono = (p) => { const x = pp(p); if (!x.inv) return ''; return `<div class="m"><span style="color:#6aa8ff">● Investidor</span> ${esc(x.nomes.join(' · '))}${x.mlz ? ` · <span style="color:var(--gold-hi)">● MLZ: ${x.mlz}</span>` : ''}</div>`; };
   $('#v-estoque').innerHTML = `
     <div class="ph"><div><h2 class="t">Estoque e produtos</h2><div class="sub">Produtos visíveis aparecem no site. Sem estoque, aparecem como “sob encomenda”.</div></div><button class="btn gold" data-novoprod><svg class="i"><use href="#i-plus"/></svg>Novo produto</button></div>
+    <div class="seg" style="margin-bottom:12px">${[['todos', 'Geral'], ['mlz', 'Da MLZ'], ['inv', 'Dos investidores']].map(([k, l]) => `<button class="${dn === k ? 'on' : ''}" data-dono="${k}">${l}</button>`).join('')}</div>
     <div class="kpis" style="margin-bottom:14px">
-      <div class="kpi"><div class="l">Unidades</div><div class="v num">${n.unid}</div></div>
-      <div class="kpi"><div class="l">Valor (venda)</div><div class="v num">${brl(n.valorEst)}</div></div>
-      <div class="kpi"><div class="l">Custo</div><div class="v num">${brl((() => { const es = estoqueSplit(); return es.mlz.custo + es.inv.custo; })())}</div></div>
-      <div class="kpi"><div class="l">Esgotados</div><div class="v num">${n.esgot}</div></div>
+      <div class="kpi"><div class="l">Unidades</div><div class="v num">${K.unid}</div></div>
+      <div class="kpi"><div class="l">Valor (venda)</div><div class="v num">${brl(K.venda)}</div></div>
+      <div class="kpi"><div class="l">Custo</div><div class="v num">${brl(K.custo)}</div></div>
+      <div class="kpi"><div class="l">${dn === 'inv' ? 'Investidores' : 'Esgotados'}</div><div class="v num">${dn === 'inv' ? es.porInv.length : n.esgot}</div>${dn === 'inv' && es.porInv.length ? `<div class="s">${es.porInv.map(o => `${esc(o.nome)}: ${o.unid} un.`).join(' · ')}</div>` : ''}</div>
     </div>
+    ${dn === 'inv' ? '<div class="hint" style="margin:-4px 2px 12px">Os produtos dos investidores entram pelos lotes na aba Investidores. A venda sai primeiro do lote mais antigo.</div>' : ''}
     <div class="barf"><input class="in" id="qEst" placeholder="Buscar produto" value="${esc(UI.qEst)}"></div>
     <div class="seg" style="margin-bottom:12px">${[['todos', 'Todos'], ['disp', 'Disponíveis'], ['esg', 'Esgotados'], ['semp', 'Sem preço'], ['oculto', 'Ocultos']].map(([k, l]) => `<button class="${UI.fEst === k ? 'on' : ''}" data-fe="${k}">${l}</button>`).join('')}</div>
     ${lista.length ? lista.map(p => `<div class="prod ${p.ativo ? '' : 'inativo'}">
       <img src="${esc(imgProd(p))}" alt="" loading="lazy">
       <div class="gr"><div class="n">${esc(nomeProd(p))}</div>
         <div class="m">${esc(catNome(p.categoria_id))}${p.ativo ? '' : ' · oculto do site'}</div>
-        <div class="m num">${precoProd(p) ? `<b style="color:var(--gold-hi)">${brl(precoProd(p))}</b>${+p.preco_promo && +p.preco_promo < +p.preco ? ` <s>${brl(p.preco)}</s>` : ''}` : '<span style="color:var(--warn)">sem preço</span>'}${+p.custo ? ` · custo ${brl(p.custo)}` : ''}</div></div>
+        <div class="m num">${precoProd(p) ? `<b style="color:var(--gold-hi)">${brl(precoProd(p))}</b>${+p.preco_promo && +p.preco_promo < +p.preco ? ` <s>${brl(p.preco)}</s>` : ''}` : '<span style="color:var(--warn)">sem preço</span>'}${+p.custo ? ` · custo ${brl(p.custo)}` : ''}</div>${dono(p)}</div>
       <div class="qtd"><button data-q="${p.id}" data-d="-1">−</button><span class="num ${p.estoque <= 0 ? 'zero' : ''}">${p.estoque}</span><button data-q="${p.id}" data-d="1">+</button></div>
       <button class="btn sm line" data-editprod="${p.id}" title="Editar"><svg class="i"><use href="#i-edit"/></svg></button>
     </div>`).join('') : '<div class="vazio">Nenhum produto aqui.</div>'}`;
@@ -1075,6 +1110,7 @@ elEst.addEventListener('input', (e) => { if (e.target.id === 'qEst') { UI.qEst =
 elEst.addEventListener('click', async (e) => {
   let b;
   if ((b = e.target.closest('[data-fe]'))) { UI.fEst = b.dataset.fe; return vEstoque(); }
+  if ((b = e.target.closest('[data-dono]'))) { UI.dono = b.dataset.dono; return vEstoque(); }
   if ((b = e.target.closest('[data-q]'))) {
     const p = D.produtos.find(x => x.id === +b.dataset.q); const novo = Math.max(0, p.estoque + +b.dataset.d);
     if (novo === p.estoque) return; p.estoque = novo; vEstoque();
