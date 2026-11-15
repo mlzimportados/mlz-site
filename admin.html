@@ -144,6 +144,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .seg::-webkit-scrollbar{display:none}
 .seg button{height:32px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
 .seg button.on{background:rgba(255,255,255,.09);color:var(--txt)}
+.seg.per{flex-wrap:wrap}
 
 /* cliente */
 .cli{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
@@ -351,11 +352,11 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261115a"></script>
+<script src="js/api.js?v=20261115b"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
-const UI = { tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', dono: 'todos', invAbertos: new Set(), refAbertos: new Set(), cadModo: 'novo' };
+const UI = { per: (() => { try { return localStorage.getItem('mlz_per') || 'tudo'; } catch (_) { return 'tudo'; } })(), tab: 'resumo', fVend: 'todos', qVend: '', abertos: new Set(), qEst: '', fEst: 'todos', dono: 'todos', invAbertos: new Set(), refAbertos: new Set(), cadModo: 'novo' };
 const $ = (s) => document.querySelector(s);
 const FORMAS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Crediário (parcelado direto)', 'Transferência'];
 const CANAIS = ['WhatsApp', 'Instagram', 'Presencial', 'Outro'];
@@ -378,13 +379,14 @@ function stVenda(v) { const s = v.parcelas.map(stParc); if (s.every(x => x === '
 const ROT = { pago: 'Pago', atrasado: 'Atrasado', aberto: 'Em aberto' };
 const badge = (s) => `<span class="badge b-${s}">${ROT[s]}</span>`;
 
-function numeros() {
+function numeros(ini = '') {
+  const VP = ini ? D.vendas.filter(v => v.data >= ini) : D.vendas;
   const hoje = hojeISO(), mes = hoje.slice(0, 7);
   let caixa = 0, receber = 0, atrasado = 0, vendido = 0, caixaMes = 0, vendidoMes = 0, nAtraso = 0, taxas = 0;
   for (const v of D.vendas) {
-    vendido += +v.total; taxas += +v.taxa || 0; if (v.data.slice(0, 7) === mes) vendidoMes += +v.total;
+    if (!ini || v.data >= ini) { vendido += +v.total; taxas += +v.taxa || 0; } if (v.data.slice(0, 7) === mes) vendidoMes += +v.total;
     for (const p of v.parcelas) {
-      if (p.pago_em) { caixa += +p.valor; if (p.pago_em.slice(0, 7) === mes) caixaMes += +p.valor; }
+      if (p.pago_em) { if (!ini || p.pago_em.slice(0, 10) >= ini) caixa += +p.valor; if (p.pago_em.slice(0, 7) === mes) caixaMes += +p.valor; }
       else { receber += +p.valor; if (p.vencimento < hoje) { atrasado += +p.valor; nAtraso++; } }
     }
   }
@@ -393,11 +395,11 @@ function numeros() {
     if (p.estoque > 0) { unid += p.estoque; valorEst += p.estoque * precoProd(p); custoEst += p.estoque * (+p.custo || 0); if (!precoProd(p)) semPreco++; }
     else esgot++;
   }
-  const itensVend = D.vendas.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^(Juros do parcelamento|Desconto)/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
+  const itensVend = VP.reduce((s, v) => s + v.venda_itens.filter(i => i.produto_id || !/^(Juros do parcelamento|Desconto)/.test(i.descricao || '')).reduce((a, i) => a + i.quantidade, 0), 0);
   // resultado: lucro = vendas − custo dos itens; parte dos investidores sai do lucro
   let custoVend = 0, semCusto = 0, parteInv = 0, lucroMes = 0;
   const pctInv = new Map((D.investidores || []).map(i => [i.id, +i.percentual || 0]));
-  for (const v of D.vendas) {
+  for (const v of VP) {
     let lv = 0;
     for (const i of v.venda_itens) {
       const c = +i.custo_unit || 0, l = i.quantidade * (+i.preco_unit - c);
@@ -410,7 +412,7 @@ function numeros() {
   }
   // resultado separado: vendas de produtos da MLZ x vendas de produtos de investidores (taxa da venda dividida pelo valor de cada item)
   const RM = { vendido: 0, custo: 0, taxas: 0, unid: 0, mes: 0 }, RI = { vendido: 0, custo: 0, taxas: 0, unid: 0, parte: 0, mes: 0, porInv: new Map() };
-  for (const v of D.vendas) {
+  for (const v of VP) {
     const tot = v.venda_itens.reduce((s, i) => s + Math.max(0, i.quantidade * +i.preco_unit), 0), tx = +v.taxa || 0, doMes = v.data.slice(0, 7) === mes;
     for (const i of v.venda_itens) {
       const val = i.quantidade * +i.preco_unit, c = i.quantidade * (+i.custo_unit || 0), t = tot > 0 ? tx * Math.max(0, val) / tot : 0;
@@ -462,7 +464,11 @@ const cliObj = (id) => D.clientes.find(c => c.id === id) || {};
 
 // ---------- RESUMO ----------
 function vResumo() {
-  const n = numeros(), es = estoqueSplit();
+  const PER = [['1d', '1 dia', 0], ['7d', '7 dias', 6], ['1m', '1 mês', 29], ['3m', '3 meses', 89], ['6m', '6 meses', 179], ['1a', '1 ano', 364], ['tudo', 'Tudo', null]];
+  const per = PER.find(x => x[0] === UI.per) || PER[6];
+  const ini = per[2] === null ? '' : new Date(Date.now() - per[2] * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+  const n = numeros(ini), nT = ini ? numeros('') : n, es = estoqueSplit();
+  const perTxt = ini ? (per[2] === 0 ? 'hoje' : `de ${dataBR(ini)} até hoje`) : 'desde o início';
   const tot = n.caixa + n.receber;
   const pct = (x) => tot ? (x / tot * 100) : 0;
   const hoje = hojeISO(), em7 = new Date(Date.now() + 7 * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
@@ -471,6 +477,8 @@ function vResumo() {
   pend.sort((a, b) => a.p.vencimento.localeCompare(b.p.vencimento));
   $('#v-resumo').innerHTML = `
     <div class="ph"><div><h2 class="t">Resumo</h2><div class="sub">Visão geral do negócio · ${dataBR(hoje)}</div></div><button class="btn gold" data-irr="nova"><svg class="i"><use href="#i-plus"/></svg>Nova venda</button></div>
+    <div class="seg per" style="margin-bottom:6px">${PER.map(([k, l]) => `<button class="${per[0] === k ? 'on' : ''}" data-per="${k}">${l}</button>`).join('')}</div>
+    <div class="hint" style="margin:0 2px 12px">Período: ${perTxt}. Em caixa, vendido e resultado seguem o período; a receber, atrasado e estoque são sempre o valor de agora.</div>
     <div class="kpis">
       <div class="kpi caixa"><div class="l"><svg class="i"><use href="#i-wallet"/></svg>Em caixa (recebido)</div><div class="v num">${brl(n.caixa)}</div><div class="s">Este mês: ${brl(n.caixaMes)}</div></div>
       <div class="kpi receber"><div class="l"><svg class="i"><use href="#i-clock"/></svg>A receber</div><div class="v num">${brl(n.receber)}</div><div class="s">Parcelas ainda não pagas</div></div>
@@ -497,13 +505,13 @@ function vResumo() {
         <div class="kpi caixa"><div class="l">Lucro total da MLZ</div><div class="v num">${brl(n.lucroMLZ)}</div><div class="s">Vendas da MLZ + parte da MLZ nos investidores · mês: ${brl(n.lucroMes)}</div></div>
         <div class="kpi"><div class="l">Lucro bruto geral</div><div class="v num">${brl(n.lucroBruto)}</div><div class="s">Tudo junto, antes da parte dos investidores</div></div>
         <div class="kpi"><div class="l">Margem geral</div><div class="v num">${n.vendido ? Math.round(n.lucroBruto / n.vendido * 100) : 0}%</div><div class="s">Lucro bruto ÷ vendas</div></div>
-        <div class="kpi"><div class="l">A pagar aos investidores</div><div class="v num">${brl(Math.max(0, n.RI.parte - n.pagoInv))}</div><div class="s">Parte deles − já pago</div></div>
+        <div class="kpi"><div class="l">A pagar aos investidores</div><div class="v num">${brl(Math.max(0, nT.RI.parte - nT.pagoInv))}</div><div class="s">Parte deles − já pago</div></div>
       </div>
       <div class="kpis" style="margin-top:10px">
-        <div class="kpi"><div class="l"><svg class="i"><use href="#i-wallet"/></svg>Investido pela MLZ</div><div class="v num">${brl(n.investMLZ)}</div><div class="s">Custo pago nos produtos da loja</div></div>
-        <div class="kpi"><div class="l">Capital que já voltou</div><div class="v num">${brl(n.custoVendMLZ)}</div><div class="s">Custo dos produtos vendidos</div></div>
-        <div class="kpi"><div class="l">Ainda em estoque</div><div class="v num">${brl(n.custoEstMLZ)}</div><div class="s">Pelo custo pago</div></div>
-        <div class="kpi caixa"><div class="l">Retorno do investimento</div><div class="v num">${n.investMLZ ? (n.lucroMLZ / n.investMLZ * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : 0}%</div><div class="s">Lucro da MLZ ÷ investido</div></div>
+        <div class="kpi"><div class="l"><svg class="i"><use href="#i-wallet"/></svg>Investido pela MLZ</div><div class="v num">${brl(nT.investMLZ)}</div><div class="s">Custo pago nos produtos da loja</div></div>
+        <div class="kpi"><div class="l">Capital que já voltou</div><div class="v num">${brl(nT.custoVendMLZ)}</div><div class="s">Custo dos produtos vendidos</div></div>
+        <div class="kpi"><div class="l">Ainda em estoque</div><div class="v num">${brl(nT.custoEstMLZ)}</div><div class="s">Pelo custo pago</div></div>
+        <div class="kpi caixa"><div class="l">Retorno do investimento</div><div class="v num">${nT.investMLZ ? (nT.lucroMLZ / nT.investMLZ * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : 0}%</div><div class="s">Lucro da MLZ ÷ investido</div></div>
       </div>
       ${n.semCusto ? `<div class="hint" style="color:var(--warn);margin-top:8px">${n.semCusto} unidade${n.semCusto === 1 ? '' : 's'} vendida${n.semCusto === 1 ? '' : 's'} sem custo cadastrado: o lucro aparece maior do que é. Cadastre o custo dos produtos em Estoque ou em Cadastrar → Repor estoque.</div>` : ''}
     </div>
@@ -533,7 +541,7 @@ function vResumo() {
         </div>`).join('') : '<div class="vazio">Nada atrasado nem vencendo nos próximos 7 dias.</div>'}
     </div>`;
 }
-$('#v-resumo').addEventListener('click', async (e) => { if (e.target.closest('[data-irr]')) return irPara('nova'); const b = e.target.closest('[data-pagar]'); if (b) await alternarParcela(+b.dataset.pagar); });
+$('#v-resumo').addEventListener('click', async (e) => { if (e.target.closest('[data-irr]')) return irPara('nova'); const pb = e.target.closest('[data-per]'); if (pb) { UI.per = pb.dataset.per; try { localStorage.setItem('mlz_per', UI.per); } catch (_) {} return vResumo(); } const b = e.target.closest('[data-pagar]'); if (b) await alternarParcela(+b.dataset.pagar); });
 
 // ---------- VENDAS por cliente ----------
 async function alternarParcela(id) {
