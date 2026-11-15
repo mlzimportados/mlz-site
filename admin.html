@@ -82,7 +82,8 @@ main{margin-left:236px;padding:38px 44px 60px;max-width:1236px}
   .topm{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;height:58px;padding:0 16px;background:rgba(7,17,31,.96);border-bottom:1px solid var(--line)}
   .topm img{height:17px}
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;flex-direction:row;background:rgba(10,23,40,.98);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-  nav.tabs button{flex:1;flex-direction:column;gap:4px;height:auto;padding:7px 2px;font-size:10.5px;justify-content:center}
+  nav.tabs{overflow-x:auto;scrollbar-width:none}
+  nav.tabs button{flex:1 0 62px;flex-direction:column;gap:4px;height:auto;padding:7px 2px;font-size:10.5px;justify-content:center}
   nav.tabs button svg{width:21px;height:21px}
   nav.tabs button.on{background:none}
   .nb{position:absolute;top:2px;left:calc(50% + 5px);margin:0;min-width:16px;height:16px;font-size:9.5px;padding:0 4px}
@@ -145,6 +146,8 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .seg button{height:32px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
 .seg button.on{background:rgba(255,255,255,.09);color:var(--txt)}
 .seg.per{flex-wrap:wrap}
+.citem{display:grid;grid-template-columns:1fr 64px 92px 92px 28px;gap:6px;align-items:center;margin-bottom:6px}
+@media(max-width:560px){.citem{grid-template-columns:64px 1fr 1fr 28px}.citem select{grid-column:1/-1}}
 
 /* cliente */
 .cli{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
@@ -327,6 +330,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
       <button data-tab="cad"><svg class="i"><use href="#i-tag"/></svg>Cadastrar</button>
       <button data-tab="estoque"><svg class="i"><use href="#i-box"/></svg>Estoque</button>
       <button data-tab="invest"><svg class="i"><use href="#i-trend"/></svg>Investidores</button>
+      <button data-tab="compras"><svg class="i"><use href="#i-wallet"/></svg>Compras</button>
       <button data-tab="revend"><svg class="i"><use href="#i-tag"/></svg>Revendedores</button>
       <button data-tab="ajustes"><svg class="i"><use href="#i-cog"/></svg>Ajustes</button>
     </nav>
@@ -343,6 +347,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
     <div id="v-cad" class="hide"></div>
     <div id="v-estoque" class="hide"></div>
     <div id="v-invest" class="hide"></div>
+    <div id="v-compras" class="hide"></div>
     <div id="v-revend" class="hide"></div>
     <div id="v-ajustes" class="hide"></div>
   </main>
@@ -352,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261115b"></script>
+<script src="js/api.js?v=20261115c"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1503,7 +1508,247 @@ $('#v-ajustes').addEventListener('click', async (e) => {
 });
 
 // ---------- navegação ----------
-const VIEWS = { resumo: vResumo, vendas: vVendas, entregas: vEntregas, nova: vNova, cad: vCad, estoque: vEstoque, invest: vInvest, revend: vRevend, ajustes: vAjustes };
+// ---------- COMPRAS, LOTES E FECHAMENTO DO MÊS ----------
+// cada compra (semana, quinzena ou mês) vira lotes com o custo real em R$ por unidade: (US$ × dólar ou R$) + rateio de frete/taxas pelo valor.
+// as vendas baixam do lote mais antigo primeiro (PEPS) e gravam o custo daquele lote.
+const MARGEM_MIN = () => { try { return +localStorage.getItem('mlz_margem_min') || 30; } catch (_) { return 30; } };
+const fimMes = (m) => { const [y, mm] = m.split('-').map(Number); return new Date(Date.UTC(y, mm, 0)).toISOString().slice(0, 10); };
+const nomeMes = (m) => { const [y, mm] = m.split('-').map(Number); const s = new Date(Date.UTC(y, mm - 1, 15)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }); return s.charAt(0).toUpperCase() + s.slice(1); };
+const mesAnt = (m) => { const [y, mm] = m.split('-').map(Number); return mm === 1 ? `${y - 1}-12` : `${y}-${String(mm - 1).padStart(2, '0')}`; };
+const todosLotes = () => (D.compras || []).flatMap(c => (c.lotes || []).map(l => ({ ...l, compra: c })));
+// unidades vendidas de cada lote (até uma data, se informada)
+function vendidoPorLote(ate) {
+  const m = new Map();
+  for (const v of D.vendas) { if (ate && v.data > ate) continue; for (const i of v.venda_itens) if (i.lote_id) m.set(i.lote_id, (m.get(i.lote_id) || 0) + i.quantidade); }
+  return m;
+}
+const donoCompra = (c) => c.investidor_id ? (((D.investidores || []).find(i => i.id === c.investidor_id) || {}).nome || 'Investidor') : 'MLZ';
+const totCompra = (c) => r2((c.lotes || []).reduce((s, l) => s + l.quantidade * +l.custo_unit, 0));
+const margemDe = (preco, custo) => preco > 0 ? (preco - custo) / preco * 100 : null;
+// unidades da MLZ no estoque que ainda não estão em nenhum lote
+function mlzSemLote() {
+  const vend = vendidoPorLote(), livreLote = new Map();
+  for (const l of todosLotes()) livreLote.set(l.produto_id, (livreLote.get(l.produto_id) || 0) + Math.max(0, l.quantidade - (vend.get(l.id) || 0)));
+  for (const inv of (D.investidores || [])) for (const l of inv.lotes) if (!l.compra_id) livreLote.set(l.produto_id, (livreLote.get(l.produto_id) || 0) + Math.max(0, l.quantidade - (vend.get(l.id) || 0)));
+  return D.produtos.filter(p => p.estoque > 0).map(p => ({ p, qtd: p.estoque - (livreLote.get(p.id) || 0) })).filter(x => x.qtd > 0);
+}
+
+function vCompras() {
+  const sub = UI.compSub || 'compras';
+  $('#v-compras').innerHTML = `
+    <div class="ph"><div><h2 class="t">Compras e fechamento</h2><div class="sub">Cada compra vira um lote com o custo real. As vendas baixam do lote mais antigo primeiro.</div></div>
+      ${sub === 'compras' ? '<button class="btn gold" data-novacompra><svg class="i"><use href="#i-plus"/></svg>Nova compra</button>' : ''}</div>
+    <div class="seg" style="margin-bottom:14px"><button class="${sub === 'compras' ? 'on' : ''}" data-csub="compras">Compras e lotes</button><button class="${sub === 'fech' ? 'on' : ''}" data-csub="fech">Fechamento do mês</button></div>
+    <div id="csub"></div>`;
+  sub === 'compras' ? vComprasLista() : vFechamento();
+}
+
+function vComprasLista() {
+  const vend = vendidoPorLote(), sl = mlzSemLote(), lim = MARGEM_MIN();
+  const cs = [...(D.compras || [])].sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
+  const porMes = new Map(); cs.forEach(c => { const m = c.data.slice(0, 7); if (!porMes.has(m)) porMes.set(m, []); porMes.get(m).push(c); });
+  const fech = new Set((D.fechamentos || []).filter(f => !f.reaberto_em).map(f => f.mes));
+  $('#csub').innerHTML = `
+    ${sl.length ? `<div class="box" style="margin-bottom:14px;border-color:rgba(217,178,76,.4)"><b>${sl.reduce((s, x) => s + x.qtd, 0)} unidades da MLZ ainda sem lote</b>
+      <div class="m" style="margin:4px 0 10px;color:var(--muted);font-size:13px">É o estoque que já existia antes do sistema de lotes. Crie um lote de "estoque inicial" com o custo cadastrado de cada produto para as vendas usarem o custo certo.${sl.some(x => !+x.p.custo) ? ` <span style="color:var(--warn)">${sl.filter(x => !+x.p.custo).length} produto(s) estão sem custo: cadastre antes em Estoque.</span>` : ''}</div>
+      <button class="btn sm gold" data-estini>Criar lote de estoque inicial</button></div>` : ''}
+    ${cs.length ? [...porMes].map(([m, lst]) => `<div class="sec" style="margin-top:6px"><h3>${nomeMes(m)}${fech.has(m) ? ' <span class="badge b-pago" style="margin-left:6px">mês fechado</span>' : ''}<span class="m" style="margin-left:auto;font-weight:400;font-size:13px;color:var(--muted)">${lst.length} compra${lst.length === 1 ? '' : 's'} · ${brl(lst.reduce((s, c) => s + totCompra(c), 0))}</span></h3>
+      ${lst.map(c => cardCompra(c, vend, lim)).join('')}</div>`).join('')
+      : '<div class="vazio">Nenhuma compra lançada ainda. Toque em <b>Nova compra</b> a cada pedido que chegar (semanal, quinzenal ou mensal).</div>'}`;
+}
+function cardCompra(c, vend, lim) {
+  const ab = (UI.compAbertas || new Set()).has(c.id), ls = c.lotes || [];
+  const un = ls.reduce((s, l) => s + l.quantidade, 0), resta = ls.reduce((s, l) => s + Math.max(0, l.quantidade - (vend.get(l.id) || 0)), 0);
+  const baixa = ls.filter(l => { const p = D.produtos.find(x => x.id === l.produto_id); const mg = p ? margemDe(precoProd(p), +l.custo_unit) : null; return mg !== null && mg < lim; }).length;
+  return `<div class="cli">
+    <div class="chead" data-togcompra="${c.id}">
+      <div class="av" style="${c.investidor_id ? 'color:#6aa8ff' : ''}">${c.estoque_inicial ? 'EI' : c.investidor_id ? 'IN' : 'MLZ'}</div>
+      <div class="gr"><div class="n">${dataBR(c.data)} · ${esc(c.descricao || (c.estoque_inicial ? 'Estoque inicial' : 'Compra'))}</div>
+        <div class="m">${esc(donoCompra(c))}${c.dolar ? ` · dólar ${(+c.dolar).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}` : ''}${+c.frete + +c.taxas + +c.outros ? ` · frete/taxas ${brl(+c.frete + +c.taxas + +c.outros)}` : ''}</div></div>
+      ${baixa ? `<span class="badge b-atrasado">${baixa} com margem baixa</span>` : resta ? `<span class="badge b-aberto">${resta} em estoque</span>` : `<span class="badge b-pago">Vendido</span>`}
+    </div>
+    <div class="ctot"><div>Custo total<b class="num">${brl(totCompra(c))}</b></div><div>Unidades<b class="num">${un}</b></div><div>Restam<b class="num">${resta}</b></div></div>
+    ${ab ? `<div class="cbody" style="padding-top:12px">
+      ${ls.map(l => { const p = D.produtos.find(x => x.id === l.produto_id) || {}; const v = vend.get(l.id) || 0; const mg = margemDe(precoProd(p), +l.custo_unit);
+        return `<div class="linha"><div class="gr"><div class="n">${esc(nomeProd(p) || 'Produto')} · ${l.quantidade} un.</div>
+          <div class="m">${l.custo_usd ? `US$ ${(+l.custo_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · ` : ''}custo real <b style="color:var(--txt)">${brl(l.custo_unit)}</b>/un.${mg !== null ? ` · margem <b style="color:${mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b> no preço ${brl(precoProd(p))}` : ''}</div></div>
+          <span class="badge ${l.quantidade - v > 0 ? 'b-aberto' : 'b-pago'}">${v} vendida${v === 1 ? '' : 's'} · ${l.quantidade - v} resta${l.quantidade - v === 1 ? '' : 'm'}</span></div>`; }).join('')}
+      ${c.obs ? `<div class="hint" style="margin-top:8px">${esc(c.obs)}</div>` : ''}
+      ${ls.every(l => !vend.get(l.id)) ? `<div style="margin-top:12px"><button class="btn sm line" data-delcompra="${c.id}" style="color:var(--bad)">Excluir compra</button></div>` : '<div class="hint" style="margin-top:10px">Compra com vendas não pode ser excluída.</div>'}
+    </div>` : ''}
+  </div>`;
+}
+
+function formCompra(ini) {
+  const prods = [...D.produtos].sort((a, b) => nomeProd(a).localeCompare(nomeProd(b)));
+  const opt = (sel) => prods.map(p => `<option value="${p.id}" ${+sel === p.id ? 'selected' : ''}>${esc(nomeProd(p))}</option>`).join('');
+  const linha = (it = {}) => `<div class="citem">
+      <select class="in" name="prod">${opt(it.produto_id)}</select><input class="in num" name="qtd" inputmode="numeric" placeholder="Qtd" value="${it.quantidade || ''}">
+      <input class="in num" name="usd" inputmode="decimal" placeholder="US$ un." value="${it.custo_usd || ''}"><input class="in num" name="brl" inputmode="decimal" placeholder="ou R$ un." value="${it.custo_brl || ''}">
+      <button type="button" class="btn sm line" data-rmitem title="Tirar" style="padding:0;width:28px">✕</button>
+      <div class="m cprev" style="grid-column:1/-1;font-size:12.5px;color:var(--muted);margin:-2px 2px 4px"></div></div>`;
+  abrirModal(`<h3>${ini ? 'Lote de estoque inicial' : 'Nova compra'}</h3><form id="fcompra" class="form">
+    <div class="grid2"><label class="f">Data da compra<input class="in" type="date" name="data" value="${hojeISO()}"></label>
+    <label class="f">De quem é o estoque<select class="in" name="inv"><option value="">MLZ (estoque próprio)</option>${ini ? '' : (D.investidores || []).filter(i => i.ativo).map(i => `<option value="${i.id}">Investidor: ${esc(i.nome)}</option>`).join('')}</select></label></div>
+    <label class="f">Descrição / fornecedor<input class="in" name="descricao" placeholder="Ex.: Pedido Dubai semana 2" value="${ini ? 'Estoque inicial' : ''}"></label>
+    ${ini ? '' : `<div class="grid2"><label class="f">Cotação do dólar (R$)<input class="in num" name="dolar" inputmode="decimal" placeholder="Ex.: 5,42"></label>
+    <label class="f">Frete (R$)<input class="in num" name="frete" inputmode="decimal" placeholder="0,00"></label></div>
+    <div class="grid2"><label class="f">Taxas de importação (R$)<input class="in num" name="taxas" inputmode="decimal" placeholder="0,00"></label>
+    <label class="f">Outros custos (R$)<input class="in num" name="outros" inputmode="decimal" placeholder="0,00"></label></div>`}
+    <div class="f" style="margin-bottom:4px">Produtos <span class="m" style="color:var(--faint);font-size:12px">· custo por unidade em US$ (usa a cotação) ou em R$</span></div>
+    <div id="citens">${ini ? ini.map(x => linha({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo ? String(x.p.custo).replace('.', ',') : '' })).join('') : linha()}</div>
+    ${ini ? '' : '<button type="button" class="btn sm line" data-additem style="margin:4px 0 10px"><svg class="i"><use href="#i-plus"/></svg>Adicionar produto</button>'}
+    <div class="grid2"><label class="f">Avisar se a margem ficar abaixo de (%)<input class="in num" name="lim" inputmode="numeric" value="${MARGEM_MIN()}"></label><div id="ctot" style="align-self:end;padding-bottom:10px;font-size:14px"></div></div>
+    <div class="hint">Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um. O custo real vira o custo do produto e é usado nas vendas deste lote.</div>
+    <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar compra</button></div></form>`);
+  const f = $('#fcompra'), num = (v) => +String(v || '').replace(/\./g, '').replace(',', '.') || 0;
+  const numU = (v) => { const s = String(v || '').trim(); return s ? +(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s) || 0 : 0; };
+  const ler = () => {
+    const dolar = numU(f.dolar && f.dolar.value), extra = num(f.frete && f.frete.value) + num(f.taxas && f.taxas.value) + num(f.outros && f.outros.value);
+    const its = [...f.querySelectorAll('.citem')].map(el => ({ el, produto_id: +el.querySelector('[name=prod]').value, quantidade: parseInt(el.querySelector('[name=qtd]').value) || 0, usd: numU(el.querySelector('[name=usd]').value), brl: numU(el.querySelector('[name=brl]').value) }));
+    its.forEach(i => { i.base = i.brl || (i.usd && dolar ? i.usd * dolar : 0); });
+    const tot = its.reduce((s, i) => s + i.base * i.quantidade, 0);
+    its.forEach(i => { i.custo = i.base ? r2(i.base + (tot > 0 ? extra * i.base / tot : 0)) : 0; });
+    return { dolar, extra, its, tot };
+  };
+  const prev = () => {
+    const { its, extra, tot } = ler(), lim = num(f.lim.value) || 30;
+    try { localStorage.setItem('mlz_margem_min', lim); } catch (_) {}
+    let baixa = 0;
+    its.forEach(i => { const p = D.produtos.find(x => x.id === i.produto_id) || {}, pr = precoProd(p), mg = i.custo ? margemDe(pr, i.custo) : null; if (mg !== null && mg < lim) baixa++;
+      i.el.querySelector('.cprev').innerHTML = i.custo ? `Custo real ${brl(i.custo)}/un.${mg !== null ? ` · preço ${brl(pr)} · margem <b style="color:${mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b>${mg < lim ? ' ⚠ abaixo do limite' : ''}` : ''}` : (i.usd && !i.brl ? '<span style="color:var(--warn)">Informe a cotação do dólar</span>' : ''); });
+    $('#ctot').innerHTML = `Total: <b class="num">${brl(tot + extra)}</b>${baixa ? ` · <span style="color:var(--bad)">${baixa} com margem baixa</span>` : ''}`;
+  };
+  f.addEventListener('input', prev); f.addEventListener('change', prev);
+  f.addEventListener('click', (e) => {
+    if (e.target.closest('[data-additem]')) { $('#citens').insertAdjacentHTML('beforeend', linha()); prev(); }
+    const rm = e.target.closest('[data-rmitem]'); if (rm && f.querySelectorAll('.citem').length > 1) { rm.closest('.citem').remove(); prev(); }
+  });
+  prev();
+  f.onsubmit = async (e) => {
+    e.preventDefault(); const { dolar, its } = ler();
+    const ok = its.filter(i => i.quantidade > 0);
+    if (!ok.length) return toast('Informe a quantidade dos produtos.');
+    if (ok.some(i => !i.base)) return toast(ok.some(i => i.usd && !i.brl && !dolar) ? 'Informe a cotação do dólar.' : 'Informe o custo de todos os produtos.');
+    const bt = f.querySelector('.btn.gold'); bt.disabled = true;
+    try {
+      await api.salvarCompra({ data: f.data.value, descricao: f.descricao.value.trim(), investidor_id: f.inv.value || null, dolar: dolar || null,
+        frete: num(f.frete && f.frete.value), taxas: num(f.taxas && f.taxas.value), outros: num(f.outros && f.outros.value), estoque_inicial: !!ini,
+        itens: ok.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade, custo_usd: i.brl ? null : i.usd || null, custo_brl: i.brl || null })) });
+      toast('Compra salva'); fecharModal(); await carregar();
+    } catch (err) { bt.disabled = false; toast('Erro: ' + err.message); }
+  };
+}
+
+// ---------- fechamento ----------
+function resultadoVendas(vs) {
+  const pctInv = new Map((D.investidores || []).map(i => [i.id, +i.percentual || 0]));
+  const RM = { vendido: 0, custo: 0, taxas: 0, unid: 0 }, RI = { vendido: 0, custo: 0, taxas: 0, unid: 0, parte: 0 };
+  let semCusto = 0;
+  for (const v of vs) {
+    const tot = v.venda_itens.reduce((s, i) => s + Math.max(0, i.quantidade * +i.preco_unit), 0), tx = +v.taxa || 0;
+    for (const i of v.venda_itens) {
+      const val = i.quantidade * +i.preco_unit, c = i.quantidade * (+i.custo_unit || 0), t = tot > 0 ? tx * Math.max(0, val) / tot : 0;
+      if (i.produto_id && !+i.custo_unit) semCusto += i.quantidade;
+      if (i.investidor_id) { RI.vendido += val; RI.custo += c; RI.taxas += t; RI.unid += i.quantidade; RI.parte += (val - c) * (+(i.percentual ?? pctInv.get(i.investidor_id) ?? 0)) / 100; }
+      else { RM.vendido += val; RM.custo += c; RM.taxas += t; if (i.produto_id) RM.unid += i.quantidade; }
+    }
+  }
+  for (const R of [RM, RI]) { R.lucro = R.vendido - R.custo - R.taxas; R.margem = R.vendido ? R.lucro / R.vendido * 100 : 0; }
+  RI.mlz = RI.lucro - RI.parte;
+  return { RM, RI, semCusto, lucroMLZ: RM.lucro + RI.mlz, vendido: RM.vendido + RI.vendido, custo: RM.custo + RI.custo, taxas: RM.taxas + RI.taxas, lucro: RM.lucro + RI.lucro };
+}
+// estoque em lotes numa data: o que restava de cada lote
+function estoqueLotes(ate) {
+  const vend = vendidoPorLote(ate), out = [];
+  const add = (l, dono) => { if (l.data > ate) return; const r = l.quantidade - (vend.get(l.id) || 0); if (r > 0) out.push({ id: l.id, produto_id: l.produto_id, data: l.data, dono, resta: r, custo_unit: +l.custo_unit }); };
+  for (const l of todosLotes()) add(l, donoCompra(l.compra));
+  for (const inv of (D.investidores || [])) for (const l of inv.lotes) if (!l.compra_id) add(l, inv.nome);
+  return out;
+}
+function calcFechamento(m) {
+  const ini = m + '-01', fim = fimMes(m), antes = fimMes(mesAnt(m));
+  const vs = D.vendas.filter(v => v.data >= ini && v.data <= fim), R = resultadoVendas(vs);
+  const comp = (D.compras || []).filter(c => c.data >= ini && c.data <= fim && !c.estoque_inicial);
+  const usd = comp.reduce((s, c) => s + (c.lotes || []).reduce((a, l) => a + (+l.custo_usd || 0) * l.quantidade, 0), 0);
+  const dolarMedio = usd ? comp.reduce((s, c) => s + (+c.dolar || 0) * (c.lotes || []).reduce((a, l) => a + (+l.custo_usd || 0) * l.quantidade, 0), 0) / usd : null;
+  const ef = estoqueLotes(fim), ei = estoqueLotes(antes);
+  const val = (xs) => r2(xs.reduce((s, x) => s + x.resta * x.custo_unit, 0)), uni = (xs) => xs.reduce((s, x) => s + x.resta, 0);
+  const pm = new Map(D.produtos.map(p => [p.id, nomeProd(p)]));
+  return { mes: m, vendas: vs.length, ...R, compras: comp.map(c => ({ id: c.id, data: c.data, descricao: c.descricao, dono: donoCompra(c), dolar: c.dolar, total: totCompra(c), unid: (c.lotes || []).reduce((s, l) => s + l.quantidade, 0) })),
+    comprasTotal: r2(comp.reduce((s, c) => s + totCompra(c), 0)), dolarMedio,
+    estIni: { unid: uni(ei), valor: val(ei) }, estFim: { unid: uni(ef), valor: val(ef) },
+    lotesFim: ef.map(x => ({ ...x, nome: pm.get(x.produto_id) || 'Produto' })).sort((a, b) => a.data.localeCompare(b.data)) };
+}
+function mesesDisponiveis() {
+  const s = new Set([hojeISO().slice(0, 7)]);
+  D.vendas.forEach(v => s.add(v.data.slice(0, 7))); (D.compras || []).forEach(c => s.add(c.data.slice(0, 7))); (D.fechamentos || []).forEach(f => s.add(f.mes));
+  return [...s].sort().reverse();
+}
+function vFechamento() {
+  const meses = mesesDisponiveis(); if (!UI.mesF || !meses.includes(UI.mesF)) UI.mesF = meses[0];
+  const m = UI.mesF, atual = hojeISO().slice(0, 7), fz = (D.fechamentos || []).find(f => f.mes === m && !f.reaberto_em);
+  const F = fz ? fz.dados : calcFechamento(m), vivo = !fz ? null : calcFechamento(m);
+  const mudou = fz && vivo && (Math.abs(vivo.vendido - F.vendido) > 0.01 || Math.abs(vivo.custo - F.custo) > 0.01);
+  const pct = (x) => (Math.round(x * 10) / 10).toLocaleString('pt-BR') + '%';
+  const fechados = (D.fechamentos || []).filter(f => !f.reaberto_em).sort((a, b) => b.mes.localeCompare(a.mes));
+  $('#csub').innerHTML = `
+    <div class="barf" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select class="in" id="mesF" style="max-width:240px">${meses.map(x => `<option value="${x}" ${x === m ? 'selected' : ''}>${nomeMes(x)}${(D.fechamentos || []).some(f => f.mes === x && !f.reaberto_em) ? ' · fechado' : ''}</option>`).join('')}</select>
+      ${fz ? `<span class="badge b-pago">Fechado em ${new Date(fz.fechado_em).toLocaleDateString('pt-BR')}</span><button class="btn sm line" data-reabrir="${m}">Reabrir mês</button>`
+        : m < atual ? `<button class="btn sm gold" data-fechar-mes="${m}">Fechar ${nomeMes(m)}</button>` : '<span class="m" style="color:var(--muted);font-size:13px">Mês em andamento: dá para fechar quando ele terminar.</span>'}</div>
+    ${mudou ? '<div class="hint" style="color:var(--warn);margin:6px 2px">Os números de hoje diferem do que foi salvo no fechamento. Reabra e feche de novo para atualizar.</div>' : ''}
+    <div class="kpis" style="margin-top:12px">
+      <div class="kpi"><div class="l">Vendido</div><div class="v num">${brl(F.vendido)}</div><div class="s">${F.vendas} venda${F.vendas === 1 ? '' : 's'}</div></div>
+      <div class="kpi"><div class="l">Custo dos produtos</div><div class="v num">${brl(F.custo)}</div><div class="s">Pelo custo de cada lote</div></div>
+      <div class="kpi"><div class="l">Taxas</div><div class="v num">${brl(F.taxas)}</div><div class="s">Cartão / plataforma</div></div>
+      <div class="kpi caixa"><div class="l">Lucro da MLZ</div><div class="v num">${brl(F.lucroMLZ)}</div><div class="s">Margem geral ${pct(F.vendido ? F.lucro / F.vendido * 100 : 0)}</div></div>
+    </div>
+    <div class="esplit">
+      <div class="ebox"><div class="eh"><span class="dot" style="background:var(--gold)"></span>Vendas da MLZ</div>
+        <div class="erow"><div><small>Vendido</small><b class="num">${brl(F.RM.vendido)}</b></div><div><small>Custo</small><b class="num">${brl(F.RM.custo)}</b></div><div><small>Taxas</small><b class="num">${brl(F.RM.taxas)}</b></div></div>
+        <div class="erow" style="margin-top:12px"><div><small>Lucro</small><b class="num" style="color:var(--ok)">${brl(F.RM.lucro)}</b></div><div><small>Margem</small><b class="num">${pct(F.RM.margem)}</b></div><div><small>Unidades</small><b class="num">${F.RM.unid}</b></div></div></div>
+      <div class="ebox"><div class="eh"><span class="dot" style="background:#6aa8ff"></span>Vendas dos investidores</div>
+        <div class="erow"><div><small>Vendido</small><b class="num">${brl(F.RI.vendido)}</b></div><div><small>Custo</small><b class="num">${brl(F.RI.custo)}</b></div><div><small>Lucro</small><b class="num">${brl(F.RI.lucro)}</b></div></div>
+        <div class="erow" style="margin-top:12px"><div><small>Parte deles</small><b class="num" style="color:#6aa8ff">${brl(F.RI.parte)}</b></div><div><small>Parte da MLZ</small><b class="num" style="color:var(--ok)">${brl(F.RI.mlz)}</b></div><div><small>Margem</small><b class="num">${pct(F.RI.margem)}</b></div></div></div>
+    </div>
+    <div class="esplit">
+      <div class="ebox"><div class="eh">Estoque em lotes</div>
+        <div class="erow"><div><small>Início do mês</small><b class="num">${brl(F.estIni.valor)}</b><span class="m" style="display:block;font-size:12px;color:var(--muted)">${F.estIni.unid} un.</span></div><div><small>+ Compras</small><b class="num">${brl(F.comprasTotal)}</b><span class="m" style="display:block;font-size:12px;color:var(--muted)">${F.compras.length} compra${F.compras.length === 1 ? '' : 's'}</span></div><div><small>Fim do mês</small><b class="num" style="color:var(--gold-hi)">${brl(F.estFim.valor)}</b><span class="m" style="display:block;font-size:12px;color:var(--muted)">${F.estFim.unid} un.</span></div></div>
+        <div class="s">O estoque do fim do mês é o início do mês seguinte. Valores pelo custo real de cada lote.</div></div>
+      <div class="ebox"><div class="eh">Compras do mês</div>
+        ${F.compras.length ? F.compras.map(c => `<div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:4px 0"><span>${dataBR(c.data)} · ${esc(c.descricao || 'Compra')} <span style="color:var(--muted)">· ${esc(c.dono)}${c.dolar ? ' · dólar R$ ' + (+c.dolar).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}</span></span><b class="num">${brl(c.total)}</b></div>`).join('') : '<div class="s" style="margin:0">Nenhuma compra neste mês.</div>'}
+        ${F.dolarMedio ? `<div class="s">Dólar médio das compras: R$ ${F.dolarMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</div>` : ''}</div>
+    </div>
+    ${F.semCusto ? `<div class="hint" style="color:var(--warn);margin-top:10px">${F.semCusto} unidade(s) vendida(s) sem custo: o lucro aparece maior do que é. Crie o lote de estoque inicial em Compras e lotes.</div>` : ''}
+    <div class="sec"><h3>Estoque no fim do mês, por lote</h3>
+      ${F.lotesFim.length ? `<div class="box" style="padding:6px 0">${F.lotesFim.map(x => `<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 16px;font-size:13.5px;border-bottom:1px solid var(--line)"><span>${esc(x.nome)} <span style="color:var(--muted)">· lote ${dataBR(x.data)} · ${esc(x.dono)}</span></span><span class="num">${x.resta} × ${brl(x.custo_unit)} = <b>${brl(x.resta * x.custo_unit)}</b></span></div>`).join('')}</div>` : '<div class="vazio">Nenhum lote com estoque no fim do mês.</div>'}</div>
+    <div class="sec"><h3>Comparar meses fechados</h3>
+      ${fechados.length ? `<div class="box" style="padding:0;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px"><thead><tr style="color:var(--faint);text-align:right"><th style="text-align:left;padding:10px 14px">Mês</th><th>Vendido</th><th>Custo</th><th>Lucro MLZ</th><th>Margem</th><th>Compras</th><th>Dólar médio</th><th style="padding-right:14px">Estoque final</th></tr></thead>
+        <tbody>${fechados.map(f => { const d = f.dados || {}; return `<tr style="border-top:1px solid var(--line);text-align:right" class="num"><td style="text-align:left;padding:9px 14px">${nomeMes(f.mes)}</td><td>${brl(d.vendido)}</td><td>${brl(d.custo)}</td><td style="color:var(--ok)">${brl(d.lucroMLZ)}</td><td>${pct(d.vendido ? d.lucro / d.vendido * 100 : 0)}</td><td>${brl(d.comprasTotal)}</td><td>${d.dolarMedio ? (+d.dolarMedio).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '–'}</td><td style="padding-right:14px">${brl(d.estFim && d.estFim.valor)}</td></tr>`; }).join('')}</tbody></table></div>`
+        : '<div class="vazio">Nenhum mês fechado ainda. Depois que um mês termina, feche-o para travar os números e comparar com os outros.</div>'}</div>`;
+}
+$('#v-compras').addEventListener('change', (e) => { if (e.target.id === 'mesF') { UI.mesF = e.target.value; vFechamento(); } });
+$('#v-compras').addEventListener('click', async (e) => {
+  let b;
+  if ((b = e.target.closest('[data-csub]'))) { UI.compSub = b.dataset.csub; return vCompras(); }
+  if (e.target.closest('[data-novacompra]')) return formCompra(null);
+  if (e.target.closest('[data-estini]')) return formCompra(mlzSemLote());
+  if ((b = e.target.closest('[data-togcompra]'))) { const id = +b.dataset.togcompra; UI.compAbertas = UI.compAbertas || new Set(); UI.compAbertas.has(id) ? UI.compAbertas.delete(id) : UI.compAbertas.add(id); return vComprasLista(); }
+  if ((b = e.target.closest('[data-delcompra]'))) {
+    if (!confirm('Excluir esta compra e os lotes dela? O estoque dos produtos volta ao que era antes.')) return;
+    try { await api.excluirCompra(+b.dataset.delcompra); toast('Compra excluída'); await carregar(); } catch (err) { toast('Erro: ' + err.message); } return;
+  }
+  if ((b = e.target.closest('[data-fechar-mes]'))) {
+    const m = b.dataset.fecharMes; if (!confirm(`Fechar ${nomeMes(m)}? Os números ficam salvos e vendas/compras desse mês ficam travadas até você reabrir.`)) return;
+    try { await api.fecharMes(m, calcFechamento(m)); toast('Mês fechado'); await carregar(); } catch (err) { toast('Erro: ' + err.message); } return;
+  }
+  if ((b = e.target.closest('[data-reabrir]'))) {
+    if (!confirm('Reabrir o mês? Vendas e compras dele voltam a poder ser alteradas.')) return;
+    try { await api.reabrirMes(b.dataset.reabrir); toast('Mês reaberto'); await carregar(); } catch (err) { toast('Erro: ' + err.message); } return;
+  }
+});
+
+const VIEWS = { resumo: vResumo, vendas: vVendas, entregas: vEntregas, nova: vNova, cad: vCad, estoque: vEstoque, invest: vInvest, compras: vCompras, revend: vRevend, ajustes: vAjustes };
 function irPara(tab) {
   UI.tab = tab;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
@@ -1515,8 +1760,8 @@ $('#btSairLado').onclick = async () => { await api.sair(); location.reload(); };
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) irPara(b.dataset.tab); });
 
 async function carregar() {
-  const [produtos, clientes, vendas, cats, cfg, investidores, pedidos, indicadores, indicacoes] = await Promise.all([api.produtos(), api.clientes(), api.vendas(), api.categorias(), api.config(), api.investidores(), api.pedidos().catch(() => []), api.indicadores().catch(() => []), api.indicacoes().catch(() => [])]);
-  Object.assign(D, { produtos, clientes, vendas, cats, cfg, investidores, pedidos, indicadores, indicacoes });
+  const [produtos, clientes, vendas, cats, cfg, investidores, pedidos, indicadores, indicacoes, compras, fechamentos] = await Promise.all([api.produtos(), api.clientes(), api.vendas(), api.categorias(), api.config(), api.investidores(), api.pedidos().catch(() => []), api.indicadores().catch(() => []), api.indicacoes().catch(() => []), api.compras().catch(() => []), api.fechamentos().catch(() => [])]);
+  Object.assign(D, { produtos, clientes, vendas, cats, cfg, investidores, pedidos, indicadores, indicacoes, compras, fechamentos });
   renderTudo(); contarEntregas();
 }
 
