@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261115c"></script>
+<script src="js/api.js?v=20261115d"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1511,7 +1511,8 @@ $('#v-ajustes').addEventListener('click', async (e) => {
 // ---------- COMPRAS, LOTES E FECHAMENTO DO MÊS ----------
 // cada compra (semana, quinzena ou mês) vira lotes com o custo real em R$ por unidade: (US$ × dólar ou R$) + rateio de frete/taxas pelo valor.
 // as vendas baixam do lote mais antigo primeiro (PEPS) e gravam o custo daquele lote.
-const MARGEM_MIN = () => { try { return +localStorage.getItem('mlz_margem_min') || 30; } catch (_) { return 30; } };
+// margem mínima é opcional: vazio = sem aviso
+const MARGEM_MIN = () => { try { return +localStorage.getItem('mlz_margem_min') || null; } catch (_) { return null; } };
 const fimMes = (m) => { const [y, mm] = m.split('-').map(Number); return new Date(Date.UTC(y, mm, 0)).toISOString().slice(0, 10); };
 const nomeMes = (m) => { const [y, mm] = m.split('-').map(Number); const s = new Date(Date.UTC(y, mm - 1, 15)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }); return s.charAt(0).toUpperCase() + s.slice(1); };
 const mesAnt = (m) => { const [y, mm] = m.split('-').map(Number); return mm === 1 ? `${y - 1}-12` : `${y}-${String(mm - 1).padStart(2, '0')}`; };
@@ -1559,7 +1560,7 @@ function vComprasLista() {
 function cardCompra(c, vend, lim) {
   const ab = (UI.compAbertas || new Set()).has(c.id), ls = c.lotes || [];
   const un = ls.reduce((s, l) => s + l.quantidade, 0), resta = ls.reduce((s, l) => s + Math.max(0, l.quantidade - (vend.get(l.id) || 0)), 0);
-  const baixa = ls.filter(l => { const p = D.produtos.find(x => x.id === l.produto_id); const mg = p ? margemDe(precoProd(p), +l.custo_unit) : null; return mg !== null && mg < lim; }).length;
+  const baixa = ls.filter(l => { const p = D.produtos.find(x => x.id === l.produto_id); const mg = p ? margemDe(precoProd(p), +l.custo_unit) : null; return lim && mg !== null && mg < lim; }).length;
   return `<div class="cli">
     <div class="chead" data-togcompra="${c.id}">
       <div class="av" style="${c.investidor_id ? 'color:#6aa8ff' : ''}">${c.estoque_inicial ? 'EI' : c.investidor_id ? 'IN' : 'MLZ'}</div>
@@ -1571,7 +1572,7 @@ function cardCompra(c, vend, lim) {
     ${ab ? `<div class="cbody" style="padding-top:12px">
       ${ls.map(l => { const p = D.produtos.find(x => x.id === l.produto_id) || {}; const v = vend.get(l.id) || 0; const mg = margemDe(precoProd(p), +l.custo_unit);
         return `<div class="linha"><div class="gr"><div class="n">${esc(nomeProd(p) || 'Produto')} · ${l.quantidade} un.</div>
-          <div class="m">${l.custo_usd ? `US$ ${(+l.custo_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · ` : ''}custo real <b style="color:var(--txt)">${brl(l.custo_unit)}</b>/un.${mg !== null ? ` · margem <b style="color:${mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b> no preço ${brl(precoProd(p))}` : ''}</div></div>
+          <div class="m">${l.custo_usd ? `US$ ${(+l.custo_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · ` : ''}custo real <b style="color:var(--txt)">${brl(l.custo_unit)}</b>/un.${mg !== null ? ` · margem <b style="color:${lim && mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b> no preço ${brl(precoProd(p))}` : ''}</div></div>
           <span class="badge ${l.quantidade - v > 0 ? 'b-aberto' : 'b-pago'}">${v} vendida${v === 1 ? '' : 's'} · ${l.quantidade - v} resta${l.quantidade - v === 1 ? '' : 'm'}</span></div>`; }).join('')}
       ${c.obs ? `<div class="hint" style="margin-top:8px">${esc(c.obs)}</div>` : ''}
       ${ls.every(l => !vend.get(l.id)) ? `<div style="margin-top:12px"><button class="btn sm line" data-delcompra="${c.id}" style="color:var(--bad)">Excluir compra</button></div>` : '<div class="hint" style="margin-top:10px">Compra com vendas não pode ser excluída.</div>'}
@@ -1598,7 +1599,7 @@ function formCompra(ini) {
     <div class="f" style="margin-bottom:4px">Produtos <span class="m" style="color:var(--faint);font-size:12px">· custo por unidade em US$ (usa a cotação) ou em R$</span></div>
     <div id="citens">${ini ? ini.map(x => linha({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo ? String(x.p.custo).replace('.', ',') : '' })).join('') : linha()}</div>
     ${ini ? '' : '<button type="button" class="btn sm line" data-additem style="margin:4px 0 10px"><svg class="i"><use href="#i-plus"/></svg>Adicionar produto</button>'}
-    <div class="grid2"><label class="f">Avisar se a margem ficar abaixo de (%)<input class="in num" name="lim" inputmode="numeric" value="${MARGEM_MIN()}"></label><div id="ctot" style="align-self:end;padding-bottom:10px;font-size:14px"></div></div>
+    <div class="grid2"><label class="f">Avisar se a margem ficar abaixo de (%) <span style="color:var(--faint)">· opcional</span><input class="in num" name="lim" inputmode="numeric" placeholder="Ex.: 30" value="${MARGEM_MIN() || ''}"></label><div id="ctot" style="align-self:end;padding-bottom:10px;font-size:14px"></div></div>
     <div class="hint">Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um. O custo real vira o custo do produto e é usado nas vendas deste lote.</div>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar compra</button></div></form>`);
   const f = $('#fcompra'), num = (v) => +String(v || '').replace(/\./g, '').replace(',', '.') || 0;
@@ -1612,11 +1613,11 @@ function formCompra(ini) {
     return { dolar, extra, its, tot };
   };
   const prev = () => {
-    const { its, extra, tot } = ler(), lim = num(f.lim.value) || 30;
-    try { localStorage.setItem('mlz_margem_min', lim); } catch (_) {}
+    const { its, extra, tot } = ler(), lim = num(f.lim.value) || null;
+    try { lim ? localStorage.setItem('mlz_margem_min', lim) : localStorage.removeItem('mlz_margem_min'); } catch (_) {}
     let baixa = 0;
-    its.forEach(i => { const p = D.produtos.find(x => x.id === i.produto_id) || {}, pr = precoProd(p), mg = i.custo ? margemDe(pr, i.custo) : null; if (mg !== null && mg < lim) baixa++;
-      i.el.querySelector('.cprev').innerHTML = i.custo ? `Custo real ${brl(i.custo)}/un.${mg !== null ? ` · preço ${brl(pr)} · margem <b style="color:${mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b>${mg < lim ? ' ⚠ abaixo do limite' : ''}` : ''}` : (i.usd && !i.brl ? '<span style="color:var(--warn)">Informe a cotação do dólar</span>' : ''); });
+    its.forEach(i => { const p = D.produtos.find(x => x.id === i.produto_id) || {}, pr = precoProd(p), mg = i.custo ? margemDe(pr, i.custo) : null; const ruim = lim && mg !== null && mg < lim; if (ruim) baixa++;
+      i.el.querySelector('.cprev').innerHTML = i.custo ? `Custo real ${brl(i.custo)}/un.${mg !== null ? ` · preço ${brl(pr)} · margem <b style="color:${ruim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b>${ruim ? ' ⚠ abaixo do limite' : ''}` : ''}` : (i.usd && !i.brl ? '<span style="color:var(--warn)">Informe a cotação do dólar</span>' : ''); });
     $('#ctot').innerHTML = `Total: <b class="num">${brl(tot + extra)}</b>${baixa ? ` · <span style="color:var(--bad)">${baixa} com margem baixa</span>` : ''}`;
   };
   f.addEventListener('input', prev); f.addEventListener('change', prev);
