@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261115d"></script>
+<script src="js/api.js?v=20261117a"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1034,6 +1034,7 @@ function vCad() {
         <label class="f">Marca<input class="in" name="marca" placeholder="Ex.: Lattafa"></label></div>
         <div class="grid3"><label class="f">Categoria<select class="in" name="categoria_id">${D.cats.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select></label>
         <label class="f">Tipo<input class="in" name="tipo" placeholder="Ex.: Eau de Parfum"></label>
+        <label class="f">Gênero (abas do site)<select class="in" name="genero"><option value="">Sem gênero</option>${[['masculino','Masculino'],['feminino','Feminino'],['unissex','Unissex']].map(([k, l]) => `<option value="${k}" ${'' === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="f">Família / aroma<input class="in" name="familia" list="famCad" placeholder="Ex.: Gourmand"><datalist id="famCad">${fams.map(f => `<option value="${f}">`).join('')}</datalist></label></div>
         <label class="f">Descrição (aparece no site). Notas em linhas “Saída: …”, “Corpo: …”, “Fundo: …”<textarea class="in" name="descricao" placeholder="Saída: Canela, Cardamomo&#10;Corpo: Tâmara, Praliné&#10;Fundo: Baunilha, Fava tonka"></textarea></label>
       </div>` : `<div class="card"><h3>Produto</h3>
@@ -1068,7 +1069,7 @@ function vCad() {
     $('#cadSalvar').disabled = true;
     try {
       if (novo) {
-        const d = { nome: f.nome.trim(), marca: f.marca.trim() || null, categoria_id: +f.categoria_id || null, tipo: f.tipo.trim() || null, familia: f.familia.trim() || null, descricao: f.descricao.trim() || null,
+        const d = { nome: f.nome.trim(), marca: f.marca.trim() || null, categoria_id: +f.categoria_id || null, tipo: f.tipo.trim() || null, familia: f.familia.trim() || null, genero: f.genero || null, descricao: f.descricao.trim() || null,
           custo, preco, preco_promo: promo > 0 ? promo : null, estoque: q, ativo: f.ativo === 'on', destaque: f.destaque === 'on' };
         if (arquivo) d.imagem = await api.enviarFoto(arquivo);
         await api.salvarProduto(d); toast('Produto cadastrado');
@@ -1143,6 +1144,7 @@ function editarProduto(id) {
     <label class="f">Marca<input class="in" name="marca" value="${esc(p.marca || '')}"></label></div>
     <div class="grid2"><label class="f">Categoria<select class="in" name="categoria_id">${D.cats.map(c => `<option value="${c.id}" ${c.id === p.categoria_id ? 'selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></label>
     <label class="f">Tipo<input class="in" name="tipo" value="${esc(p.tipo || '')}" placeholder="Ex.: Eau de Parfum"></label></div>
+    <label class="f">Gênero (abas do site)<select class="in" name="genero"><option value="">Sem gênero</option>${[['masculino','Masculino'],['feminino','Feminino'],['unissex','Unissex']].map(([k, l]) => `<option value="${k}" ${(p.genero || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     <label class="f">Família / aroma (filtro “Qual é o seu estilo?” do site)<input class="in" name="familia" list="famList" value="${esc(p.familia || '')}" placeholder="Ex.: Amadeirado, Gourmand, Frutado…"><datalist id="famList">${['Amadeirado','Especiado','Gourmand','Frutado','Aromático','Floral','Cítrico','Aquático'].map(f => `<option value="${f}">`).join('')}</datalist></label>
     <label class="f">Descrição (aparece no site). Para a pirâmide de notas use linhas “Saída: …”, “Corpo: …”, “Fundo: …”<textarea class="in" name="descricao" placeholder="Saída: Maçã, Bergamota&#10;Corpo: Lavanda&#10;Fundo: Baunilha">${esc(p.descricao || '')}</textarea></label>
     <div class="grid3"><label class="f">Preço<input class="in num" name="preco" inputmode="decimal" value="${v(p.preco)}" placeholder="0,00"></label>
@@ -1161,7 +1163,7 @@ function editarProduto(id) {
   $('#fprod').onsubmit = async (e) => {
     e.preventDefault(); const fd = new FormData(e.target);
     const num = (k) => { const s = String(fd.get(k) || '').trim(); return s ? r2(+s.replace(/\./g, '').replace(',', '.')) : null; };
-    const d = { nome: fd.get('nome').trim(), marca: fd.get('marca').trim() || null, categoria_id: +fd.get('categoria_id') || null, tipo: fd.get('tipo').trim() || null, familia: fd.get('familia').trim() || null,
+    const d = { nome: fd.get('nome').trim(), marca: fd.get('marca').trim() || null, categoria_id: +fd.get('categoria_id') || null, tipo: fd.get('tipo').trim() || null, familia: fd.get('familia').trim() || null, genero: fd.get('genero') || null,
       descricao: fd.get('descricao').trim() || null, preco: num('preco'), preco_promo: num('preco_promo'), custo: num('custo'), estoque: parseInt(fd.get('estoque'), 10) || 0,
       ativo: fd.get('ativo') === 'on', destaque: fd.get('destaque') === 'on' };
     $('#fpSalvar').disabled = true;

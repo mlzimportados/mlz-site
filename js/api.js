@@ -13,7 +13,7 @@ async function mlzPagamento(body, token) {
   if (!r.ok) throw new Error(d.erro || 'Não foi possível iniciar o pagamento.');
   return d;
 }
-const PROD_PUBLICO = 'id,nome,marca,categoria_id,tipo,descricao,familia,preco,preco_promo,estoque,imagem,ativo,destaque';
+const PROD_PUBLICO = 'id,nome,marca,categoria_id,tipo,descricao,familia,genero,preco,preco_promo,estoque,imagem,ativo,destaque';
 
 // criarApi({ conta: true }) = páginas da loja: login do CLIENTE, separado do login do painel admin
 function criarApi(opts = {}) {

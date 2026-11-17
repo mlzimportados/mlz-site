@@ -138,6 +138,11 @@ section.blk{padding:76px 0 0}
 .encbox b{display:block;font-size:16px;color:var(--gold-hi);margin-bottom:4px;font-weight:500}
 .encbox p{font-size:14px;color:var(--muted);line-height:1.55}
 .pp s{color:var(--faint);font-size:12.5px;margin-right:6px;font-weight:400}
+.generos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.generos button{height:38px;padding:0 18px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;color:var(--muted);transition:.2s;display:inline-flex;align-items:center;gap:7px}
+.generos button:hover{color:var(--txt);border-color:rgba(217,178,76,.4)}
+.generos button.on{background:var(--gold);border-color:var(--gold);color:#0b1a2e;font-weight:600}
+.generos small{font-size:11px;opacity:.7}
 .marcas{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:34px}
 .marcas::-webkit-scrollbar{display:none}
 .marcas button{flex:none;padding:12px 14px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:.2s}
@@ -348,6 +353,7 @@ footer{margin-top:64px;padding:0 0 22px}
   <section class="blk" id="colecao">
     <div class="shead"><div><div class="eyebrow" id="colEyebrow">Coleção</div><h2 id="colTitulo">Todos os produtos</h2></div>
       <div class="toolbar"><span id="filtroAtivo"></span><label class="busca"><svg class="i"><use href="#i-busca"/></svg><input id="q" type="search" placeholder="Buscar" autocomplete="off"></label></div></div>
+    <div class="generos" id="generos"></div>
     <div class="marcas" id="marcas"></div>
     <div id="grade"></div>
   </section>
@@ -407,10 +413,10 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261115d"></script>
+<script src="js/api.js?v=20261117a"></script>
 <script>
 const api = criarApi({ conta: true });
-let CFG = {}, PRODS = [], famSel = '', marcaSel = '', spotIdx = 0, spotTimer;
+let CFG = {}, PRODS = [], famSel = '', marcaSel = '', genSel = '', spotIdx = 0, spotTimer;
 
 // família olfativa (ou estilo de outros produtos): cor + frase
 const FAMILIAS = {
@@ -504,7 +510,11 @@ function cardProd(p) {
 }
 function render() {
   const q = document.getElementById('q').value.trim().toLowerCase();
-  const base = PRODS.filter(p => (!famSel || (p.familia === famSel && !esgotado(p))) && (!q || (nomeCompleto(p) + ' ' + (p.familia || '') + ' ' + (p.descricao || '')).toLowerCase().includes(q)));
+  const GEN = [['', 'Todos os produtos'], ['masculino', 'Masculinos'], ['feminino', 'Femininos'], ['unissex', 'Unissex']];
+  const base0 = PRODS.filter(p => (!famSel || (p.familia === famSel && !esgotado(p))) && (!q || (nomeCompleto(p) + ' ' + (p.familia || '') + ' ' + (p.descricao || '')).toLowerCase().includes(q)));
+  const cg = { '': base0.length }; base0.forEach(p => { if (p.genero) cg[p.genero] = (cg[p.genero] || 0) + 1; });
+  document.getElementById('generos').innerHTML = GEN.filter(([k]) => !k || cg[k]).map(([k, l]) => `<button class="${genSel === k ? 'on' : ''}" data-g="${k}">${k ? l : 'Todos'}<small>${cg[k] || 0}</small></button>`).join('');
+  const base = base0.filter(p => !genSel || p.genero === genSel);
   // abas de marca (contagem respeita aroma/busca)
   const cont = {}; base.forEach(p => { const m = marcaBase(p.marca); cont[m] = (cont[m] || 0) + 1; });
   const todasMarcas = [...new Set(PRODS.map(p => marcaBase(p.marca)))].sort((a, b) => PRODS.filter(p => marcaBase(p.marca) === b).length - PRODS.filter(p => marcaBase(p.marca) === a).length || a.localeCompare(b));
@@ -513,7 +523,7 @@ function render() {
     todasMarcas.filter(m => cont[m]).map(m => `<button class="${marcaSel === m ? 'on' : ''}" data-m="${esc(m)}">${esc(m)}<small>${cont[m]}</small></button>`).join('');
   const lista = base.filter(p => !marcaSel || marcaBase(p.marca) === marcaSel);
   document.getElementById('colEyebrow').textContent = famSel ? 'Família ' + famSel.toLowerCase() : 'Coleção';
-  document.getElementById('colTitulo').textContent = famSel ? ((FAMILIAS[famSel] || {}).d || famSel) : (marcaSel || 'Todos os produtos');
+  document.getElementById('colTitulo').textContent = famSel ? ((FAMILIAS[famSel] || {}).d || famSel) : (marcaSel || (genSel ? GEN.find(g => g[0] === genSel)[1] : 'Todos os produtos'));
   document.getElementById('filtroAtivo').innerHTML = famSel ? `<button class="filtro" id="limpaFam">${esc(famSel)} <svg class="i"><use href="#i-x"/></svg></button>` : '';
   if (!lista.length) { document.getElementById('grade').innerHTML = '<div class="grade"><div class="vazio">Nada encontrado. Chame a gente que procuramos para você.</div></div>'; return; }
   const grupos = todasMarcas.map(m => [m, lista.filter(p => marcaBase(p.marca) === m)]).filter(([, ps]) => ps.length);
@@ -521,6 +531,7 @@ function render() {
       <div class="ghead"><h3>${esc(m)}</h3><span>${ps.length} ${ps.length === 1 ? 'produto' : 'produtos'}</span></div>
       <div class="grade">${[...ps].sort((a, b) => esgotado(a) - esgotado(b)).map(cardProd).join('')}</div></div>`).join('');
 }
+document.getElementById('generos').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; genSel = b.dataset.g; marcaSel = ''; render(); });
 document.getElementById('marcas').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; marcaSel = b.dataset.m; render(); });
 document.getElementById('grade').addEventListener('click', e => { const c = e.target.closest('.prod'); if (c) abrir(+c.dataset.id); });
 document.getElementById('filtroAtivo').addEventListener('click', e => { if (e.target.closest('#limpaFam')) { famSel = ''; montarAromas(); render(); } });
@@ -679,7 +690,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261115d';
+const VERSAO_SITE = '20261117a';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
