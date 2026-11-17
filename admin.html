@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117l"></script>
+<script src="js/api.js?v=20261117m"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1526,6 +1526,8 @@ function vendidoPorLote(ate) {
   return m;
 }
 const donoCompra = (c) => c.investidor_id ? (((D.investidores || []).find(i => i.id === c.investidor_id) || {}).nome || 'Investidor') : 'MLZ';
+// preço "de" riscado = venda +12%, arredondado para o final 9,90 mais próximo
+const de12 = (v) => r2(Math.round((v * 1.12 - 9.9) / 10) * 10 + 9.9);
 const nomeLote = (l) => { const p = D.produtos.find(x => x.id === l.produto_id); return p ? nomeProd(p) : ''; };
 const ordLotes = (ls) => (ls || []).slice().sort((a, b) => nomeLote(a).localeCompare(nomeLote(b), 'pt-BR') || a.id - b.id);
 const totCompra = (c) => r2((c.lotes || []).reduce((s, l) => s + l.quantidade * +l.custo_unit, 0));
@@ -1657,11 +1659,11 @@ function formCompra(ini, ed) {
     try {
       if (ed) await api.atualizarCompra({ id: ed.id, ...corpo });
       else await api.salvarCompra({ ...corpo, investidor_id: f.inv.value || null, estoque_inicial: !!ini });
-      // preço de venda: atualiza o produto quando mudou (com preço riscado, muda o valor "por")
+      // preço de venda: atualiza o produto quando mudou (com preço riscado, muda o "por" e recalcula o "de" com 12%)
       for (const i of ok) {
         const p = D.produtos.find(x => x.id === i.produto_id); if (!p || !i.venda || Math.abs(i.venda - precoProd(p)) < 0.005) continue;
         const temP = +p.preco_promo > 0 && +p.preco_promo < +p.preco;
-        await api.salvarProduto(temP && i.venda < +p.preco ? { id: p.id, preco_promo: i.venda } : { id: p.id, preco: i.venda, preco_promo: null });
+        await api.salvarProduto(temP ? { id: p.id, preco_promo: i.venda, preco: de12(i.venda) } : { id: p.id, preco: i.venda, preco_promo: null });
       }
       toast('Compra salva'); fecharModal(); await carregar();
     } catch (err) { bt.disabled = false; toast('Erro: ' + err.message); }
