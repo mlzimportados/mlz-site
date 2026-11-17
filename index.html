@@ -133,7 +133,7 @@ section.blk{padding:76px 0 0}
 .tagenc{position:absolute;left:10px;top:10px;z-index:2;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;padding:5px 9px;border-radius:999px;background:rgba(7,17,31,.82);border:1px solid rgba(217,178,76,.45);color:var(--gold-hi);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .prod.enc .pimg img{filter:none;opacity:.8}
 .ppix{margin-top:2px;font-size:12px;color:#7fd1a8}
-.prod.enc .pp{font-size:13px;color:var(--muted);font-weight:400}
+.prod.enc:not(.encp) .pp{font-size:13px;color:var(--muted);font-weight:400}
 .encbox{margin:22px 0 6px;padding:16px 18px;border:1px solid rgba(217,178,76,.35);border-radius:16px;background:linear-gradient(130deg,rgba(217,178,76,.12),transparent 70%)}
 .encbox b{display:block;font-size:16px;color:var(--gold-hi);margin-bottom:4px;font-weight:500}
 .encbox p{font-size:14px;color:var(--muted);line-height:1.55}
@@ -413,7 +413,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117c"></script>
+<script src="js/api.js?v=20261117d"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', genSel = '', spotIdx = 0, spotTimer;
@@ -498,14 +498,16 @@ document.getElementById('aromaGrid').addEventListener('click', e => {
 
 // ---------- coleção ----------
 const esgotado = (p) => !(+p.estoque > 0);
+// body splash (categoria 3) mostra o preço mesmo sob encomenda
+const precoVisivel = (p) => !esgotado(p) || +p.categoria_id === 3;
 const marcaBase = (m) => (m || 'Outras').replace(/\s+Pride$/i, '');
 function cardProd(p) {
   const enc = esgotado(p);
-  return `<button class="prod${enc ? ' enc' : ''}" data-id="${p.id}">
+  return `<button class="prod${enc ? ' enc' : ''}${enc && precoVisivel(p) ? ' encp' : ''}" data-id="${p.id}">
       <div class="pimg">${enc ? '<span class="tagenc">Sob encomenda</span>' : temPromo(p) ? '<span class="tagdesc"><b>-12%</b><i>OFF</i></span>' : ''}<img loading="lazy" src="${esc(imgSrc(p))}" alt="${esc(nomeCompleto(p))}"></div>
       <div class="pinfo"><div class="pb">${esc(p.marca || '')}</div><div class="pn">${esc(p.nome)}</div>
         ${enc ? '' : p.familia ? `<div class="pf" style="--c:${corFam(p.familia)}">${esc(p.familia)}</div>` : (p.tipo ? `<div class="pf">${esc(p.tipo)}</div>` : '')}
-        <div class="pp">${enc ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
+        <div class="pp">${!precoVisivel(p) ? 'Esgotado · encomende o seu' : precoHtml(p)}</div>${enc && precoVisivel(p) ? '<div class="ppix">Sob encomenda</div>' : ''}${!enc && pixDesc() && precoFinal(p) ? `<div class="ppix">${brl(noPix(precoFinal(p)))} no Pix</div>` : ''}</div>
     </button>`;
 }
 function render() {
@@ -564,7 +566,7 @@ function abrir(id) {
       <div class="pb">${esc(p.marca || '')}</div>
       <div class="pn">${esc(p.nome)}</div>
       ${p.familia ? `<span class="fam" style="--c:${corFam(p.familia)}">${esc(p.familia)}${FAMILIAS[p.familia] ? ' · ' + esc(FAMILIAS[p.familia].d.toLowerCase()) : ''}</span>` : (p.tipo ? `<span class="fam">${esc(p.tipo)}</span>` : '')}
-      ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada e o valor.</p></div>` : `
+      ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada${precoVisivel(p) ? '' : ' e o valor'}.</p></div>${precoVisivel(p) && f ? `<div class="sprice"><span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}</div>` : ''}` : `
       <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : '<span class="por" style="font-size:22px">Consulte o preço</span>'}</div>
       ${f && pixDesc() ? `<div class="spix"><b>${brl(noPix(f))}</b> no Pix <span>${String(pixDesc()).replace('.', ',')}% off</span></div>` : ''}${f && max > 1 ? `<div class="parc">ou em até <b>${max}x de ${brl(f / max)} sem juros</b> no cartão</div>${max < 12 ? `<div class="parc2">ou até 12x com acréscimo</div>` : ''}` : ''}`}
       ${niveis.length ? `<div class="piramide">${niveis.map(([k, l]) => `<div class="nivel"><div class="nl">Notas de ${l}</div><div class="notas">${n[k].map(x => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}</div>` : ''}
@@ -690,7 +692,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261117c';
+const VERSAO_SITE = '20261117d';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
