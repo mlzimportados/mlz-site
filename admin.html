@@ -146,8 +146,8 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 .seg button{height:32px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
 .seg button.on{background:rgba(255,255,255,.09);color:var(--txt)}
 .seg.per{flex-wrap:wrap}
-.citem{display:grid;grid-template-columns:1fr 64px 92px 92px 28px;gap:6px;align-items:center;margin-bottom:6px}
-@media(max-width:560px){.citem{grid-template-columns:64px 1fr 1fr 28px}.citem select{grid-column:1/-1}}
+.citem{display:grid;grid-template-columns:1fr 54px 80px 80px 88px 28px;gap:6px;align-items:center;margin-bottom:6px}
+@media(max-width:620px){.citem{grid-template-columns:54px 1fr 1fr 1fr 28px}.citem select{grid-column:1/-1}}
 
 /* cliente */
 .cli{border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117e"></script>
+<script src="js/api.js?v=20261117f"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1574,41 +1574,49 @@ function cardCompra(c, vend, lim) {
     ${ab ? `<div class="cbody" style="padding-top:12px">
       ${ls.map(l => { const p = D.produtos.find(x => x.id === l.produto_id) || {}; const v = vend.get(l.id) || 0; const mg = margemDe(precoProd(p), +l.custo_unit);
         return `<div class="linha"><div class="gr"><div class="n">${esc(nomeProd(p) || 'Produto')} · ${l.quantidade} un.</div>
-          <div class="m">${l.custo_usd ? `US$ ${(+l.custo_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · ` : ''}custo real <b style="color:var(--txt)">${brl(l.custo_unit)}</b>/un.${mg !== null ? ` · margem <b style="color:${lim && mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b> no preço ${brl(precoProd(p))}` : ''}</div></div>
+          <div class="m">${l.custo_usd ? `US$ ${(+l.custo_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · ` : ''}${+l.custo_unit ? `custo real <b style="color:var(--txt)">${brl(l.custo_unit)}</b>/un.` : '<span style="color:var(--warn)">custo a definir</span>'}${mg !== null ? ` · margem <b style="color:${lim && mg < lim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b> no preço ${brl(precoProd(p))}` : ''}</div></div>
           <span class="badge ${l.quantidade - v > 0 ? 'b-aberto' : 'b-pago'}">${v} vendida${v === 1 ? '' : 's'} · ${l.quantidade - v} resta${l.quantidade - v === 1 ? '' : 'm'}</span></div>`; }).join('')}
       ${c.obs ? `<div class="hint" style="margin-top:8px">${esc(c.obs)}</div>` : ''}
-      ${ls.every(l => !vend.get(l.id)) ? `<div style="margin-top:12px"><button class="btn sm line" data-delcompra="${c.id}" style="color:var(--bad)">Excluir compra</button></div>` : '<div class="hint" style="margin-top:10px">Compra com vendas não pode ser excluída.</div>'}
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm gold" data-editcompra="${c.id}"><svg class="i"><use href="#i-edit"/></svg>Editar compra</button>
+      ${ls.every(l => !vend.get(l.id)) ? `<button class="btn sm line" data-delcompra="${c.id}" style="color:var(--bad)">Excluir compra</button></div>` : '</div><div class="hint" style="margin-top:8px">Compra com vendas não pode ser excluída, mas pode ser editada.</div>'}
     </div>` : ''}
   </div>`;
 }
 
-function formCompra(ini) {
+function formCompra(ini, ed) {
   const prods = [...D.produtos].sort((a, b) => nomeProd(a).localeCompare(nomeProd(b)));
   const opt = (sel) => prods.map(p => `<option value="${p.id}" ${+sel === p.id ? 'selected' : ''}>${esc(nomeProd(p))}</option>`).join('');
-  const linha = (it = {}) => `<div class="citem">
-      <select class="in" name="prod">${opt(it.produto_id)}</select><input class="in num" name="qtd" inputmode="numeric" placeholder="Qtd" value="${it.quantidade || ''}">
-      <input class="in num" name="usd" inputmode="decimal" placeholder="US$ un." value="${it.custo_usd || ''}"><input class="in num" name="brl" inputmode="decimal" placeholder="ou R$ un." value="${it.custo_brl || ''}">
-      <button type="button" class="btn sm line" data-rmitem title="Tirar" style="padding:0;width:28px">✕</button>
+  const br = (v) => v === null || v === undefined || v === '' ? '' : String(v).replace('.', ',');
+  const precoDe = (pid) => { const p = D.produtos.find(x => x.id === +pid); return p && precoProd(p) ? br(precoProd(p).toFixed(2)) : ''; };
+  const vend = vendidoPorLote();
+  const linha = (it = {}) => `<div class="citem" ${it.lote_id ? `data-lote="${it.lote_id}"` : ''}>
+      <select class="in" name="prod" ${it.lote_id ? 'disabled' : ''}>${opt(it.produto_id)}</select><input class="in num" name="qtd" inputmode="numeric" placeholder="Qtd" value="${it.quantidade ?? ''}">
+      <input class="in num" name="usd" inputmode="decimal" placeholder="US$ un." value="${br(it.custo_usd)}"><input class="in num" name="brl" inputmode="decimal" placeholder="ou R$ un." value="${br(it.custo_brl)}">
+      <input class="in num" name="venda" inputmode="decimal" placeholder="Venda R$" title="Preço de venda no site" value="${it.produto_id ? precoDe(it.produto_id) : ''}">
+      ${it.lote_id ? '<span></span>' : '<button type="button" class="btn sm line" data-rmitem title="Tirar" style="padding:0;width:28px">✕</button>'}
       <div class="m cprev" style="grid-column:1/-1;font-size:12.5px;color:var(--muted);margin:-2px 2px 4px"></div></div>`;
-  abrirModal(`<h3>${ini ? 'Lote de estoque inicial' : 'Nova compra'}</h3><form id="fcompra" class="form">
-    <div class="grid2"><label class="f">Data da compra<input class="in" type="date" name="data" value="${hojeISO()}"></label>
-    <label class="f">De quem é o estoque<select class="in" name="inv"><option value="">MLZ (estoque próprio)</option>${ini ? '' : (D.investidores || []).filter(i => i.ativo).map(i => `<option value="${i.id}">Investidor: ${esc(i.nome)}</option>`).join('')}</select></label></div>
-    <label class="f">Descrição / fornecedor<input class="in" name="descricao" placeholder="Ex.: Pedido Dubai semana 2" value="${ini ? 'Estoque inicial' : ''}"></label>
-    ${ini ? '' : `<div class="grid2"><label class="f">Cotação do dólar (R$)<input class="in num" name="dolar" inputmode="decimal" placeholder="Ex.: 5,42"></label>
-    <label class="f">Frete (R$)<input class="in num" name="frete" inputmode="decimal" placeholder="0,00"></label></div>
-    <div class="grid2"><label class="f">Taxas de importação (R$)<input class="in num" name="taxas" inputmode="decimal" placeholder="0,00"></label>
-    <label class="f">Outros custos (R$)<input class="in num" name="outros" inputmode="decimal" placeholder="0,00"></label></div>`}
-    <div class="f" style="margin-bottom:4px">Produtos <span class="m" style="color:var(--faint);font-size:12px">· custo por unidade em US$ (usa a cotação) ou em R$</span></div>
-    <div id="citens">${ini ? ini.map(x => linha({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo ? String(x.p.custo).replace('.', ',') : '' })).join('') : linha()}</div>
+  const C = ed || {};
+  const itensIni = ed ? (ed.lotes || []).slice().sort((a, b) => a.id - b.id).map(l => ({ lote_id: l.id, produto_id: l.produto_id, quantidade: l.quantidade, custo_usd: l.custo_usd, custo_brl: l.custo_usd ? '' : (+l.custo_base || '') }))
+    : ini ? ini.map(x => ({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo || '' })) : [{}];
+  abrirModal(`<h3>${ed ? 'Editar compra' : ini ? 'Lote de estoque inicial' : 'Nova compra'}</h3><form id="fcompra" class="form">
+    <div class="grid2"><label class="f">Data da compra<input class="in" type="date" name="data" value="${ed ? C.data : hojeISO()}"></label>
+    <label class="f">De quem é o estoque<select class="in" name="inv" ${ed ? 'disabled' : ''}><option value="">MLZ (estoque próprio)</option>${ini ? '' : (D.investidores || []).filter(i => i.ativo || i.id === C.investidor_id).map(i => `<option value="${i.id}" ${C.investidor_id === i.id ? 'selected' : ''}>Investidor: ${esc(i.nome)}</option>`).join('')}</select></label></div>
+    <label class="f">Descrição / fornecedor<input class="in" name="descricao" placeholder="Ex.: Lote 2" value="${esc(ed ? C.descricao || '' : ini ? 'Estoque inicial' : '')}"></label>
+    ${ini || C.estoque_inicial ? '' : `<div class="grid2"><label class="f">Cotação do dólar (R$)<input class="in num" name="dolar" inputmode="decimal" placeholder="Ex.: 5,42" value="${br(C.dolar)}"></label>
+    <label class="f">Frete (R$)<input class="in num" name="frete" inputmode="decimal" placeholder="0,00" value="${+C.frete ? br(C.frete) : ''}"></label></div>
+    <div class="grid2"><label class="f">Taxas de importação (R$)<input class="in num" name="taxas" inputmode="decimal" placeholder="0,00" value="${+C.taxas ? br(C.taxas) : ''}"></label>
+    <label class="f">Outros custos (R$)<input class="in num" name="outros" inputmode="decimal" placeholder="0,00" value="${+C.outros ? br(C.outros) : ''}"></label></div>`}
+    <div class="f" style="margin-bottom:4px">Produtos <span class="m" style="color:var(--faint);font-size:12px">· qtd · custo por unidade em US$ (usa a cotação) ou em R$ · preço de venda no site</span></div>
+    <div id="citens">${itensIni.map(linha).join('')}</div>
     ${ini ? '' : '<button type="button" class="btn sm line" data-additem style="margin:4px 0 10px"><svg class="i"><use href="#i-plus"/></svg>Adicionar produto</button>'}
     <div class="grid2"><label class="f">Avisar se a margem ficar abaixo de (%) <span style="color:var(--faint)">· opcional</span><input class="in num" name="lim" inputmode="numeric" placeholder="Ex.: 30" value="${MARGEM_MIN() || ''}"></label><div id="ctot" style="align-self:end;padding-bottom:10px;font-size:14px"></div></div>
-    <div class="hint">Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um. O custo real vira o custo do produto e é usado nas vendas deste lote.</div>
+    <div class="hint">Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um.${ed ? ' Ao salvar, o custo novo também corrige o lucro das vendas que já saíram deste lote. Para tirar um produto, deixe a quantidade 0.' : ' O custo real vira o custo do produto e é usado nas vendas deste lote.'}</div>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar compra</button></div></form>`);
   const f = $('#fcompra'), num = (v) => +String(v || '').replace(/\./g, '').replace(',', '.') || 0;
   const numU = (v) => { const s = String(v || '').trim(); return s ? +(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s) || 0 : 0; };
   const ler = () => {
     const dolar = numU(f.dolar && f.dolar.value), extra = num(f.frete && f.frete.value) + num(f.taxas && f.taxas.value) + num(f.outros && f.outros.value);
-    const its = [...f.querySelectorAll('.citem')].map(el => ({ el, produto_id: +el.querySelector('[name=prod]').value, quantidade: parseInt(el.querySelector('[name=qtd]').value) || 0, usd: numU(el.querySelector('[name=usd]').value), brl: numU(el.querySelector('[name=brl]').value) }));
+    const its = [...f.querySelectorAll('.citem')].map(el => ({ el, lote_id: +el.dataset.lote || null, produto_id: +el.querySelector('[name=prod]').value, quantidade: parseInt(el.querySelector('[name=qtd]').value) || 0, usd: numU(el.querySelector('[name=usd]').value), brl: numU(el.querySelector('[name=brl]').value), venda: numU(el.querySelector('[name=venda]').value) }));
     its.forEach(i => { i.base = i.brl || (i.usd && dolar ? i.usd * dolar : 0); });
     const tot = its.reduce((s, i) => s + i.base * i.quantidade, 0);
     its.forEach(i => { i.custo = i.base ? r2(i.base + (tot > 0 ? extra * i.base / tot : 0)) : 0; });
@@ -1618,26 +1626,37 @@ function formCompra(ini) {
     const { its, extra, tot } = ler(), lim = num(f.lim.value) || null;
     try { lim ? localStorage.setItem('mlz_margem_min', lim) : localStorage.removeItem('mlz_margem_min'); } catch (_) {}
     let baixa = 0;
-    its.forEach(i => { const p = D.produtos.find(x => x.id === i.produto_id) || {}, pr = precoProd(p), mg = i.custo ? margemDe(pr, i.custo) : null; const ruim = lim && mg !== null && mg < lim; if (ruim) baixa++;
-      i.el.querySelector('.cprev').innerHTML = i.custo ? `Custo real ${brl(i.custo)}/un.${mg !== null ? ` · preço ${brl(pr)} · margem <b style="color:${ruim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b>${ruim ? ' ⚠ abaixo do limite' : ''}` : ''}` : (i.usd && !i.brl ? '<span style="color:var(--warn)">Informe a cotação do dólar</span>' : ''); });
+    its.forEach(i => { const pr = i.venda, mg = i.custo && pr ? margemDe(pr, i.custo) : null; const ruim = lim && mg !== null && mg < lim; if (ruim) baixa++;
+      const v = i.lote_id ? vend.get(i.lote_id) || 0 : 0;
+      i.el.querySelector('.cprev').innerHTML = (i.custo ? `Custo real ${brl(i.custo)}/un.${mg !== null ? ` · venda ${brl(pr)} · margem <b style="color:${ruim ? 'var(--bad)' : 'var(--ok)'}">${Math.round(mg)}%</b>${ruim ? ' ⚠ abaixo do limite' : ''}` : ' · sem preço de venda'}` : (i.usd && !i.brl ? '<span style="color:var(--warn)">Informe a cotação do dólar</span>' : 'Custo a definir')) + (v ? ` · ${v} já vendida${v === 1 ? '' : 's'}` : ''); });
     $('#ctot').innerHTML = `Total: <b class="num">${brl(tot + extra)}</b>${baixa ? ` · <span style="color:var(--bad)">${baixa} com margem baixa</span>` : ''}`;
   };
-  f.addEventListener('input', prev); f.addEventListener('change', prev);
+  f.addEventListener('input', prev);
+  f.addEventListener('change', (e) => { if (e.target.name === 'prod') { const el = e.target.closest('.citem'); el.querySelector('[name=venda]').value = precoDe(e.target.value); } prev(); });
   f.addEventListener('click', (e) => {
-    if (e.target.closest('[data-additem]')) { $('#citens').insertAdjacentHTML('beforeend', linha()); prev(); }
+    if (e.target.closest('[data-additem]')) { $('#citens').insertAdjacentHTML('beforeend', linha({ produto_id: prods[0] && prods[0].id })); prev(); }
     const rm = e.target.closest('[data-rmitem]'); if (rm && f.querySelectorAll('.citem').length > 1) { rm.closest('.citem').remove(); prev(); }
   });
   prev();
   f.onsubmit = async (e) => {
     e.preventDefault(); const { dolar, its } = ler();
-    const ok = its.filter(i => i.quantidade > 0);
+    const ok = ed ? its.filter(i => i.lote_id || i.quantidade > 0) : its.filter(i => i.quantidade > 0);
     if (!ok.length) return toast('Informe a quantidade dos produtos.');
-    if (ok.some(i => !i.base)) return toast(ok.some(i => i.usd && !i.brl && !dolar) ? 'Informe a cotação do dólar.' : 'Informe o custo de todos os produtos.');
+    if (!ed && ok.some(i => !i.base)) return toast(ok.some(i => i.usd && !i.brl && !dolar) ? 'Informe a cotação do dólar.' : 'Informe o custo de todos os produtos.');
+    if (ok.some(i => i.usd && !i.brl && !dolar)) return toast('Informe a cotação do dólar.');
     const bt = f.querySelector('.btn.gold'); bt.disabled = true;
+    const corpo = { data: f.data.value, descricao: f.descricao.value.trim(), dolar: dolar || null,
+      frete: num(f.frete && f.frete.value), taxas: num(f.taxas && f.taxas.value), outros: num(f.outros && f.outros.value),
+      itens: ok.map(i => ({ lote_id: i.lote_id, produto_id: i.produto_id, quantidade: i.quantidade, custo_usd: i.brl ? null : i.usd || null, custo_brl: i.brl || null })) };
     try {
-      await api.salvarCompra({ data: f.data.value, descricao: f.descricao.value.trim(), investidor_id: f.inv.value || null, dolar: dolar || null,
-        frete: num(f.frete && f.frete.value), taxas: num(f.taxas && f.taxas.value), outros: num(f.outros && f.outros.value), estoque_inicial: !!ini,
-        itens: ok.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade, custo_usd: i.brl ? null : i.usd || null, custo_brl: i.brl || null })) });
+      if (ed) await api.atualizarCompra({ id: ed.id, ...corpo });
+      else await api.salvarCompra({ ...corpo, investidor_id: f.inv.value || null, estoque_inicial: !!ini });
+      // preço de venda: atualiza o produto quando mudou (com preço riscado, muda o valor "por")
+      for (const i of ok) {
+        const p = D.produtos.find(x => x.id === i.produto_id); if (!p || !i.venda || Math.abs(i.venda - precoProd(p)) < 0.005) continue;
+        const temP = +p.preco_promo > 0 && +p.preco_promo < +p.preco;
+        await api.salvarProduto(temP && i.venda < +p.preco ? { id: p.id, preco_promo: i.venda } : { id: p.id, preco: i.venda, preco_promo: null });
+      }
       toast('Compra salva'); fecharModal(); await carregar();
     } catch (err) { bt.disabled = false; toast('Erro: ' + err.message); }
   };
@@ -1736,6 +1755,7 @@ $('#v-compras').addEventListener('click', async (e) => {
   if ((b = e.target.closest('[data-csub]'))) { UI.compSub = b.dataset.csub; return vCompras(); }
   if (e.target.closest('[data-novacompra]')) return formCompra(null);
   if (e.target.closest('[data-estini]')) return formCompra(mlzSemLote());
+  if ((b = e.target.closest('[data-editcompra]'))) return formCompra(null, (D.compras || []).find(c => c.id === +b.dataset.editcompra));
   if ((b = e.target.closest('[data-togcompra]'))) { const id = +b.dataset.togcompra; UI.compAbertas = UI.compAbertas || new Set(); UI.compAbertas.has(id) ? UI.compAbertas.delete(id) : UI.compAbertas.add(id); return vComprasLista(); }
   if ((b = e.target.closest('[data-delcompra]'))) {
     if (!confirm('Excluir esta compra e os lotes dela? O estoque dos produtos volta ao que era antes.')) return;

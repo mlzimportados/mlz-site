@@ -82,6 +82,7 @@ function criarApi(opts = {}) {
     salvarLote: async (x) => ok(await sb.from('lotes').insert(x)),
     compras: async () => ok(await sb.from('compras').select('*, lotes(*)').order('data', { ascending: false })),
     salvarCompra: async (p) => ok(await sb.rpc('salvar_compra', { p })),
+    atualizarCompra: async (p) => ok(await sb.rpc('atualizar_compra', { p })),
     excluirCompra: async (id) => { ok(await sb.from('lotes').delete().eq('compra_id', id)); return ok(await sb.from('compras').delete().eq('id', id)); },
     fechamentos: async () => ok(await sb.from('fechamentos').select('*').order('mes', { ascending: false })),
     fecharMes: async (mes, dados) => ok(await sb.rpc('fechar_mes', { p_mes: mes, p_dados: dados })),
