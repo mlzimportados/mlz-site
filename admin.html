@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117k"></script>
+<script src="js/api.js?v=20261117l"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1526,6 +1526,8 @@ function vendidoPorLote(ate) {
   return m;
 }
 const donoCompra = (c) => c.investidor_id ? (((D.investidores || []).find(i => i.id === c.investidor_id) || {}).nome || 'Investidor') : 'MLZ';
+const nomeLote = (l) => { const p = D.produtos.find(x => x.id === l.produto_id); return p ? nomeProd(p) : ''; };
+const ordLotes = (ls) => (ls || []).slice().sort((a, b) => nomeLote(a).localeCompare(nomeLote(b), 'pt-BR') || a.id - b.id);
 const totCompra = (c) => r2((c.lotes || []).reduce((s, l) => s + l.quantidade * +l.custo_unit, 0));
 const margemDe = (preco, custo) => preco > 0 ? (preco - custo) / preco * 100 : null;
 // unidades da MLZ no estoque que ainda não estão em nenhum lote
@@ -1560,7 +1562,7 @@ function vComprasLista() {
       : '<div class="vazio">Nenhuma compra lançada ainda. Toque em <b>Nova compra</b> a cada pedido que chegar (semanal, quinzenal ou mensal).</div>'}`;
 }
 function cardCompra(c, vend, lim) {
-  const ab = (UI.compAbertas || new Set()).has(c.id), ls = c.lotes || [];
+  const ab = (UI.compAbertas || new Set()).has(c.id), ls = ordLotes(c.lotes);
   const un = ls.reduce((s, l) => s + l.quantidade, 0), resta = ls.reduce((s, l) => s + Math.max(0, l.quantidade - (vend.get(l.id) || 0)), 0);
   const baixa = ls.filter(l => { const p = D.produtos.find(x => x.id === l.produto_id); const mg = p ? margemDe(precoProd(p), +l.custo_unit) : null; return lim && mg !== null && mg < lim; }).length;
   return `<div class="cli">
@@ -1597,7 +1599,7 @@ function formCompra(ini, ed) {
       ${it.lote_id ? '<span></span>' : '<button type="button" class="btn sm line" data-rmitem title="Tirar" style="padding:0;width:28px">✕</button>'}
       <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12.5px;margin:-2px 2px 4px"><label style="display:inline-flex;gap:5px;align-items:center;color:var(--muted);cursor:pointer;white-space:nowrap"><input type="checkbox" name="sf" ${it.sem_frete ? 'checked' : ''} style="accent-color:var(--gold)">Sem frete</label><span class="m cprev" style="color:var(--muted)"></span></div></div>`;
   const C = ed || {};
-  const itensIni = ed ? (ed.lotes || []).slice().sort((a, b) => a.id - b.id).map(l => ({ lote_id: l.id, produto_id: l.produto_id, quantidade: l.quantidade, custo_usd: l.custo_usd, custo_brl: l.custo_usd ? '' : (+l.custo_base || ''), sem_frete: !!l.sem_frete }))
+  const itensIni = ed ? ordLotes(ed.lotes).map(l => ({ lote_id: l.id, produto_id: l.produto_id, quantidade: l.quantidade, custo_usd: l.custo_usd, custo_brl: l.custo_usd ? '' : (+l.custo_base || ''), sem_frete: !!l.sem_frete }))
     : ini ? ini.map(x => ({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo || '' })) : [{}];
   abrirModal(`<h3>${ed ? 'Editar compra' : ini ? 'Lote de estoque inicial' : 'Nova compra'}</h3><form id="fcompra" class="form">
     <div class="grid2"><label class="f">Data da compra<input class="in" type="date" name="data" value="${ed ? C.data : hojeISO()}"></label>
