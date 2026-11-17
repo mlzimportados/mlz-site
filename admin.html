@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117i"></script>
+<script src="js/api.js?v=20261117j"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1595,9 +1595,9 @@ function formCompra(ini, ed) {
       <input class="in num" name="usd" inputmode="decimal" placeholder="US$ un." value="${br(it.custo_usd)}"><input class="in num" name="brl" inputmode="decimal" placeholder="ou R$ un." value="${br(it.custo_brl)}">
       <input class="in num" name="venda" inputmode="decimal" placeholder="Venda R$" title="Preço de venda no site" value="${it.produto_id ? precoDe(it.produto_id) : ''}">
       ${it.lote_id ? '<span></span>' : '<button type="button" class="btn sm line" data-rmitem title="Tirar" style="padding:0;width:28px">✕</button>'}
-      <div class="m cprev" style="grid-column:1/-1;font-size:12.5px;color:var(--muted);margin:-2px 2px 4px"></div></div>`;
+      <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12.5px;margin:-2px 2px 4px"><label style="display:inline-flex;gap:5px;align-items:center;color:var(--muted);cursor:pointer;white-space:nowrap"><input type="checkbox" name="sf" ${it.sem_frete ? 'checked' : ''} style="accent-color:var(--gold)">Sem frete</label><span class="m cprev" style="color:var(--muted)"></span></div></div>`;
   const C = ed || {};
-  const itensIni = ed ? (ed.lotes || []).slice().sort((a, b) => a.id - b.id).map(l => ({ lote_id: l.id, produto_id: l.produto_id, quantidade: l.quantidade, custo_usd: l.custo_usd, custo_brl: l.custo_usd ? '' : (+l.custo_base || '') }))
+  const itensIni = ed ? (ed.lotes || []).slice().sort((a, b) => a.id - b.id).map(l => ({ lote_id: l.id, produto_id: l.produto_id, quantidade: l.quantidade, custo_usd: l.custo_usd, custo_brl: l.custo_usd ? '' : (+l.custo_base || ''), sem_frete: !!l.sem_frete }))
     : ini ? ini.map(x => ({ produto_id: x.p.id, quantidade: x.qtd, custo_brl: +x.p.custo || '' })) : [{}];
   abrirModal(`<h3>${ed ? 'Editar compra' : ini ? 'Lote de estoque inicial' : 'Nova compra'}</h3><form id="fcompra" class="form">
     <div class="grid2"><label class="f">Data da compra<input class="in" type="date" name="data" value="${ed ? C.data : hojeISO()}"></label>
@@ -1611,18 +1611,19 @@ function formCompra(ini, ed) {
     <div id="citens">${itensIni.map(linha).join('')}</div>
     ${ini ? '' : '<button type="button" class="btn sm line" data-additem style="margin:4px 0 10px"><svg class="i"><use href="#i-plus"/></svg>Adicionar produto</button>'}
     <div class="grid2"><label class="f">Avisar se a margem ficar abaixo de (%) <span style="color:var(--faint)">· opcional</span><input class="in num" name="lim" inputmode="numeric" placeholder="Ex.: 30" value="${MARGEM_MIN() || ''}"></label><div id="ctot" style="align-self:end;padding-bottom:10px;font-size:14px"></div></div>
-    <div class="hint">O frete é a % sobre o valor dos produtos. Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um.${ed ? ' Ao salvar, o custo novo também corrige o lucro das vendas que já saíram deste lote. Para tirar um produto, deixe a quantidade 0.' : ' O custo real vira o custo do produto e é usado nas vendas deste lote.'}</div>
+    <div class="hint">O frete é a % sobre o valor dos produtos (menos os marcados "Sem frete"). Frete, taxas e outros custos são divididos entre os produtos pelo valor de cada um.${ed ? ' Ao salvar, o custo novo também corrige o lucro das vendas que já saíram deste lote. Para tirar um produto, deixe a quantidade 0.' : ' O custo real vira o custo do produto e é usado nas vendas deste lote.'}</div>
     <div class="mfoot"><button type="button" class="btn line" data-fechar>Cancelar</button><button class="btn gold">Salvar compra</button></div></form>`);
   const f = $('#fcompra'), num = (v) => +String(v || '').replace(/\./g, '').replace(',', '.') || 0;
   const numU = (v) => { const s = String(v || '').trim(); return s ? +(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s) || 0 : 0; };
   const ler = () => {
     const dolar = numU(f.dolar && f.dolar.value), fpct = f.fpct && f.fpct.value.trim() ? numU(f.fpct.value) : null;
-    const its = [...f.querySelectorAll('.citem')].map(el => ({ el, lote_id: +el.dataset.lote || null, produto_id: +el.querySelector('[name=prod]').value, quantidade: parseInt(el.querySelector('[name=qtd]').value) || 0, usd: numU(el.querySelector('[name=usd]').value), brl: numU(el.querySelector('[name=brl]').value), venda: numU(el.querySelector('[name=venda]').value) }));
+    const its = [...f.querySelectorAll('.citem')].map(el => ({ el, lote_id: +el.dataset.lote || null, produto_id: +el.querySelector('[name=prod]').value, quantidade: parseInt(el.querySelector('[name=qtd]').value) || 0, usd: numU(el.querySelector('[name=usd]').value), brl: numU(el.querySelector('[name=brl]').value), venda: numU(el.querySelector('[name=venda]').value), sf: el.querySelector('[name=sf]').checked }));
     its.forEach(i => { i.base = i.brl || (i.usd && dolar ? i.usd * dolar : 0); });
     const tot = its.reduce((s, i) => s + i.base * i.quantidade, 0);
-    const frete = fpct !== null ? r2(tot * fpct / 100) : (f.fpct ? 0 : +C.frete || 0), extra = frete + num(f.taxas && f.taxas.value) + num(f.outros && f.outros.value);
+    const totFr = its.reduce((s, i) => s + (i.sf ? 0 : i.base * i.quantidade), 0);
+    const frete = fpct !== null ? r2(totFr * fpct / 100) : (f.fpct ? 0 : +C.frete || 0), outros = num(f.taxas && f.taxas.value) + num(f.outros && f.outros.value), extra = frete + outros;
     if ($('#cfrete')) $('#cfrete').textContent = frete ? '· ' + brl(frete) : '';
-    its.forEach(i => { i.custo = i.base ? r2(i.base + (tot > 0 ? extra * i.base / tot : 0)) : 0; });
+    its.forEach(i => { i.custo = i.base ? r2(i.base + (!i.sf && totFr > 0 ? frete * i.base / totFr : 0) + (tot > 0 ? outros * i.base / tot : 0)) : 0; });
     return { dolar, extra, its, tot, fpct, frete };
   };
   const prev = () => {
@@ -1650,7 +1651,7 @@ function formCompra(ini, ed) {
     const bt = f.querySelector('.btn.gold'); bt.disabled = true;
     const corpo = { data: f.data.value, descricao: f.descricao.value.trim(), dolar: dolar || null,
       frete, frete_pct: fpct, taxas: num(f.taxas && f.taxas.value), outros: num(f.outros && f.outros.value),
-      itens: ok.map(i => ({ lote_id: i.lote_id, produto_id: i.produto_id, quantidade: i.quantidade, custo_usd: i.brl ? null : i.usd || null, custo_brl: i.brl || null })) };
+      itens: ok.map(i => ({ lote_id: i.lote_id, produto_id: i.produto_id, quantidade: i.quantidade, custo_usd: i.brl ? null : i.usd || null, custo_brl: i.brl || null, sem_frete: i.sf })) };
     try {
       if (ed) await api.atualizarCompra({ id: ed.id, ...corpo });
       else await api.salvarCompra({ ...corpo, investidor_id: f.inv.value || null, estoque_inicial: !!ini });
