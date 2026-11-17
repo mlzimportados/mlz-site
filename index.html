@@ -413,7 +413,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117d"></script>
+<script src="js/api.js?v=20261117e"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', genSel = '', spotIdx = 0, spotTimer;
@@ -498,8 +498,8 @@ document.getElementById('aromaGrid').addEventListener('click', e => {
 
 // ---------- coleção ----------
 const esgotado = (p) => !(+p.estoque > 0);
-// body splash (categoria 3) mostra o preço mesmo sob encomenda
-const precoVisivel = (p) => !esgotado(p) || +p.categoria_id === 3;
+// produto sob encomenda nunca mostra preço
+const precoVisivel = (p) => !esgotado(p);
 const marcaBase = (m) => (m || 'Outras').replace(/\s+Pride$/i, '');
 function cardProd(p) {
   const enc = esgotado(p);
@@ -692,7 +692,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261117d';
+const VERSAO_SITE = '20261117e';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
