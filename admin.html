@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117n"></script>
+<script src="js/api.js?v=20261117o"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -375,6 +375,8 @@ const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
 const addMeses = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const dt = new Date(Date.UTC(y, m - 1 + n, 1)); const ult = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate(); dt.setUTCDate(Math.min(d, ult)); return dt.toISOString().slice(0, 10); };
 const iniciais = (n) => (n || '?').trim().split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase();
 const imgProd = (p) => p.imagem || 'img/logo_gold.png';
+// etiqueta do investidor dono do lote de onde saiu o item
+const tagInv = (i) => { if (!i.investidor_id) return ''; const n = ((D.investidores || []).find(x => x.id === i.investidor_id) || {}).nome || 'investidor'; return ` <span style="display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:99px;background:rgba(106,168,255,.12);color:#6aa8ff;border:1px solid rgba(106,168,255,.3);vertical-align:1px;white-space:nowrap">Investidor: ${esc(n)}</span>`; };
 const nomeProd = (p) => [p.marca, p.nome].filter(Boolean).join(' ');
 const precoProd = (p) => (p.preco_promo && +p.preco_promo > 0 && +p.preco_promo < +p.preco) ? +p.preco_promo : (+p.preco || 0);
 
@@ -611,7 +613,7 @@ function htmlEnt(v, compacto, completo) {
       ${maps ? `<a class="btn sm line" target="_blank" rel="noopener" href="${maps}" title="Abrir no mapa"><svg class="i"><use href="#i-pin"/></svg></a>` : ''}
       ${wa ? `<a class="btn sm line" target="_blank" rel="noopener" href="${wa}" title="Avisar no WhatsApp"><svg class="i"><use href="#i-wa"/></svg></a>` : ''}
       ${completo ? `<button class="btn sm line" data-editent="${v.id}" title="Editar entrega"><svg class="i"><use href="#i-edit"/></svg></button>` : ''}</div>
-    ${completo ? `<div class="eits">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)}`).join(' · ')} · <b class="num">${brl(v.total)}</b></div>
+    ${completo ? `<div class="eits">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)}${tagInv(i)}`).join(' · ')} · <b class="num">${brl(v.total)}</b></div>
       <div class="tl"><span>Pago <b>${hora(v.criado_em) || dataBR(v.data)}</b></span>
         <span class="${v.enviado_em ? '' : 'no'}">${r.enviado} ${v.enviado_em ? '<b>' + hora(v.enviado_em) + '</b>' : '—'}</span>
         <span class="${v.entregue_em ? '' : 'no'}">${r.entregue} ${v.entregue_em ? '<b>' + hora(v.entregue_em) + '</b>' : '—'}</span></div>
@@ -738,7 +740,7 @@ function cardVenda(v, tel) {
   }
   return `<div class="venda">
     <div class="vtop"><div><b class="num">${brl(v.total)}</b> <span class="m">· ${dataBR(v.data)} · ${esc(v.forma_pagamento)}${n > 1 ? ` · ${n}x` : ''}${v.canal ? ' · ' + esc(v.canal) : ''}${+v.taxa ? ` · taxa ${brl(v.taxa)}` : ''}</span></div>${badge(st)}</div>
-    <div class="itens">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)} <span style="color:var(--muted)" class="num">(${brl(i.preco_unit)})</span>`).join('<br>')}</div>
+    <div class="itens">${v.venda_itens.map(i => `${i.quantidade}× ${esc(i.descricao)} <span style="color:var(--muted)" class="num">(${brl(i.preco_unit)})</span>${tagInv(i)}`).join('<br>')}</div>
     <div class="parcs">${ps.map(p => { const s = stParc(p); return `<button class="pc ${s}" data-parc="${p.id}" title="${ROT[s]}">
       <span class="ck">${p.pago_em ? '<svg class="i"><use href="#i-check"/></svg>' : ''}</span>
       <b>${n > 1 ? `${p.numero}/${n}` : 'À vista'}</b><span class="num">${brl(p.valor)}</span><span>${p.pago_em ? 'pago ' + dataBR(p.pago_em).slice(0, 5) : 'vence ' + dataBR(p.vencimento).slice(0, 5)}</span></button>`; }).join('')}</div>
