@@ -357,7 +357,7 @@ h2.t{font-family:var(--hd);font-weight:600;font-size:26px;letter-spacing:-.6px;m
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117j"></script>
+<script src="js/api.js?v=20261117k"></script>
 <script>
 const api = criarApi();
 const D = { produtos: [], clientes: [], vendas: [], cats: [], cfg: {}, investidores: [], indicadores: [], indicacoes: [] };
@@ -1570,7 +1570,7 @@ function cardCompra(c, vend, lim) {
         <div class="m">${esc(donoCompra(c))}${c.dolar ? ` · dólar ${(+c.dolar).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}` : ''}</div></div>
       ${baixa ? `<span class="badge b-atrasado">${baixa} com margem baixa</span>` : resta ? `<span class="badge b-aberto">${resta} em estoque</span>` : `<span class="badge b-pago">Vendido</span>`}
     </div>
-    <div class="ctot"><div>Produtos<b class="num">${brl(totCompra(c) - (+c.frete + +c.taxas + +c.outros))}</b></div><div>${+c.taxas || +c.outros ? 'Frete e taxas' : 'Frete'}${c.frete_pct != null ? ` (${br(c.frete_pct)}%)` : ''}<b class="num">${brl(+c.frete + +c.taxas + +c.outros)}</b></div><div>Custo total<b class="num" style="color:var(--gold-hi)">${brl(totCompra(c))}</b></div></div>
+    <div class="ctot"><div>Produtos<b class="num">${brl(totCompra(c) - (+c.frete + +c.taxas + +c.outros))}</b></div><div>${+c.taxas || +c.outros ? 'Frete e taxas' : 'Frete'}${c.frete_pct != null ? ` (${String(+c.frete_pct).replace(".", ",")}%)` : ''}<b class="num">${brl(+c.frete + +c.taxas + +c.outros)}</b></div><div>Custo total<b class="num" style="color:var(--gold-hi)">${brl(totCompra(c))}</b></div></div>
     <div class="m" style="padding:8px 18px 10px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)">${un} unidade${un === 1 ? '' : 's'} · ${resta} em estoque${+c.taxas ? ` · taxas ${brl(c.taxas)}` : ''}${+c.outros ? ` · outros ${brl(c.outros)}` : ''}</div>
     ${ab ? `<div class="cbody" style="padding-top:12px">
       ${ls.map(l => { const p = D.produtos.find(x => x.id === l.produto_id) || {}; const v = vend.get(l.id) || 0; const mg = margemDe(precoProd(p), +l.custo_unit);
