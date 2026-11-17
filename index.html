@@ -413,7 +413,7 @@ footer{margin-top:64px;padding:0 0 22px}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/api.js?v=20261117g"></script>
+<script src="js/api.js?v=20261117h"></script>
 <script>
 const api = criarApi({ conta: true });
 let CFG = {}, PRODS = [], famSel = '', marcaSel = '', genSel = '', spotIdx = 0, spotTimer;
@@ -438,7 +438,7 @@ const imgSrc = p => p.imagem || 'img/logo_gold.png';
 const nomeCompleto = p => [p.marca, p.nome].filter(Boolean).join(' ');
 const pixDesc = () => { const d = parseFloat(String(CFG.pix_desconto || '').replace(',', '.')); return d > 0 && d < 50 ? d : 0; };
 const noPix = v => Math.round(v * (100 - pixDesc())) / 100;
-const precoHtml = p => { const f = precoFinal(p); if (!f) return 'Consulte'; return (temPromo(p) ? `<s>${brl(p.preco)}</s>` : '') + brl(f); };
+const precoHtml = p => { const f = precoFinal(p); if (!f) return ''; return (temPromo(p) ? `<s>${brl(p.preco)}</s>` : '') + brl(f); };
 
 function linkWa(texto) { const n = soDigitos(CFG.whatsapp); if (!n) return null; return `https://wa.me/${n.length <= 11 ? '55' + n : n}?text=${encodeURIComponent(texto)}`; }
 const igUser = () => (CFG.instagram || '').replace(/^@/, '').trim();
@@ -567,7 +567,7 @@ function abrir(id) {
       <div class="pn">${esc(p.nome)}</div>
       ${p.familia ? `<span class="fam" style="--c:${corFam(p.familia)}">${esc(p.familia)}${FAMILIAS[p.familia] ? ' · ' + esc(FAMILIAS[p.familia].d.toLowerCase()) : ''}</span>` : (p.tipo ? `<span class="fam">${esc(p.tipo)}</span>` : '')}
       ${enc ? `<div class="encbox"><b>Esgotado no momento, fazemos encomenda</b><p>Trazemos este perfume para você. Fale com a gente para saber o prazo de chegada${precoVisivel(p) ? '' : ' e o valor'}.</p></div>${precoVisivel(p) && f ? `<div class="sprice"><span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}</div>` : ''}` : `
-      <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : '<span class="por" style="font-size:22px">Consulte o preço</span>'}</div>
+      <div class="sprice">${f ? `<span class="por">${brl(f)}</span>${temPromo(p) ? `<s>${brl(p.preco)}</s>` : ''}` : ''}</div>
       ${f && pixDesc() ? `<div class="spix"><b>${brl(noPix(f))}</b> no Pix <span>${String(pixDesc()).replace('.', ',')}% off</span></div>` : ''}${f && max > 1 ? `<div class="parc">ou em até <b>${max}x de ${brl(f / max)} sem juros</b> no cartão</div>${max < 12 ? `<div class="parc2">ou até 12x com acréscimo</div>` : ''}` : ''}`}
       ${niveis.length ? `<div class="piramide">${niveis.map(([k, l]) => `<div class="nivel"><div class="nl">Notas de ${l}</div><div class="notas">${n[k].map(x => `<span>${esc(x)}</span>`).join('')}</div></div>`).join('')}</div>` : ''}
       ${resto ? `<div class="desc">${esc(resto)}</div>` : ''}
@@ -692,7 +692,7 @@ function passoSacola(n) {
   if (n === 2) { const f = ft.nome; if (!f.value) setTimeout(() => f.focus({ preventScroll: true }), 250); }
 }
 // ---------- versão nova do site: recarrega a página antiga (aba aberta / cache do celular) ----------
-const VERSAO_SITE = '20261117g';
+const VERSAO_SITE = '20261117h';
 async function checarVersao(reabrir) {
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false;
